@@ -1,5 +1,5 @@
-﻿{
-  "name": "[INWORK] p/units/neso/meta",
+{
+  "name": "[INWORK] p/units/neso/meta/core",
   "params": {
     "startWorkspaceAppearance": "ai"
   }

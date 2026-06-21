@@ -1,4 +1,4 @@
-﻿// @shared-route
+// @shared-route
 import { requireAnyUser } from '@app/auth'
 import * as loggerLib from '../../lib/logger.lib'
 import {
@@ -11,7 +11,7 @@ import {
 const LOG_PATH = 'api/tests/list'
 
 /**
- * GET /api/tests/list — каталог тестов базового минимума (как p/units/neso/meta).
+ * GET /api/tests/list — каталог тестов базового минимума (как p/units/neso/meta/core).
  * Каждая категория содержит `blocks` (функциональные группы) и плоский `tests` для совместимости.
  */
 export const listTestsRoute = app.get('/', async (ctx) => {

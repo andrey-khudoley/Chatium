@@ -1,7 +1,7 @@
-﻿import { runAppFunction } from '@app/app'
+import { runAppFunction } from '@app/app'
 import { BROKER_EVENT_CONTRACTS, SAMPLE_MODULE_KEY } from '../contracts/brokerEvents'
 
-const TEMPLATE_BROKER_APP = 'p/units/neso/meta'
+const TEMPLATE_BROKER_APP = 'p/units/neso/meta/core'
 const SAMPLE_SUBSCRIPTION_NAME = 'sample-note-reader'
 const SAMPLE_MODULE_AUTH_TOKEN = 'template-sample-module-token'
 export const SAMPLE_SUBSCRIPTION_KEY = `${SAMPLE_MODULE_KEY}:${SAMPLE_SUBSCRIPTION_NAME}`

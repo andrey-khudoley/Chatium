@@ -1,4 +1,4 @@
-﻿export const SAMPLE_MODULE_KEY = 'p/units/neso/meta/sample-module'
+export const SAMPLE_MODULE_KEY = 'p/units/neso/meta/core/sample-module'
 
 export const BROKER_EVENT_CONTRACTS = [
   {

@@ -1,8 +1,8 @@
-﻿# Spec-as-source: `p/units/neso/meta`
+# Spec-as-source: `p/units/neso/meta/core`
 
 Статус: источник истины для проекта.  
 Последнее обновление: 2026-06-19.
-Область действия: весь каталог `p/units/neso/meta`.
+Область действия: весь каталог `p/units/neso/meta/core`.
 
 Этот файл описывает требуемое состояние проекта целиком: продуктовую роль модуля, маршруты, страницы, API, данные, логи, тесты, UI-поведение, права доступа и правила эволюции. Если код, README, ADR или старые документы расходятся с этой спецификацией, приоритет у этого файла. Контракты и ошибки встроены сюда, потому что текущий объем не требует отдельных файлов.
 
@@ -18,7 +18,7 @@
 
 ## 1. Назначение
 
-`p/units/neso/meta` - meta-модуль сервиса NESO, который хранит системные контракты, координирует взаимодействие модулей и выступает Heap-backed брокером событий.
+`p/units/neso/meta/core` - meta-модуль сервиса NESO, который хранит системные контракты, координирует взаимодействие модулей и выступает Heap-backed брокером событий.
 
 Одна из продуктовых ролей core - работа в качестве центрального broker-а для event-driven модели будущего сервиса. Все прикладные модули сервиса должны обмениваться фактами через события: модуль-публикатор регистрирует, что произошло, core сохраняет событие в durable Heap-журнале, определяет подписчиков/получателей и дает модулям-потребителям единый способ узнать, что именно им нужно опросить и обработать.
 
@@ -107,167 +107,164 @@ Core не является внешним message broker-ом вроде Kafka/R
 
 ### 3.1 Полный инвентарь файлов
 
-Этот инвентарь является нормативным. Любой новый, удаленный или переименованный файл в `p/units/neso/meta` требует синхронного изменения таблицы.
+Этот инвентарь является нормативным. Любой новый, удаленный или переименованный файл в `p/units/neso/meta/core` требует синхронного изменения таблицы.
 
-| Файл                                                   | Нормативная роль                                                                                                       |
-| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| `.CHATIUM-LLM.md`                                      | Краткий LLM-контекст проекта и ссылки на документы; не источник истины.                                                |
-| `.dir.json`                                            | Метаданные каталога Chatium workspace.                                                                                 |
-| `.workspace.json`                                      | Workspace feature flags, сейчас `heap`.                                                                                |
-| `README.md`                                            | Человеческое описание проекта и быстрые ссылки; не источник истины при расхождении со spec.                            |
-| `index.tsx`                                            | SSR route `/`, экспорт `indexPageRoute`.                                                                               |
-| `web/admin/index.tsx`                                  | SSR route `/web/admin`, экспорт `adminPageRoute`.                                                                      |
-| `web/login/index.tsx`                                  | SSR route `/web/login`, экспорт `loginPageRoute`.                                                                      |
-| `web/profile/index.tsx`                                | SSR route `/web/profile`, экспорт `profilePageRoute`.                                                                  |
-| `web/tests/index.tsx`                                  | SSR route `/web/tests`, экспорт `testsPageRoute`.                                                                      |
-| `pages/HomePage.vue`                                   | Vue page главной.                                                                                                      |
-| `pages/LoginPage.vue`                                  | Vue page входа.                                                                                                        |
-| `pages/ProfilePage.vue`                                | Vue page профиля.                                                                                                      |
-| `pages/AdminPage.vue`                                  | Vue page админки.                                                                                                      |
-| `pages/TestsPage.vue`                                  | Vue page тестов.                                                                                                       |
-| `components/Header.vue`                                | Общий header и logout orchestration.                                                                                   |
-| `components/LogoutModal.vue`                           | Презентационный modal выхода.                                                                                          |
-| `components/GlobalGlitch.vue`                          | Глобальные CSS-правила glitch effect.                                                                                  |
-| `components/AppFooter.vue`                             | Общий footer и событие `chatium-click`.                                                                                |
-| `components/admin/AdminCounters.vue`                   | Презентационная карточка error/warn counters.                                                                          |
-| `components/admin/AdminSettings.vue`                   | UI настроек `project_name` и `log_level`.                                                                              |
-| `components/admin/AdminLogMonitor.vue`                 | Презентационный монитор логов админки.                                                                                 |
-| `components/admin/broker/BrokerOpsPanel.vue`           | Контейнер broker ops-панели: вкладки, фильтры, загрузка diagnostics and actions orchestration.                         |
-| `components/admin/broker/BrokerModulesTable.vue`       | Таблица BPM-модулей с enable/disable actions.                                                                          |
-| `components/admin/broker/BrokerSubscriptionsTable.vue` | Таблица подписок broker-а с enable/disable actions.                                                                    |
-| `components/admin/broker/BrokerEventsTable.vue`        | Таблица событий broker-а с primary summary and raw payload open action.                                                |
-| `components/admin/broker/BrokerDeliveriesTable.vue`    | Таблица deliveries с inspect, requeue and skip actions.                                                                |
-| `components/admin/broker/BrokerNotificationsTable.vue` | Таблица notification attempts с retry action.                                                                          |
-| `components/admin/broker/BrokerRawPayloadViewer.vue`   | Expandable JSON viewer для raw `BrokerEvents.payload` с audit-triggered load.                                          |
-| `components/admin/broker/BrokerOpsConfirmModal.vue`    | Подтверждение ops actions с обязательным reason/comment.                                                               |
-| `components/tests/TestSuiteTab.vue`                    | Презентационная вкладка test suite.                                                                                    |
-| `components/tests/TestsLogMonitor.vue`                 | Презентационный монитор логов страницы тестов.                                                                         |
-| `config/routes.tsx`                                    | `PROJECT_ROOT`, route constants and URL helpers.                                                                       |
-| `config/project.tsx`                                   | Project/page constants and title/header helpers.                                                                       |
-| `api/settings/list.ts`                                 | `GET /api/settings/list`, экспорт `listSettingsRoute`.                                                                 |
-| `api/settings/get.ts`                                  | `GET /api/settings/get`, экспорт `getSettingRoute`.                                                                    |
-| `api/settings/save.ts`                                 | `POST /api/settings/save`, экспорт `saveSettingRoute`.                                                                 |
-| `api/logger/log.ts`                                    | `POST /api/logger/log`, экспорт `logRoute`.                                                                            |
-| `api/logger/browser.ts`                                | `POST /api/logger/browser`, экспорт `postBrowserLogsRoute`.                                                            |
-| `api/admin/logs/recent.ts`                             | `GET /api/admin/logs/recent`, экспорт `getRecentLogsRoute`.                                                            |
-| `api/admin/logs/before.ts`                             | `GET /api/admin/logs/before`, экспорт `getLogsBeforeRoute`.                                                            |
-| `api/admin/dashboard/counts.ts`                        | `GET /api/admin/dashboard/counts`, экспорт `getDashboardCountsRoute`.                                                  |
-| `api/admin/dashboard/reset.ts`                         | `POST /api/admin/dashboard/reset`, экспорт `resetDashboardRoute`.                                                      |
-| `api/admin/broker/diagnostics.ts`                      | `GET /api/admin/broker/diagnostics`, broker ops data для admin UI.                                                     |
-| `api/admin/broker/events/raw.ts`                       | `POST /api/admin/broker/events/raw`, audit и возврат raw payload события.                                              |
-| `api/admin/broker/modules/toggle.ts`                   | `POST /api/admin/broker/modules/toggle`, enable/disable module with audit.                                             |
-| `api/admin/broker/subscriptions/toggle.ts`             | `POST /api/admin/broker/subscriptions/toggle`, enable/disable subscription with audit.                                 |
-| `api/admin/broker/deliveries/requeue.ts`               | `POST /api/admin/broker/deliveries/requeue`, requeue failed/dead_letter delivery with audit.                           |
-| `api/admin/broker/deliveries/skip.ts`                  | `POST /api/admin/broker/deliveries/skip`, skip poison delivery with audit.                                             |
-| `api/admin/broker/notifications/retry.ts`              | `POST /api/admin/broker/notifications/retry`, retry notification attempt with audit.                                   |
-| `api/tests/list.ts`                                    | `GET /api/tests/list`, экспорт `listTestsRoute`.                                                                       |
-| `api/tests/unit/index.ts`                              | `GET /api/tests/unit`, экспорт `templateUnitTestsRoute`.                                                               |
-| `api/tests/integration/index.ts`                       | `GET /api/tests/integration`, экспорт `templateIntegrationTestsRoute`.                                                 |
-| `functions/broker/publish.ts`                          | Internal `app.function('/broker/publish')`, публикация события модулем.                                                |
-| `functions/broker/poll.ts`                             | Internal `app.function('/broker/poll')`, получение и claim pending deliveries потребителем.                            |
-| `functions/broker/ack.ts`                              | Internal `app.function('/broker/ack')`, подтверждение обработки deliveries.                                            |
-| `functions/broker/fail.ts`                             | Internal `app.function('/broker/fail')`, фиксация ошибки и retry/dead-letter.                                          |
-| `functions/broker/modules/register.ts`                 | Internal `app.function('/broker/modules/register')`, регистрация/обновление BPM-модуля и его event contracts manifest. |
-| `functions/broker/subscriptions/register.ts`           | Internal `app.function('/broker/subscriptions/register')`, batch регистрация/обновление подписок.                      |
-| `functions/broker/diagnostics.ts`                      | Internal/Admin `app.function('/broker/diagnostics')`, чтение broker state для диагностики.                             |
-| `functions/broker/notifications/retry.ts`              | Internal/Admin `app.function('/broker/notifications/retry')`, retry notification attempts.                             |
-| `jobs/broker/notifications-dispatch.ts`                | `app.job` для batch dispatch `BrokerNotificationAttempts` в пределах lifetime операции.                                |
-| `sample-module/contracts/brokerEvents.ts`              | MAX-independent sample event contract `sample.note.created`.                                                           |
-| `sample-module/lib/coreBrokerClient.lib.ts`            | Sample module broker client через `@app/app.runAppFunction` без HTTP broker URL.                                       |
-| `sample-module/api/register.ts`                        | `POST /sample-module/api/register`, Admin-only registration sample.                                                    |
-| `sample-module/api/publish-note.ts`                    | `POST /sample-module/api/publish-note`, Admin-only publish sample note event.                                          |
-| `sample-module/api/poll.ts`                            | `POST /sample-module/api/poll`, Admin-only poll sample deliveries.                                                     |
-| `sample-module/api/ack.ts`                             | `POST /sample-module/api/ack`, Admin-only ack sample deliveries.                                                       |
-| `sample-module/api/fail.ts`                            | `POST /sample-module/api/fail`, Admin-only fail sample deliveries.                                                     |
-| `sample-module/README.md`                              | Краткая инструкция к sample module.                                                                                    |
-| `interfaces/getcourse/contracts/brokerEvents.ts`       | GetCourse interface event contract `getcourse.raw_event.accepted`.                                                     |
-| `interfaces/getcourse/lib/coreBrokerClient.lib.ts`     | GetCourse interface broker client через `@app/app.runAppFunction` без HTTP broker URL.                                 |
-| `interfaces/getcourse/api/register.ts`                 | `POST /interfaces/getcourse/api/register`, Admin-only registration GetCourse interface module.                         |
-| `interfaces/getcourse/api/publish-event.ts`            | `POST /interfaces/getcourse/api/publish-event`, Admin-only publish normalized GetCourse raw event.                     |
-| `interfaces/getcourse/api/poll.ts`                     | `POST /interfaces/getcourse/api/poll`, Admin-only poll GetCourse interface deliveries.                                 |
-| `interfaces/getcourse/api/ack.ts`                      | `POST /interfaces/getcourse/api/ack`, Admin-only ack GetCourse interface deliveries.                                   |
-| `interfaces/getcourse/api/fail.ts`                     | `POST /interfaces/getcourse/api/fail`, Admin-only fail GetCourse interface deliveries.                                 |
-| `interfaces/getcourse/README.md`                       | Краткая инструкция к GetCourse interface module.                                                                       |
-| `tables/settings.table.ts`                             | Heap schema `Settings`.                                                                                                |
-| `tables/logs.table.ts`                                 | Heap schema `Logs`.                                                                                                    |
-| `tables/brokerModules.table.ts`                        | Heap schema `BrokerModules`, registry BPM-модулей.                                                                     |
-| `tables/brokerEventContracts.table.ts`                 | Heap schema `BrokerEventContracts`, версионированный каталог module-owned event contracts.                             |
-| `tables/brokerSubscriptions.table.ts`                  | Heap schema `BrokerSubscriptions`, registry подписок потребителей.                                                     |
-| `tables/brokerEvents.table.ts`                         | Heap schema `BrokerEvents`, immutable event log.                                                                       |
-| `tables/brokerDeliveries.table.ts`                     | Heap schema `BrokerDeliveries`, materialized deliveries для poll/ack/fail.                                             |
-| `tables/brokerNotificationAttempts.table.ts`           | Heap schema `BrokerNotificationAttempts`, audit best-effort уведомлений подписчиков.                                   |
-| `tables/brokerOpsAudit.table.ts`                       | Heap schema `BrokerOpsAudit`, audit admin ops actions and raw payload views.                                           |
-| `tables/.gitkeep`                                      | Placeholder каталога tables; не содержит поведения.                                                                    |
-| `repos/settings.repo.ts`                               | CRUD repository для settings без logger recursion.                                                                     |
-| `repos/logs.repo.ts`                                   | CRUD/query repository для logs.                                                                                        |
-| `repos/brokerModules.repo.ts`                          | CRUD/query repository для `BrokerModules`.                                                                             |
-| `repos/brokerEventContracts.repo.ts`                   | CRUD/query repository для `BrokerEventContracts`.                                                                      |
-| `repos/brokerSubscriptions.repo.ts`                    | CRUD/query repository для `BrokerSubscriptions`.                                                                       |
-| `repos/brokerEvents.repo.ts`                           | Append/query repository для `BrokerEvents`.                                                                            |
-| `repos/brokerDeliveries.repo.ts`                       | CRUD/query repository для `BrokerDeliveries`.                                                                          |
-| `repos/brokerNotificationAttempts.repo.ts`             | CRUD/query repository для `BrokerNotificationAttempts`.                                                                |
-| `repos/brokerOpsAudit.repo.ts`                         | Append/query repository для `BrokerOpsAudit`.                                                                          |
-| `lib/settings.lib.ts`                                  | Settings business logic and validation.                                                                                |
-| `lib/logger.lib.ts`                                    | Server logging pipeline.                                                                                               |
-| `lib/logLevel.lib.ts`                                  | Server-only helper for reading and injecting `window.__BOOT__.logLevel`.                                               |
-| `lib/broker/internalApi.lib.ts`                        | Реализация broker contracts под `functions/broker/*`: publish, poll, ack, fail, registry.                              |
-| `lib/broker/types.lib.ts`                              | Broker DTO, semantic result/error types and safe row mappers.                                                          |
-| `lib/broker/moduleIdentity.lib.ts`                     | Проверка internal module identity, registry state and permissions.                                                     |
-| `lib/broker/eventContracts.lib.ts`                     | Регистрация, versioning, hash and lookup module-owned event contracts.                                                 |
-| `lib/broker/errorCodes.lib.ts`                         | Stable broker semantic error codes and typed error result helpers.                                                     |
-| `lib/broker/patterns.lib.ts`                           | Exact/`*`/suffix wildcard matching для module/event patterns.                                                          |
-| `lib/broker/safeJson.lib.ts`                           | Stable ids, stable JSON/hash helpers and redaction helpers for broker errors/payload previews.                         |
-| `lib/broker/schemaValidation.lib.ts`                   | Runtime validation `json-schema-subset-v1` для event payload contracts.                                                |
-| `lib/broker/eventSummary.lib.ts`                       | Pure builder `BrokerEventSafe.primarySummary` по module-owned display hints с generic fallback.                        |
-| `lib/broker/subscriptionMatching.lib.ts`               | Pure matching события к подпискам.                                                                                     |
-| `lib/broker/notify.lib.ts`                             | Best-effort notification orchestration: internal/socket hints, attempts, retry.                                        |
-| `lib/htmlRedirect.ts`                                  | Typed wrapper around `ctx.resp.redirect` for html routes.                                                              |
-| `lib/admin/dashboard.lib.ts`                           | Dashboard counters and reset logic.                                                                                    |
-| `lib/tests/templateUnitSuite.ts`                       | Unit runner orchestrator.                                                                                              |
-| `lib/tests/templateUnitRoutesChecks.ts`                | Unit checks for route helpers.                                                                                         |
-| `lib/tests/templateUnitSuiteHelpers.ts`                | Sync unit result helpers.                                                                                              |
-| `lib/tests/integrationSuite.ts`                        | Integration runner orchestrator.                                                                                       |
-| `lib/tests/integrationApiSuite.ts`                     | API/e2e integration checks.                                                                                            |
-| `lib/tests/integrationSuiteHelpers.ts`                 | Async integration result helpers and `isAdmin`.                                                                        |
-| `lib/tests/logTestRunFailures.ts`                      | Failure-to-log bridge for test API wrappers.                                                                           |
-| `lib/.gitkeep`                                         | Placeholder каталога lib; не содержит поведения.                                                                       |
-| `shared/logger.ts`                                     | Browser logger, severity matrix and log sink.                                                                          |
-| `shared/browserRemoteLogger.ts`                        | Browser remote batching and console/global handlers.                                                                   |
-| `shared/useRemoteLogging.ts`                           | Vue lifecycle composable for remote browser logging.                                                                   |
-| `shared/useLogStream.ts`                               | Vue lifecycle/state composable for log history and WebSocket.                                                          |
-| `shared/logStreamUtils.ts`                             | Pure log stream formatting/filter helpers.                                                                             |
-| `shared/logStreamSocket.ts`                            | Optional socket lifecycle listener adapter.                                                                            |
-| `shared/useTestSuites.ts`                              | Vue state/actions for test tabs and runners.                                                                           |
-| `shared/testSuiteHelpers.ts`                           | Pure test UI and HTTP check helpers.                                                                                   |
-| `shared/testCatalog.ts`                                | Runtime test catalog shared by UI/API/runners.                                                                         |
-| `shared/logLevel.ts`                                   | SSR helper for reading/injecting `window.__BOOT__.logLevel`.                                                           |
-| `shared/preloader.ts`                                  | SSR CSS/script/html snippets for boot loader.                                                                          |
-| `shared/.gitkeep`                                      | Placeholder каталога shared; не содержит поведения.                                                                    |
-| `styles.tsx`                                           | Shared CSS strings `baseHtmlStyles`, `customScrollbarStyles`.                                                          |
-| `pagecss/adminPageCss1.ts`                             | Admin page CSS part 1.                                                                                                 |
-| `pagecss/adminPageCss2.ts`                             | Admin page CSS part 2.                                                                                                 |
-| `pagecss/adminPageCss3.ts`                             | Admin page CSS part 3.                                                                                                 |
-| `pagecss/headerCss1.ts`                                | Header CSS part 1.                                                                                                     |
-| `pagecss/headerCss2.ts`                                | Header CSS part 2.                                                                                                     |
-| `pagecss/homeBootCss.ts`                               | Home boot/CRT CSS.                                                                                                     |
-| `pagecss/homePageCss1.ts`                              | Home page CSS part 1.                                                                                                  |
-| `pagecss/homePageCss2.ts`                              | Home page CSS part 2.                                                                                                  |
-| `pagecss/profilePageCss1.ts`                           | Profile page CSS part 1.                                                                                               |
-| `pagecss/profilePageCss2.ts`                           | Profile page CSS part 2.                                                                                               |
-| `pagecss/testsPageCss1.ts`                             | Tests page CSS part 1.                                                                                                 |
-| `pagecss/testsPageCss2.ts`                             | Tests page CSS part 2.                                                                                                 |
-| `pagecss/testsPageCss3.ts`                             | Tests page CSS part 3.                                                                                                 |
-| `pagecss/testsPageCss4.ts`                             | Tests page CSS part 4.                                                                                                 |
-| `docs/spec/spec.md`                                    | Spec-as-source, этот документ.                                                                                         |
-| `docs/architecture.md`                                 | Legacy architecture reference.                                                                                         |
-| `docs/api.md`                                          | Legacy API reference.                                                                                                  |
-| `docs/data.md`                                         | Legacy data reference.                                                                                                 |
-| `docs/imports.md`                                      | Legacy imports reference.                                                                                              |
-| `docs/ADR/0001-initial-structure.md`                   | Legacy ADR initial structure.                                                                                          |
-| `docs/ADR/0002-settings-heap-and-layered-api.md`       | Legacy ADR settings/layering.                                                                                          |
-| `tsconfig.json`                                        | Local TS/Vue compiler config.                                                                                          |
-| `jsx.d.ts`                                             | Local JSX/Chatium type shim.                                                                                           |
-| `vue-shim.d.ts`                                        | Local Vue/Chatium type shim.                                                                                           |
+| Файл                                                         | Нормативная роль                                                                                                       |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `.CHATIUM-LLM.md`                                            | Краткий LLM-контекст проекта и ссылки на документы; не источник истины.                                                |
+| `.dir.json`                                                  | Метаданные каталога Chatium workspace.                                                                                 |
+| `.workspace.json`                                            | Workspace feature flags, сейчас `heap`.                                                                                |
+| `README.md`                                                  | Человеческое описание проекта и быстрые ссылки; не источник истины при расхождении со spec.                            |
+| `index.tsx`                                                  | SSR route `/`, экспорт `indexPageRoute`.                                                                               |
+| `web/admin/index.tsx`                                        | SSR route `/web/admin`, экспорт `adminPageRoute`.                                                                      |
+| `web/login/index.tsx`                                        | SSR route `/web/login`, экспорт `loginPageRoute`.                                                                      |
+| `web/profile/index.tsx`                                      | SSR route `/web/profile`, экспорт `profilePageRoute`.                                                                  |
+| `web/tests/index.tsx`                                        | SSR route `/web/tests`, экспорт `testsPageRoute`.                                                                      |
+| `pages/HomePage.vue`                                         | Vue page главной.                                                                                                      |
+| `pages/LoginPage.vue`                                        | Vue page входа.                                                                                                        |
+| `pages/ProfilePage.vue`                                      | Vue page профиля.                                                                                                      |
+| `pages/AdminPage.vue`                                        | Vue page админки.                                                                                                      |
+| `pages/TestsPage.vue`                                        | Vue page тестов.                                                                                                       |
+| `components/Header.vue`                                      | Общий header и logout orchestration.                                                                                   |
+| `components/LogoutModal.vue`                                 | Презентационный modal выхода.                                                                                          |
+| `components/GlobalGlitch.vue`                                | Глобальные CSS-правила glitch effect.                                                                                  |
+| `components/AppFooter.vue`                                   | Общий footer и событие `chatium-click`.                                                                                |
+| `components/admin/AdminCounters.vue`                         | Презентационная карточка error/warn counters.                                                                          |
+| `components/admin/AdminSettings.vue`                         | UI настроек `project_name` и `log_level`.                                                                              |
+| `components/admin/AdminLogMonitor.vue`                       | Презентационный монитор логов админки.                                                                                 |
+| `components/admin/broker/BrokerOpsPanel.vue`                 | Контейнер broker ops-панели: вкладки, фильтры, загрузка diagnostics and actions orchestration.                         |
+| `components/admin/broker/BrokerModulesTable.vue`             | Таблица BPM-модулей с enable/disable actions.                                                                          |
+| `components/admin/broker/BrokerSubscriptionsTable.vue`       | Таблица подписок broker-а с enable/disable actions.                                                                    |
+| `components/admin/broker/BrokerEventsTable.vue`              | Таблица событий broker-а с primary summary and raw payload open action.                                                |
+| `components/admin/broker/BrokerDeliveriesTable.vue`          | Таблица deliveries с inspect, requeue and skip actions.                                                                |
+| `components/admin/broker/BrokerNotificationsTable.vue`       | Таблица notification attempts с retry action.                                                                          |
+| `components/admin/broker/BrokerRawPayloadViewer.vue`         | Expandable JSON viewer для raw `BrokerEvents.payload` с audit-triggered load.                                          |
+| `components/admin/broker/BrokerOpsConfirmModal.vue`          | Подтверждение ops actions с обязательным reason/comment.                                                               |
+| `components/tests/TestSuiteTab.vue`                          | Презентационная вкладка test suite.                                                                                    |
+| `components/tests/TestsLogMonitor.vue`                       | Презентационный монитор логов страницы тестов.                                                                         |
+| `config/routes.tsx`                                          | `PROJECT_ROOT`, route constants and URL helpers.                                                                       |
+| `config/project.tsx`                                         | Project/page constants and title/header helpers.                                                                       |
+| `api/settings/list.ts`                                       | `GET /api/settings/list`, экспорт `listSettingsRoute`.                                                                 |
+| `api/settings/get.ts`                                        | `GET /api/settings/get`, экспорт `getSettingRoute`.                                                                    |
+| `api/settings/save.ts`                                       | `POST /api/settings/save`, экспорт `saveSettingRoute`.                                                                 |
+| `api/logger/log.ts`                                          | `POST /api/logger/log`, экспорт `logRoute`.                                                                            |
+| `api/logger/browser.ts`                                      | `POST /api/logger/browser`, экспорт `postBrowserLogsRoute`.                                                            |
+| `api/admin/logs/recent.ts`                                   | `GET /api/admin/logs/recent`, экспорт `getRecentLogsRoute`.                                                            |
+| `api/admin/logs/before.ts`                                   | `GET /api/admin/logs/before`, экспорт `getLogsBeforeRoute`.                                                            |
+| `api/admin/dashboard/counts.ts`                              | `GET /api/admin/dashboard/counts`, экспорт `getDashboardCountsRoute`.                                                  |
+| `api/admin/dashboard/reset.ts`                               | `POST /api/admin/dashboard/reset`, экспорт `resetDashboardRoute`.                                                      |
+| `api/admin/broker/diagnostics.ts`                            | `GET /api/admin/broker/diagnostics`, broker ops data для admin UI.                                                     |
+| `api/admin/broker/events/raw.ts`                             | `POST /api/admin/broker/events/raw`, audit и возврат raw payload события.                                              |
+| `api/admin/broker/modules/toggle.ts`                         | `POST /api/admin/broker/modules/toggle`, enable/disable module with audit.                                             |
+| `api/admin/broker/subscriptions/toggle.ts`                   | `POST /api/admin/broker/subscriptions/toggle`, enable/disable subscription with audit.                                 |
+| `api/admin/broker/deliveries/requeue.ts`                     | `POST /api/admin/broker/deliveries/requeue`, requeue failed/dead_letter delivery with audit.                           |
+| `api/admin/broker/deliveries/skip.ts`                        | `POST /api/admin/broker/deliveries/skip`, skip poison delivery with audit.                                             |
+| `api/admin/broker/notifications/retry.ts`                    | `POST /api/admin/broker/notifications/retry`, retry notification attempt with audit.                                   |
+| `api/tests/list.ts`                                          | `GET /api/tests/list`, экспорт `listTestsRoute`.                                                                       |
+| `api/tests/unit/index.ts`                                    | `GET /api/tests/unit`, экспорт `templateUnitTestsRoute`.                                                               |
+| `api/tests/integration/index.ts`                             | `GET /api/tests/integration`, экспорт `templateIntegrationTestsRoute`.                                                 |
+| `functions/broker/publish.ts`                                | Internal `app.function('/broker/publish')`, публикация события модулем.                                                |
+| `functions/broker/poll.ts`                                   | Internal `app.function('/broker/poll')`, получение и claim pending deliveries потребителем.                            |
+| `functions/broker/ack.ts`                                    | Internal `app.function('/broker/ack')`, подтверждение обработки deliveries.                                            |
+| `functions/broker/fail.ts`                                   | Internal `app.function('/broker/fail')`, фиксация ошибки и retry/dead-letter.                                          |
+| `functions/broker/modules/register.ts`                       | Internal `app.function('/broker/modules/register')`, регистрация/обновление BPM-модуля и его event contracts manifest. |
+| `functions/broker/subscriptions/register.ts`                 | Internal `app.function('/broker/subscriptions/register')`, batch регистрация/обновление подписок.                      |
+| `functions/broker/diagnostics.ts`                            | Internal/Admin `app.function('/broker/diagnostics')`, чтение broker state для диагностики.                             |
+| `functions/broker/notifications/retry.ts`                    | Internal/Admin `app.function('/broker/notifications/retry')`, retry notification attempts.                             |
+| `jobs/broker/notifications-dispatch.ts`                      | `app.job` для batch dispatch `BrokerNotificationAttempts` в пределах lifetime операции.                                |
+| `sample-module/contracts/brokerEvents.ts`                    | MAX-independent sample event contract `sample.note.created`.                                                           |
+| `sample-module/lib/coreBrokerClient.lib.ts`                  | Sample module broker client через `@app/app.runAppFunction` без HTTP broker URL.                                       |
+| `sample-module/api/register.ts`                              | `POST /sample-module/api/register`, Admin-only registration sample.                                                    |
+| `sample-module/api/publish-note.ts`                          | `POST /sample-module/api/publish-note`, Admin-only publish sample note event.                                          |
+| `sample-module/api/poll.ts`                                  | `POST /sample-module/api/poll`, Admin-only poll sample deliveries.                                                     |
+| `sample-module/api/ack.ts`                                   | `POST /sample-module/api/ack`, Admin-only ack sample deliveries.                                                       |
+| `sample-module/api/fail.ts`                                  | `POST /sample-module/api/fail`, Admin-only fail sample deliveries.                                                     |
+| `sample-module/README.md`                                    | Краткая инструкция к sample module.                                                                                    |
+| `../interfaces/getcourse/contracts/brokerEvents.ts`          | GetCourse interface event contract `getcourse.raw_event.accepted`.                                                     |
+| `../interfaces/getcourse/lib/broker/coreBrokerClient.lib.ts` | GetCourse interface broker client через `@app/app.runAppFunction` без HTTP broker URL.                                 |
+| `../interfaces/getcourse/api/module/register.ts`             | `POST /api/module/register`, Admin-only registration GetCourse interface module in its own project root.               |
+| `../interfaces/getcourse/api/module/publish-event.ts`        | `POST /api/module/publish-event`, Admin-only publish normalized GetCourse raw event.                                   |
+| `../interfaces/getcourse/README.md`                          | Краткая инструкция к GetCourse interface module.                                                                       |
+| `tables/settings.table.ts`                                   | Heap schema `Settings`.                                                                                                |
+| `tables/logs.table.ts`                                       | Heap schema `Logs`.                                                                                                    |
+| `tables/brokerModules.table.ts`                              | Heap schema `BrokerModules`, registry BPM-модулей.                                                                     |
+| `tables/brokerEventContracts.table.ts`                       | Heap schema `BrokerEventContracts`, версионированный каталог module-owned event contracts.                             |
+| `tables/brokerSubscriptions.table.ts`                        | Heap schema `BrokerSubscriptions`, registry подписок потребителей.                                                     |
+| `tables/brokerEvents.table.ts`                               | Heap schema `BrokerEvents`, immutable event log.                                                                       |
+| `tables/brokerDeliveries.table.ts`                           | Heap schema `BrokerDeliveries`, materialized deliveries для poll/ack/fail.                                             |
+| `tables/brokerNotificationAttempts.table.ts`                 | Heap schema `BrokerNotificationAttempts`, audit best-effort уведомлений подписчиков.                                   |
+| `tables/brokerOpsAudit.table.ts`                             | Heap schema `BrokerOpsAudit`, audit admin ops actions and raw payload views.                                           |
+| `tables/.gitkeep`                                            | Placeholder каталога tables; не содержит поведения.                                                                    |
+| `repos/settings.repo.ts`                                     | CRUD repository для settings без logger recursion.                                                                     |
+| `repos/logs.repo.ts`                                         | CRUD/query repository для logs.                                                                                        |
+| `repos/brokerModules.repo.ts`                                | CRUD/query repository для `BrokerModules`.                                                                             |
+| `repos/brokerEventContracts.repo.ts`                         | CRUD/query repository для `BrokerEventContracts`.                                                                      |
+| `repos/brokerSubscriptions.repo.ts`                          | CRUD/query repository для `BrokerSubscriptions`.                                                                       |
+| `repos/brokerEvents.repo.ts`                                 | Append/query repository для `BrokerEvents`.                                                                            |
+| `repos/brokerDeliveries.repo.ts`                             | CRUD/query repository для `BrokerDeliveries`.                                                                          |
+| `repos/brokerNotificationAttempts.repo.ts`                   | CRUD/query repository для `BrokerNotificationAttempts`.                                                                |
+| `repos/brokerOpsAudit.repo.ts`                               | Append/query repository для `BrokerOpsAudit`.                                                                          |
+| `lib/settings.lib.ts`                                        | Settings business logic and validation.                                                                                |
+| `lib/logger.lib.ts`                                          | Server logging pipeline.                                                                                               |
+| `lib/logLevel.lib.ts`                                        | Server-only helper for reading and injecting `window.__BOOT__.logLevel`.                                               |
+| `lib/broker/internalApi.lib.ts`                              | Реализация broker contracts под `functions/broker/*`: publish, poll, ack, fail, registry.                              |
+| `lib/broker/types.lib.ts`                                    | Broker DTO, semantic result/error types and safe row mappers.                                                          |
+| `lib/broker/moduleIdentity.lib.ts`                           | Проверка internal module identity, registry state and permissions.                                                     |
+| `lib/broker/eventContracts.lib.ts`                           | Регистрация, versioning, hash and lookup module-owned event contracts.                                                 |
+| `lib/broker/errorCodes.lib.ts`                               | Stable broker semantic error codes and typed error result helpers.                                                     |
+| `lib/broker/patterns.lib.ts`                                 | Exact/`*`/suffix wildcard matching для module/event patterns.                                                          |
+| `lib/broker/safeJson.lib.ts`                                 | Stable ids, stable JSON/hash helpers and redaction helpers for broker errors/payload previews.                         |
+| `lib/broker/schemaValidation.lib.ts`                         | Runtime validation `json-schema-subset-v1` для event payload contracts.                                                |
+| `lib/broker/eventSummary.lib.ts`                             | Pure builder `BrokerEventSafe.primarySummary` по module-owned display hints с generic fallback.                        |
+| `lib/broker/subscriptionMatching.lib.ts`                     | Pure matching события к подпискам.                                                                                     |
+| `lib/broker/notify.lib.ts`                                   | Best-effort notification orchestration: internal/socket hints, attempts, retry.                                        |
+| `lib/htmlRedirect.ts`                                        | Typed wrapper around `ctx.resp.redirect` for html routes.                                                              |
+| `lib/admin/dashboard.lib.ts`                                 | Dashboard counters and reset logic.                                                                                    |
+| `lib/tests/templateUnitSuite.ts`                             | Unit runner orchestrator.                                                                                              |
+| `lib/tests/templateUnitRoutesChecks.ts`                      | Unit checks for route helpers.                                                                                         |
+| `lib/tests/templateUnitSuiteHelpers.ts`                      | Sync unit result helpers.                                                                                              |
+| `lib/tests/integrationSuite.ts`                              | Integration runner orchestrator.                                                                                       |
+| `lib/tests/integrationApiSuite.ts`                           | API/e2e integration checks.                                                                                            |
+| `lib/tests/integrationSuiteHelpers.ts`                       | Async integration result helpers and `isAdmin`.                                                                        |
+| `lib/tests/logTestRunFailures.ts`                            | Failure-to-log bridge for test API wrappers.                                                                           |
+| `lib/.gitkeep`                                               | Placeholder каталога lib; не содержит поведения.                                                                       |
+| `shared/logger.ts`                                           | Browser logger, severity matrix and log sink.                                                                          |
+| `shared/browserRemoteLogger.ts`                              | Browser remote batching and console/global handlers.                                                                   |
+| `shared/useRemoteLogging.ts`                                 | Vue lifecycle composable for remote browser logging.                                                                   |
+| `shared/useLogStream.ts`                                     | Vue lifecycle/state composable for log history and WebSocket.                                                          |
+| `shared/logStreamUtils.ts`                                   | Pure log stream formatting/filter helpers.                                                                             |
+| `shared/logStreamSocket.ts`                                  | Optional socket lifecycle listener adapter.                                                                            |
+| `shared/useTestSuites.ts`                                    | Vue state/actions for test tabs and runners.                                                                           |
+| `shared/testSuiteHelpers.ts`                                 | Pure test UI and HTTP check helpers.                                                                                   |
+| `shared/testCatalog.ts`                                      | Runtime test catalog shared by UI/API/runners.                                                                         |
+| `shared/logLevel.ts`                                         | SSR helper for reading/injecting `window.__BOOT__.logLevel`.                                                           |
+| `shared/preloader.ts`                                        | SSR CSS/script/html snippets for boot loader.                                                                          |
+| `shared/.gitkeep`                                            | Placeholder каталога shared; не содержит поведения.                                                                    |
+| `styles.tsx`                                                 | Shared CSS strings `baseHtmlStyles`, `customScrollbarStyles`.                                                          |
+| `pagecss/adminPageCss1.ts`                                   | Admin page CSS part 1.                                                                                                 |
+| `pagecss/adminPageCss2.ts`                                   | Admin page CSS part 2.                                                                                                 |
+| `pagecss/adminPageCss3.ts`                                   | Admin page CSS part 3.                                                                                                 |
+| `pagecss/headerCss1.ts`                                      | Header CSS part 1.                                                                                                     |
+| `pagecss/headerCss2.ts`                                      | Header CSS part 2.                                                                                                     |
+| `pagecss/homeBootCss.ts`                                     | Home boot/CRT CSS.                                                                                                     |
+| `pagecss/homePageCss1.ts`                                    | Home page CSS part 1.                                                                                                  |
+| `pagecss/homePageCss2.ts`                                    | Home page CSS part 2.                                                                                                  |
+| `pagecss/profilePageCss1.ts`                                 | Profile page CSS part 1.                                                                                               |
+| `pagecss/profilePageCss2.ts`                                 | Profile page CSS part 2.                                                                                               |
+| `pagecss/testsPageCss1.ts`                                   | Tests page CSS part 1.                                                                                                 |
+| `pagecss/testsPageCss2.ts`                                   | Tests page CSS part 2.                                                                                                 |
+| `pagecss/testsPageCss3.ts`                                   | Tests page CSS part 3.                                                                                                 |
+| `pagecss/testsPageCss4.ts`                                   | Tests page CSS part 4.                                                                                                 |
+| `docs/spec/spec.md`                                          | Spec-as-source, этот документ.                                                                                         |
+| `docs/architecture.md`                                       | Legacy architecture reference.                                                                                         |
+| `docs/api.md`                                                | Legacy API reference.                                                                                                  |
+| `docs/data.md`                                               | Legacy data reference.                                                                                                 |
+| `docs/imports.md`                                            | Legacy imports reference.                                                                                              |
+| `docs/ADR/0001-initial-structure.md`                         | Legacy ADR initial structure.                                                                                          |
+| `docs/ADR/0002-settings-heap-and-layered-api.md`             | Legacy ADR settings/layering.                                                                                          |
+| `tsconfig.json`                                              | Local TS/Vue compiler config.                                                                                          |
+| `jsx.d.ts`                                                   | Local JSX/Chatium type shim.                                                                                           |
+| `vue-shim.d.ts`                                              | Local Vue/Chatium type shim.                                                                                           |
 
 ## 4. Роли и доступ
 
@@ -301,10 +298,10 @@ Broker internal identity:
 
 - broker не публикует module-facing HTTP endpoints наружу; вызовы publish/poll/ack/fail выполняются через internal `app.function()` endpoints из `functions/broker/*`;
 - межмодульные вызовы выполняются только через `@app/app.runAppFunction(ctx, targetApp, path, params)`, а не через `runAppFunctionInCurrentAccount`, `InternalCallTargetCurrentAccount`, `fetch`, `request` или `route.run(ctx)`;
-- `targetApp` для вызова core broker-а задается в caller-side wrapper-е через существующую конфигурационную модель проекта: базовый путь берется из `config/routes.tsx` (`PROJECT_ROOT`) и резолвится тем же способом, что остальные проектные пути; бизнес-код не дублирует строку `p/units/neso/meta` и не собирает target вручную;
+- `targetApp` для вызова core broker-а задается в caller-side wrapper-е через существующую конфигурационную модель проекта: базовый путь берется из `config/routes.tsx` (`PROJECT_ROOT`) и резолвится тем же способом, что остальные проектные пути; бизнес-код не дублирует строку `p/units/neso/meta/core` и не собирает target вручную;
 - каждый BPM-модуль, которому нужен broker, обязан иметь server-only wrapper над core broker API; бизнес-логика вызывает методы wrapper-а (`publish`, `poll`, `ack`, `fail`, registration helpers), а не импортирует `runAppFunction` напрямую;
 - handler `app.function()` получает `callerInfo`; core сохраняет это как diagnostic/audit context, но не считает секретом и не использует вместо проверки `BrokerModules`;
-- `producerModule` и `consumerModule` задаются trusted server-side wrapper-ом как `moduleKey`, равный `PROJECT_ROOT` модуля из его `config/routes.tsx`, например `p/units/neso/meta/sample-module`;
+- `producerModule` и `consumerModule` задаются trusted server-side wrapper-ом как `moduleKey`, равный `PROJECT_ROOT` модуля из его `config/routes.tsx`, например `p/units/neso/meta/core/sample-module`;
 - browser/client payload не может передать или переопределить module identity;
 - каждый internal call сверяет `moduleKey` с `BrokerModules`, `enabled=true`, `adminDisabled=false` и allowed publish/subscribe patterns;
 - `callerInfo` сохраняется как audit/diagnostics context; он не является секретом и не заменяет проверку `BrokerModules`;
@@ -315,7 +312,7 @@ Broker internal identity:
 `config/routes.tsx` задает:
 
 ```ts
-PROJECT_ROOT = 'p/units/neso/meta'
+PROJECT_ROOT = 'p/units/neso/meta/core'
 ROUTES = {
   index: './',
   admin: './web/admin',
@@ -334,13 +331,13 @@ ROUTE_PATHS = {
 
 Нормативное поведение helper-ов:
 
-- `getFullUrl('./')`, `getFullUrl('/')`, `getFullUrl('')` возвращают `/p/units/neso/meta/`.
-- `getFullUrl('./web/admin')`, `getFullUrl('/web/admin')`, `getFullUrl('web/admin')` возвращают `/p/units/neso/meta/web/admin`.
-- `withProjectRoot('./web/admin')` и `withProjectRoot('web/admin')` возвращают `./p/units/neso/meta/web/admin`.
-- `withProjectRoot('./')` и `withProjectRoot('')` возвращают `./p/units/neso/meta/`.
-- `withProjectRootAndSubroute('./web/admin', 'edit')` возвращает `./p/units/neso/meta/web/admin~edit`.
-- `withProjectRootAndSubroute('./web/admin', '/edit')` возвращает `./p/units/neso/meta/web/admin~edit`.
-- `withProjectRootAndSubroute('./web/admin', 'users/123')` возвращает `./p/units/neso/meta/web/admin~users/123`.
+- `getFullUrl('./')`, `getFullUrl('/')`, `getFullUrl('')` возвращают `/p/units/neso/meta/core/`.
+- `getFullUrl('./web/admin')`, `getFullUrl('/web/admin')`, `getFullUrl('web/admin')` возвращают `/p/units/neso/meta/core/web/admin`.
+- `withProjectRoot('./web/admin')` и `withProjectRoot('web/admin')` возвращают `./p/units/neso/meta/core/web/admin`.
+- `withProjectRoot('./')` и `withProjectRoot('')` возвращают `./p/units/neso/meta/core/`.
+- `withProjectRootAndSubroute('./web/admin', 'edit')` возвращает `./p/units/neso/meta/core/web/admin~edit`.
+- `withProjectRootAndSubroute('./web/admin', '/edit')` возвращает `./p/units/neso/meta/core/web/admin~edit`.
+- `withProjectRootAndSubroute('./web/admin', 'users/123')` возвращает `./p/units/neso/meta/core/web/admin~users/123`.
 
 Все значения `ROUTES` должны начинаться с `./`. Все публичные ссылки во Vue props должны быть без домена.
 
@@ -694,20 +691,20 @@ Heap table: `t__neso-meta__broker_module__3Mn7Qx`.
 
 Поля:
 
-| Поле                    | Тип            | Требование                                                                                                                                     |
-| ----------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `moduleKey`             | `Heap.String`  | Уникальный стабильный ключ модуля: значение `PROJECT_ROOT` из `config/routes.tsx`, например `p/units/neso/meta/sample-module`, searchable off. |
-| `displayName`           | `Heap.String`  | Человекочитаемое имя модуля.                                                                                                                   |
-| `kind`                  | `Heap.String`  | `core`, `interface`, `domain`, `worker`, `external`.                                                                                           |
-| `enabled`               | `Heap.Boolean` | Declared-enabled флаг, которым управляет регистрация/bootstrap модуля.                                                                         |
-| `adminDisabled`         | `Heap.Boolean` | Admin emergency stop. Если true, module effective-disabled независимо от `enabled`.                                                            |
-| `adminDisabledAt`       | `Heap.Number`  | Unix time в миллисекундах или `0`, если admin stop снят.                                                                                       |
-| `adminDisableReason`    | `Heap.String`  | Последняя активная причина admin stop или пустая строка.                                                                                       |
-| `allowedPublishTypes`   | `Heap.Any`     | Array event type patterns, пустой массив = publish запрещен.                                                                                   |
-| `allowedSubscribeTypes` | `Heap.Any`     | Array event type patterns, пустой массив = subscribe запрещен.                                                                                 |
-| `createdAt`             | `Heap.Number`  | Unix time в миллисекундах.                                                                                                                     |
-| `updatedAt`             | `Heap.Number`  | Unix time в миллисекундах.                                                                                                                     |
-| `metadata`              | `Heap.Any`     | JSON-compatible служебные данные без секретов.                                                                                                 |
+| Поле                    | Тип            | Требование                                                                                                                                          |
+| ----------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `moduleKey`             | `Heap.String`  | Уникальный стабильный ключ модуля: значение `PROJECT_ROOT` из `config/routes.tsx`, например `p/units/neso/meta/core/sample-module`, searchable off. |
+| `displayName`           | `Heap.String`  | Человекочитаемое имя модуля.                                                                                                                        |
+| `kind`                  | `Heap.String`  | `core`, `interface`, `domain`, `worker`, `external`.                                                                                                |
+| `enabled`               | `Heap.Boolean` | Declared-enabled флаг, которым управляет регистрация/bootstrap модуля.                                                                              |
+| `adminDisabled`         | `Heap.Boolean` | Admin emergency stop. Если true, module effective-disabled независимо от `enabled`.                                                                 |
+| `adminDisabledAt`       | `Heap.Number`  | Unix time в миллисекундах или `0`, если admin stop снят.                                                                                            |
+| `adminDisableReason`    | `Heap.String`  | Последняя активная причина admin stop или пустая строка.                                                                                            |
+| `allowedPublishTypes`   | `Heap.Any`     | Array event type patterns, пустой массив = publish запрещен.                                                                                        |
+| `allowedSubscribeTypes` | `Heap.Any`     | Array event type patterns, пустой массив = subscribe запрещен.                                                                                      |
+| `createdAt`             | `Heap.Number`  | Unix time в миллисекундах.                                                                                                                          |
+| `updatedAt`             | `Heap.Number`  | Unix time в миллисекундах.                                                                                                                          |
+| `metadata`              | `Heap.Any`     | JSON-compatible служебные данные без секретов.                                                                                                      |
 
 Repo: `repos/brokerModules.repo.ts`.
 
@@ -1492,7 +1489,7 @@ Broker обслуживает event-driven обмен модулей как inte
 
 Internal contracts регистрируются через `app.function()` в `functions/broker/*`. Handler-ы тонкие: принимают typed params, получают `callerInfo`, добавляют audit context и вызывают реализацию из `lib/broker/internalApi.lib.ts`. Для межмодульного вызова используется только `@app/app.runAppFunction(ctx, targetApp, path, params)`, не `runAppFunctionInCurrentAccount`, не `request`, не `fetch` и не обычный HTTP route `.run(ctx)`.
 
-Caller-side wrapper является обязательной частью интеграции любого BPM-модуля с broker-ом. Канонический путь wrapper-а внутри модуля: `lib/broker/coreBrokerClient.lib.ts`. Wrapper живет в server-only слое модуля-потребителя/публикатора, импортирует `runAppFunction`, берет `targetApp` из `PROJECT_ROOT` core-проекта (`p/units/neso/meta/config/routes.tsx`) и берет `producerModule`/`consumerModule` из `PROJECT_ROOT` своего модуля. Для `app.function` вызовов не используются `getFullUrl`, `route.url()` и HTTP URL: `targetApp` - это project root/slug core, а function path - один из `/broker/*`. Wrapper предоставляет узкие generic методы `registerCoreBrokerModule`, `publishCoreBrokerEvent`, `pollCoreBrokerDeliveries`, `ackCoreBrokerDeliveries`, `failCoreBrokerDeliveries`, `registerCoreBrokerSubscription`. Event-specific typed helpers живут в модуле-владельце события и вызывают generic wrapper, core не содержит signatures конкретных событий. В прикладной бизнес-логике запрещены прямые вызовы `runAppFunction` к broker-у: это нужно, чтобы module identity, базовый путь core и contracts оставались в одном контролируемом месте.
+Caller-side wrapper является обязательной частью интеграции любого BPM-модуля с broker-ом. Канонический путь wrapper-а внутри модуля: `lib/broker/coreBrokerClient.lib.ts`. Wrapper живет в server-only слое модуля-потребителя/публикатора, импортирует `runAppFunction`, берет `targetApp` из `PROJECT_ROOT` core-проекта (`p/units/neso/meta/core/config/routes.tsx`) и берет `producerModule`/`consumerModule` из `PROJECT_ROOT` своего модуля. Для `app.function` вызовов не используются `getFullUrl`, `route.url()` и HTTP URL: `targetApp` - это project root/slug core, а function path - один из `/broker/*`. Wrapper предоставляет узкие generic методы `registerCoreBrokerModule`, `publishCoreBrokerEvent`, `pollCoreBrokerDeliveries`, `ackCoreBrokerDeliveries`, `failCoreBrokerDeliveries`, `registerCoreBrokerSubscription`. Event-specific typed helpers живут в модуле-владельце события и вызывают generic wrapper, core не содержит signatures конкретных событий. В прикладной бизнес-логике запрещены прямые вызовы `runAppFunction` к broker-у: это нужно, чтобы module identity, базовый путь core и contracts оставались в одном контролируемом месте.
 
 Broker semantic error result:
 
@@ -1871,34 +1868,30 @@ Notification behavior:
 
 Sample module показывает, как производный метапроект подключает отдельный модуль к локальному broker-у без MAX-зависимостей и без HTTP broker URL.
 
-| Method/path                                    | Auth  | Request                                                                                                          | Success response                                | Validation errors                               |
-| ---------------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ----------------------------------------------- |
-| `POST /sample-module/api/register`             | Admin | empty                                                                                                            | `{ success, moduleResult, subscriptionResult }` | Broker semantic errors.                         |
-| `POST /sample-module/api/publish-note`         | Admin | `{ noteId?, title?, body?, authorId?, targetModules? }`                                                          | Broker publish result.                          | Broker semantic errors; invalid payload schema. |
-| `POST /sample-module/api/poll`                 | Admin | `{ limit?: number }`                                                                                             | Broker poll result with claimed deliveries.     | Broker semantic errors.                         |
-| `POST /sample-module/api/ack`                  | Admin | Broker ack request                                                                                               | Broker ack result.                              | Invalid claim token/status.                     |
-| `POST /sample-module/api/fail`                 | Admin | Broker fail request                                                                                              | Broker fail result.                             | Invalid claim token/status.                     |
-| `POST /interfaces/getcourse/api/register`      | Admin | empty                                                                                                            | `{ success, moduleResult, subscriptionResult }` | Broker semantic errors.                         |
-| `POST /interfaces/getcourse/api/publish-event` | Admin | `{ rawEventId?, eventType?, source?, accountName?, objectId?, userId?, payloadJson?, payload?, targetModules? }` | Broker publish result.                          | Broker semantic errors; invalid payload schema. |
-| `POST /interfaces/getcourse/api/poll`          | Admin | `{ limit?: number }`                                                                                             | Broker poll result with claimed deliveries.     | Broker semantic errors.                         |
-| `POST /interfaces/getcourse/api/ack`           | Admin | Broker ack request                                                                                               | Broker ack result.                              | Invalid claim token/status.                     |
-| `POST /interfaces/getcourse/api/fail`          | Admin | Broker fail request                                                                                              | Broker fail result.                             | Invalid claim token/status.                     |
+| Method/path                            | Auth  | Request                                                                                                          | Success response                                | Validation errors                               |
+| -------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ----------------------------------------------- |
+| `POST /sample-module/api/register`     | Admin | empty                                                                                                            | `{ success, moduleResult, subscriptionResult }` | Broker semantic errors.                         |
+| `POST /sample-module/api/publish-note` | Admin | `{ noteId?, title?, body?, authorId?, targetModules? }`                                                          | Broker publish result.                          | Broker semantic errors; invalid payload schema. |
+| `POST /sample-module/api/poll`         | Admin | `{ limit?: number }`                                                                                             | Broker poll result with claimed deliveries.     | Broker semantic errors.                         |
+| `POST /sample-module/api/ack`          | Admin | Broker ack request                                                                                               | Broker ack result.                              | Invalid claim token/status.                     |
+| `POST /sample-module/api/fail`         | Admin | Broker fail request                                                                                              | Broker fail result.                             | Invalid claim token/status.                     |
+| `POST /api/module/register`            | Admin | empty                                                                                                            | `{ success, moduleResult }`                     | Broker semantic errors.                         |
+| `POST /api/module/publish-event`       | Admin | `{ rawEventId?, eventType?, source?, accountName?, objectId?, userId?, payloadJson?, payload?, targetModules? }` | Broker publish result.                          | Broker semantic errors; invalid payload schema. |
 
 Sample module:
 
-- регистрирует module key `p/units/neso/meta/sample-module`;
+- регистрирует module key `p/units/neso/meta/core/sample-module`;
 - публикует `sample.note.created@1` с module-owned schema/display/examples из `sample-module/contracts/brokerEvents.ts`;
 - регистрирует подписку `sample-note-reader` на собственное событие;
-- вызывает broker только через `@app/app.runAppFunction` target `p/units/neso/meta`;
+- вызывает broker только через `@app/app.runAppFunction` target `p/units/neso/meta/core`;
 - защищает все sample API через `requireAccountRole(ctx, 'Admin')`.
 
 GetCourse interface module:
 
 - регистрирует module key `p/units/neso/meta/interfaces/getcourse`;
-- публикует `getcourse.raw_event.accepted@1` с module-owned schema/display/examples из `interfaces/getcourse/contracts/brokerEvents.ts`;
-- регистрирует подписку `getcourse-raw-event-reader` на собственное событие;
+- публикует `getcourse.raw_event.accepted@1` с module-owned schema/display/examples из `../interfaces/getcourse/contracts/brokerEvents.ts`;
 - хранит raw GetCourse payload в строковом `payloadJson`, чтобы не расширять текущий `json-schema-subset-v1` произвольными объектами;
-- вызывает broker только через `@app/app.runAppFunction` target `p/units/neso/meta`;
+- вызывает broker только через `@app/app.runAppFunction` target `p/units/neso/meta/core`;
 - защищает все GetCourse interface API через `requireAccountRole(ctx, 'Admin')`.
 
 ### 11.5 Admin broker ops
@@ -2271,7 +2264,7 @@ HTTP helper behavior:
 | `tsconfig.json`   | TypeScript/Vue конфигурация проекта: `target/module ESNext`, `moduleResolution bundler`, `rootDir/baseUrl .`, path alias `/* -> ./*`, `jsx preserve`, `strict false`, include `**/*.ts`, `**/*.tsx`, `**/*.vue`, `vue-shim.d.ts`. |
 | `jsx.d.ts`        | Локальные определения Chatium JSX, `*.vue`, глобального `window.__BOOT__` и минимального `app.html/get/post/job`.                                                                                                                 |
 | `vue-shim.d.ts`   | Локальные Vue type shims и минимальные `app.Req`, `app.Ctx`, `RichUgcCtx` для проекта.                                                                                                                                            |
-| `.dir.json`       | Метаданные каталога в workspace; текущее `name` равно `[INWORK] p/units/neso/meta`.                                                                                                                                               |
+| `.dir.json`       | Метаданные каталога в workspace; текущее `name` равно `[INWORK] p/units/neso/meta/core`.                                                                                                                                          |
 | `.workspace.json` | Включает workspace feature `heap`; не удалять, пока проект использует Heap tables.                                                                                                                                                |
 | `.CHATIUM-LLM.md` | Краткий LLM-контекст; должен ссылаться на этот spec-as-source как источник истины.                                                                                                                                                |
 

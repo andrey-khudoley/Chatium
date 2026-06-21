@@ -1,4 +1,4 @@
-﻿# API
+# API
 
 ## Настройки (api/settings/)
 
@@ -51,20 +51,18 @@
 
 ## Broker modules
 
-Admin-only helper endpoints for local broker module examples and interface modules.
+Admin-only helper endpoints for local broker module examples and sibling interface modules.
+GetCourse paths below are relative to `p/units/neso/meta/interfaces/getcourse`.
 
-| Method | Path                                    | File                                      | Auth  | Назначение                                                                                     |
-| ------ | --------------------------------------- | ----------------------------------------- | ----- | ---------------------------------------------------------------------------------------------- |
-| POST   | /interfaces/getcourse/api/register      | interfaces/getcourse/api/register.ts      | Admin | Зарегистрировать GetCourse interface module и подписку `getcourse-raw-event-reader`.           |
-| POST   | /interfaces/getcourse/api/publish-event | interfaces/getcourse/api/publish-event.ts | Admin | Опубликовать `getcourse.raw_event.accepted@1` с нормализованным `payloadJson`.                 |
-| POST   | /interfaces/getcourse/api/poll          | interfaces/getcourse/api/poll.ts          | Admin | Получить claimed deliveries для подписки GetCourse interface.                                  |
-| POST   | /interfaces/getcourse/api/ack           | interfaces/getcourse/api/ack.ts           | Admin | Подтвердить обработку claimed deliveries GetCourse interface.                                  |
-| POST   | /interfaces/getcourse/api/fail          | interfaces/getcourse/api/fail.ts          | Admin | Отметить claimed deliveries GetCourse interface как failed/dead-letter по broker retry policy. |
-| POST   | /sample-module/api/register             | sample-module/api/register.ts             | Admin | Зарегистрировать sample module и подписку `sample-note-reader`.                                |
-| POST   | /sample-module/api/publish-note         | sample-module/api/publish-note.ts         | Admin | Опубликовать `sample.note.created@1`.                                                          |
-| POST   | /sample-module/api/poll                 | sample-module/api/poll.ts                 | Admin | Получить claimed deliveries sample module.                                                     |
-| POST   | /sample-module/api/ack                  | sample-module/api/ack.ts                  | Admin | Подтвердить обработку claimed deliveries sample module.                                        |
-| POST   | /sample-module/api/fail                 | sample-module/api/fail.ts                 | Admin | Отметить claimed deliveries sample module как failed/dead-letter по broker retry policy.       |
+| Method | Path                            | File                                                | Auth  | Назначение                                                               |
+| ------ | ------------------------------- | --------------------------------------------------- | ----- | ------------------------------------------------------------------------ |
+| POST   | /api/module/register            | ../interfaces/getcourse/api/module/register.ts      | Admin | Зарегистрировать GetCourse interface module и его event contracts.       |
+| POST   | /api/module/publish-event       | ../interfaces/getcourse/api/module/publish-event.ts | Admin | Опубликовать `getcourse.raw_event.accepted@1` с payloadJson.             |
+| POST   | /sample-module/api/register     | sample-module/api/register.ts                       | Admin | Зарегистрировать sample module и подписку `sample-note-reader`.          |
+| POST   | /sample-module/api/publish-note | sample-module/api/publish-note.ts                   | Admin | Опубликовать `sample.note.created@1`.                                    |
+| POST   | /sample-module/api/poll         | sample-module/api/poll.ts                           | Admin | Получить claimed deliveries sample module.                               |
+| POST   | /sample-module/api/ack          | sample-module/api/ack.ts                            | Admin | Подтвердить обработку claimed deliveries sample module.                  |
+| POST   | /sample-module/api/fail         | sample-module/api/fail.ts                           | Admin | Отметить claimed deliveries sample module как failed/dead-letter policy. |
 
 ## Публичные эндпоинты
 
@@ -75,4 +73,4 @@ Admin-only helper endpoints for local broker module examples and interface modul
 ## События и webhooks
 
 - `getcourse.raw_event.accepted@1` — GetCourse interface module, module key `p/units/neso/meta/interfaces/getcourse`.
-- `sample.note.created@1` — sample module, module key `p/units/neso/meta/sample-module`.
+- `sample.note.created@1` — sample module, module key `p/units/neso/meta/core/sample-module`.

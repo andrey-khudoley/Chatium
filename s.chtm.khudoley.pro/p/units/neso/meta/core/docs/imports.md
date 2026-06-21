@@ -1,4 +1,4 @@
-﻿# Импорты страниц и схема зависимостей
+# Импорты страниц и схема зависимостей
 
 ## 1) Страницы‑роуты (TSX entrypoints)
 
@@ -297,38 +297,25 @@
 
 ## 9) Broker module examples
 
-### `./interfaces/getcourse/contracts/brokerEvents.ts`
+### `../interfaces/getcourse/contracts/brokerEvents.ts`
 
 - нет импортов
-- экспортирует `GETCOURSE_MODULE_KEY`, `BROKER_EVENT_CONTRACTS`
+- `../config/routes` → `PROJECT_ROOT` as `MODULE_KEY`
+- экспортирует `GETCOURSE_RAW_EVENT_ACCEPTED_EVENT_TYPE`, `BROKER_EVENT_CONTRACTS`
 
-### `./interfaces/getcourse/lib/coreBrokerClient.lib.ts`
+### `../interfaces/getcourse/lib/broker/coreBrokerClient.lib.ts`
 
 - `@app/app` → `runAppFunction`
-- `../contracts/brokerEvents` → `BROKER_EVENT_CONTRACTS`, `GETCOURSE_MODULE_KEY`
-- вызывает broker target `p/units/neso/meta` через `app.function('/broker/*')`
+- `../../config/routes` → `PROJECT_ROOT` as `MODULE_KEY`
+- `../../contracts/brokerEvents` → `BROKER_EVENT_CONTRACTS`, `GETCOURSE_RAW_EVENT_ACCEPTED_EVENT_TYPE`
+- вызывает broker target `p/units/neso/meta/core` через `app.function('/broker/*')`
 
-### `./interfaces/getcourse/api/register.ts`
-
-- `@app/auth` → `requireAccountRole`
-- `../lib/coreBrokerClient.lib` → `registerGetCourseBrokerModule`, `registerGetCourseBrokerSubscription`
-
-### `./interfaces/getcourse/api/publish-event.ts`
+### `../interfaces/getcourse/api/module/register.ts`
 
 - `@app/auth` → `requireAccountRole`
-- `../lib/coreBrokerClient.lib` → `publishGetCourseRawEvent`
+- `../../lib/broker/coreBrokerClient.lib` → `registerCoreBrokerModule`
 
-### `./interfaces/getcourse/api/poll.ts`
-
-- `@app/auth` → `requireAccountRole`
-- `../lib/coreBrokerClient.lib` → `pollGetCourseDeliveries`
-
-### `./interfaces/getcourse/api/ack.ts`
+### `../interfaces/getcourse/api/module/publish-event.ts`
 
 - `@app/auth` → `requireAccountRole`
-- `../lib/coreBrokerClient.lib` → `ackGetCourseDeliveries`
-
-### `./interfaces/getcourse/api/fail.ts`
-
-- `@app/auth` → `requireAccountRole`
-- `../lib/coreBrokerClient.lib` → `failGetCourseDeliveries`
+- `../../lib/broker/coreBrokerClient.lib` → `publishGetCourseRawEvent`

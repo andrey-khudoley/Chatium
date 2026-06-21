@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Юнит-проверки роутинга (config/routes). Часть templateUnitSuite.
  */
 import {
@@ -104,7 +104,7 @@ export function runRoutesChecks(results: TemplateUnitTestResult[]): void {
     results,
     'routes_PROJECT_ROOT',
     'PROJECT_ROOT',
-    () => PROJECT_ROOT === 'p/units/neso/meta'
+    () => PROJECT_ROOT === 'p/units/neso/meta/core'
   )
 
   tryPush(results, 'routes_ROUTES_KEYS_match_PATHS', 'ROUTES vs ROUTE_PATHS keys', () => {
