@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Проверка подписки на телеграм канал",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@templates/start/proverka-podpiski-na-telegram-kanal"
+  }
+}

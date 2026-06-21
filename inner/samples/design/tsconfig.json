@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "@users/*": ["../../users.chatium.ru/*"],
+      "@app/*": ["../../node_modules/@app/*"],
+      "/*": ["../../*"]
+    },
+    "allowJs": false,
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "jsx": "preserve",
+    "strict": false,
+    "noUncheckedIndexedAccess": false
+  },
+  "vueCompilerOptions": {
+    "target": 3.5,
+    "globalTypesPath": "./node_modules/.volar/vue-global-temp.d.ts"
+  },
+  "include": ["**/*.ts", "**/*.tsx", "**/*.vue", "vue-shim.d.ts"],
+  "exclude": []
+}

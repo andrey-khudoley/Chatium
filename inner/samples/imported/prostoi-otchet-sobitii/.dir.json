@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Простой отчет событий",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@templates/start/botan/templates/analytics/plain-list"
+  }
+}

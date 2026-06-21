@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Блог с генерацией контента",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@templates/start/botan/templates/members/blog"
+  }
+}

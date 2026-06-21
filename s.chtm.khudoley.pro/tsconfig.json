@@ -1,0 +1,45 @@
+{
+  "compilerOptions": {
+    "target": "es2021",
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "lib": ["es2021", "dom"],
+    "rootDir": ".",
+    "paths": {
+      "/*": ["./*"],
+      "@khudoley-stage/*": ["./*"],
+      ".chatium/*": ["./.chatium/*"],
+      ".claude/*": ["./.claude/*"],
+      ".codex/*": ["./.codex/*"],
+      ".cursor/*": ["./.cursor/*"],
+      ".deprecated/*": ["./.deprecated/*"],
+      "docs/*": ["./docs/*"],
+      "inner/*": ["./inner/*"],
+      "p/*": ["./p/*"],
+      "scripts/*": ["./scripts/*"],
+      "types/*": ["./types/*"],
+      "zoom-agent-tool/*": ["./zoom-agent-tool/*"]
+    },
+    "allowJs": false,
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "jsx": "react",
+    "jsxFactory": "jsx",
+    "jsxFragmentFactory": "jsx.Fragment",
+    "strict": true,
+    "noUncheckedIndexedAccess": true
+  },
+  "vueCompilerOptions": {
+    "strictTemplates": true
+  },
+  "include": ["**/*", ".**/*"],
+  "exclude": ["./node_modules/**/*", "./.typings/**/*"],
+  "files": [
+    "./node_modules/@app/types/globals.d.ts",
+    "./node_modules/@app/types/modules.d.ts",
+    "./node_modules/@app/ui/global-jsx.d.ts"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "name": "ZOOM конференции (тул для агента)",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@oneliner/zoom-agent-tool"
+  }
+}

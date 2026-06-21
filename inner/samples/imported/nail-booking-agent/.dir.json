@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Nail - booking agent",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@master-s/nail-booking-agent"
+  }
+}

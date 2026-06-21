@@ -1,0 +1,9 @@
+{
+  "name": "[TODO] dev/bi-system",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "codeIsPublic": false,
+    "searchable": false,
+    "isolatedExample": false
+  }
+}

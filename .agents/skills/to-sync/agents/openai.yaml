@@ -1,0 +1,4 @@
+interface:
+  display_name: "To Sync"
+  short_description: "Commit, promote to prod, and sync"
+  default_prompt: "Use $to-sync to commit dev changes, promote the committed diff to prod, and run Chatium sync."

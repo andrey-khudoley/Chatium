@@ -1,0 +1,4 @@
+interface:
+  display_name: "Chatium Platform"
+  short_description: "Chatium subsystem rules and references"
+  default_prompt: "Use $chatium-platform to check the relevant Chatium rules, topic references, inner/docs, and CodeGraph examples before editing."

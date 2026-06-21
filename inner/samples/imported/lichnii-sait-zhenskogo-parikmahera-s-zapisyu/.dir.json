@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Личный сайт женского парикмахера с записью",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@master-s/simpleSite"
+  }
+}

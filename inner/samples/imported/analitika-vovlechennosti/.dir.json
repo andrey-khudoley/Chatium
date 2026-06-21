@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Аналитика вовлеченности",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@pro/analitika-vovlechennosti"
+  }
+}

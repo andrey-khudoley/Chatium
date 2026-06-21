@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Телеграм МиниАпп",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@templates/start/telegram-miniapp"
+  }
+}

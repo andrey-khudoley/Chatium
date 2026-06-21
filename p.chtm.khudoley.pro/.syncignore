@@ -1,0 +1,13 @@
+# Agent and local tooling state
+.agents/
+.claude/
+.codex/
+.codegraph/
+.cursor/
+.playwright-mcp/
+outputs/
+work/
+
+# Dev-only контент — не публиковать (внутренние LLM-логи, проектная документация)
+**/docs/LLM/
+**/project-docs/

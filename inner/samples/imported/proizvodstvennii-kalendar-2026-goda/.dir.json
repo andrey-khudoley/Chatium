@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Производственный календарь 2026 года",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@proizvodstvennyy-kalendar-tca/productionCalendar"
+  }
+}

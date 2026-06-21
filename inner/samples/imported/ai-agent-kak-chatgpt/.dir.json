@@ -1,0 +1,10 @@
+{
+  "name": "[SAMPLE] AI-агент как ChatGPT",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@templates/start/botan/templates/sender/gpt",
+    "codeIsPublic": false,
+    "searchable": false,
+    "isolatedExample": false
+  }
+}

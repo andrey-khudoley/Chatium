@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Отправка постов в канал",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@aibrostudios/sendposttochannel"
+  }
+}

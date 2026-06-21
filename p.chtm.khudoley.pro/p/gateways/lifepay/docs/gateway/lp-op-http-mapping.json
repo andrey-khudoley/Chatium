@@ -1,0 +1,40 @@
+{
+  "_note": "STUB-указатель. В исходном ваулте этот машиночитаемый файл упоминался в operation-manual.md/testing-strategy.md/implementation-plan.md, но как отдельный артефакт никогда не был создан. Живой источник истины — код: lib/gateway/operationsCatalog.ts (валидация и маппинг op->upstream) и lib/gateway/handleV1Op.ts (цепочка вызова). Снимок ниже добавлен при переносе документации в воркспэйс 24-05-2026 для навигации; при расхождении верить коду и operation-manual.md §3.",
+  "_canonicalSource": [
+    "lib/gateway/operationsCatalog.ts",
+    "lib/gateway/handleV1Op.ts",
+    "shared/operationsCatalogShared.ts"
+  ],
+  "_relatedDocs": [
+    "./operation-manual.md",
+    "./lp-unified-op-registry-v0.md",
+    "../../../../../units/aayakovleva/project-docs/knowledge/lifepay/api-contracts.md"
+  ],
+  "contour": "bills_v1",
+  "operations": {
+    "createBill": {
+      "gatewayMethod": "POST",
+      "gatewayPath": "/v1/createBill",
+      "upstreamMethod": "POST",
+      "upstreamPath": "https://api.life-pay.ru/v1/bill"
+    },
+    "getBillStatus": {
+      "gatewayMethod": "GET",
+      "gatewayPath": "/v1/getBillStatus",
+      "upstreamMethod": "GET",
+      "upstreamPath": "https://api.life-pay.ru/v1/bill"
+    },
+    "cancelBill": {
+      "gatewayMethod": "POST",
+      "gatewayPath": "/v1/cancelBill",
+      "upstreamMethod": "POST",
+      "upstreamPath": "https://api.life-pay.ru/v1/bill"
+    },
+    "operations": {
+      "gatewayMethod": "GET",
+      "gatewayPath": "/v1/operations",
+      "upstreamMethod": null,
+      "upstreamPath": null
+    }
+  }
+}

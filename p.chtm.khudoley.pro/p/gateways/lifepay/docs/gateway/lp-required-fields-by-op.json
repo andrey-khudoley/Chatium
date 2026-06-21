@@ -1,0 +1,36 @@
+{
+  "_note": "STUB-указатель. Машиночитаемый перечень обязательных полей по op упоминался в operation-manual.md/testing-strategy.md, но как отдельный артефакт в ваулте создан не был. Живой источник истины — argsValidator/argsSchema в lib/gateway/operationsCatalog.ts. Снимок ниже добавлен при переносе 24-05-2026 для навигации; при расхождении верить коду и operation-manual.md (§2.8, §3).",
+  "_canonicalSource": ["lib/gateway/operationsCatalog.ts", "lib/gateway/buildCreateBillBody.ts"],
+  "_relatedDocs": ["./operation-manual.md", "./lp-unified-op-registry-v0.md"],
+  "requiredHeaders": {
+    "createBill": ["X-Lp-Apikey", "X-Lp-Login"],
+    "getBillStatus": ["X-Lp-Apikey", "X-Lp-Login"],
+    "cancelBill": ["X-Lp-Apikey", "X-Lp-Login"],
+    "operations": []
+  },
+  "requiredArgs": {
+    "createBill": {
+      "amount": {
+        "type": "string",
+        "format": "X.XX",
+        "note": "Число → LifePay code 6020; передавать строкой."
+      },
+      "description": {
+        "type": "string",
+        "note": "Обязателен по контракту LifePay; отсутствие → code 6020."
+      },
+      "customer_phone": {
+        "type": "string",
+        "format": "7xxxxxxxxxx",
+        "note": "Нормализуется без '+' через normalizeCustomerPhone."
+      }
+    },
+    "getBillStatus": {
+      "billNumber": { "type": "string|number", "note": "Номер счёта LifePay." }
+    },
+    "cancelBill": {
+      "billNumber": { "type": "string|number", "note": "Номер счёта LifePay." }
+    },
+    "operations": {}
+  }
+}

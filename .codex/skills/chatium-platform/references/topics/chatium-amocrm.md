@@ -1,0 +1,56 @@
+# chatium-amocrm
+
+> Migrated from `s.chtm.khudoley.pro/.cursor/skills/chatium-amocrm/SKILL.md`.
+> This is a Codex reference, not an auto-loaded standalone skill. Treat it as a quick topic guide.
+> Authoritative documentation: `inner/docs/E03-amocrm.md`. Before implementing, read the relevant `inner/docs/...` file(s) and use CodeGraph for live examples of symbols/routes.
+
+---
+name: chatium-amocrm
+description: Интеграция AmoCRM (Kommo) в Chatium — OAuth 2.0, сделки, контакты, компании, воронки, вебхуки. Использовать с @app/request для API-запросов.
+---
+
+# chatium-amocrm
+
+Интеграция с AmoCRM API v4: авторизация OAuth 2.0, сделки (leads), контакты, компании, воронки и статусы, неразобранное (unsorted), вебхуки, задачи. Запросы к API через `@app/request` (004-request, chatium-request).
+
+## Когда использовать
+
+- Синхронизация сделок и контактов с AmoCRM
+- Создание сделки/контакта из формы или чата
+- Обработка вебхуков AmoCRM (события сделок, контактов)
+- Управление воронками, неразобранным, задачами
+
+## Авторизация
+
+- OAuth 2.0: регистрация интеграции в AmoCRM, получение и обновление access_token/refresh_token.
+- Хранение токенов в Heap (таблица с полями accountId, accessToken, refreshToken, expiresAt).
+- Обновление токена по истечении срока (refresh_token).
+
+## Основные сущности и операции
+
+- **Сделки (Leads):** список, по ID, создание, обновление, фильтрация.
+- **Контакты (Contacts):** получение, создание, обновление, поиск.
+- **Компании (Companies):** CRUD по API.
+- **Воронки (Pipelines):** получение воронок, перемещение сделки по статусам.
+- **Неразобранное (Unsorted):** создание из форм/SIP, принятие/отклонение, список.
+- **Вебхуки:** настройка под события, обработка в роуте (app.post).
+- **Задачи (Tasks):** создание, получение, обновление.
+
+## Паттерны
+
+- Базовый URL: `https://{subdomain}.amocrm.ru/api/v4/`.
+- Заголовок: `Authorization: Bearer {accessToken}`.
+- При 401 — обновить токен через refresh_token и повторить запрос.
+- Логирование через ctx.account.log().
+
+## Чеклист
+
+- [ ] OAuth: регистрация интеграции, получение и хранение токенов в Heap
+- [ ] Запросы через request() из @app/request (chatium-request)
+- [ ] Обработка пагинации и лимитов API
+- [ ] Вебхуки: отдельный роут, проверка подписи при необходимости
+
+## Ссылки на документацию
+
+- **E03-amocrm.md** — AmoCRM API v4, OAuth, сделки, контакты, вебхуки, задачи
+- **004-request.md** — HTTP-клиент для запросов к API

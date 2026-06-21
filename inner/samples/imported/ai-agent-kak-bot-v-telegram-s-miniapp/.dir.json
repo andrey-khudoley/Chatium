@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] AI-агент как бот в Telegram с MiniApp",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@templates/start/botan/templates/sender/webapp"
+  }
+}

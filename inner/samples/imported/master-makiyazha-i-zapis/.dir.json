@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Мастер макияжа и запись",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@master-s/makeupArtistBooking"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Инструмент для ии агента Проверка подписки на канал",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@templates/start/instrument-dlya-ii-agenta-proverka-podpiski-na-kanal"
+  }
+}

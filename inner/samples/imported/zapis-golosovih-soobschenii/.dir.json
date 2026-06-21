@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Запись голосовых сообщений",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@malocode/voiceMessages"
+  }
+}

@@ -1,0 +1,86 @@
+# lavatop — Lava.Top gateway (Chatium)
+
+## Назначение
+
+Серверный шлюз к Lava.Top (`p/gateways/lavatop`), аналогичный соседним шлюзам `lifepay` и `gc`. Публикует публичный контур `invoices_v1` (`/v1/createInvoice`, `/v1/getInvoiceStatus`, `/v1/listProducts`, `/v1/updateOfferPrice`, `/v1/operations`) с маршрутизацией к `https://gate.lava.top`; принимает вебхуки Lava.Top и проксирует их на клиентский callback (`webhook-relay`); на `/` — панель оператора с журналами, KPI и управлением доступами. Каркас изначально скопирован из `p/template_project` (отсюда исторические упоминания шаблона в `docs/LLM/` и changelog ниже).
+
+## Важно
+
+- Платформа: Chatium. Серверная часть управляется платформой.
+- Стек фиксирован платформой, новые зависимости не добавляем.
+- Деплой происходит автоматически после пуша.
+
+## Текущее состояние
+
+- **Публичный контур `invoices_v1`**: `POST /v1/createInvoice`, `GET /v1/getInvoiceStatus`, `GET /v1/listProducts`, `POST /v1/updateOfferPrice`, `GET /v1/operations`. Авторизация клиента — заголовок `X-Lava-Apikey`, проксируется в Lava.Top как `X-Api-Key`. Общая цепочка инкапсулирована в `lib/gateway/handleV1Op.ts`. Клиент Lava.Top — `lib/gateway/lavaTopClient.ts` (обработка 429→rate_limited, timeout, network). Семантика ответов — `lib/gateway/invoicesV1Semantic.ts`. Каталог операций (SSOT) — `lib/gateway/operationsCatalog.ts`.
+- **Webhook-relay**: `POST /webhooks` принимает `PurchaseWebhookLog` от Lava.Top, `GET /webhooks/status` проверяет готовность. Авторизация рабочего POST по `lava_webhook_secret` (заголовок `X-Api-Key` или Basic). Сервис `lib/webhook/webhookRelay.service.ts` — дедупликация по `eventType:contractId:status`, поиск маппинга по `contractId` (для рекуррентных — fallback по `parentContractId`), форвард best-effort на клиентский callback. Маппинг создаётся в `createInvoice` при наличии `callbackUrl`. Вся цепочка под `runWithExclusiveLock`. Решение — `docs/ADR/0003-webhook-relay.md`.
+- **Панель оператора `/`** (`pages/HomePage.vue`; `requireInternalAccess`): вкладки Обзор (KPI + webhook-метрики) / Входящие / К Lava / Вебхуки / Доступы / Создать запрос; фильтр по дате (`panel_date_filter`). Вкладка «Создать запрос» — `components/RequestTestTab.vue`.
+- **Система доступов** (по модели lifepay): `lib/access/*`, `api/access/*` (6 эндпоинтов), `/web/forbidden`, `/web/access/invite`, `pages/InviteAcceptPage.vue`. Heap-таблицы `panelAccess` / `panelInvites`.
+- **Сырые журналы**: `api/admin/raw/{requests,upstream}/{recent,get}` (`guardInternalApi`), `api/admin/webhooks/{recent,reforward}`.
+- **Настройки gateway**: `lava_test_apikey`, `lava_base_url` (default `https://gate.lava.top`), `lava_webhook_secret`, `panel_date_filter`. Первые три редактируются администратором в админке (`pages/AdminPage.vue`, отдельные карточки с дебаунс-автосохранением); `panel_date_filter` задаётся фильтром панели.
+- **Тесты**: юнит-набор gateway (`lib/gateway/gatewayUnitSuite.ts`, ~21 кейс — каталог/маскирование/семантика/дедуп); интеграционные тесты с roundtrip и идемпотентностью маппинга (`lib/tests/integrationSuite.ts`).
+- Сервисная инфраструктура (настройки, серверные логи, дашборд, API тестов) — без изменений. Детали — `docs/api.md`, `docs/data.md`.
+
+## Навигация по документации
+
+- Архитектура (роутинг, слои, gateway, webhook-relay, доступы): `docs/architecture.md`
+- API (все эндпоинты, включая `api/v1/`, `webhooks/`, `api/access/`): `docs/api.md`
+- Данные (Heap-таблицы, репозитории): `docs/data.md`
+- Импорты/циклы: `docs/imports.md`
+- Решения: `docs/ADR/`
+- История диалогов: `docs/LLM/`
+
+## TODO
+
+- Портировать webhook-relay в `lifepay` и `gc` — Этап B (отдельная задача).
+- Настройка webhook-URL в ЛК Lava.Top — ручная операция (документировать в ops-инструкции).
+- Ретрай форварда вебхука — вне scope текущей реализации.
+- Описать доменную модель на уровне `docs/data.md` (бизнес-смысл полей).
+
+## Changelog
+
+- 2026-05-27: **унификация интерфейсных тайтлов** — `BODY_TEXT`/`BODY_SUBTEXT` в `config/project.tsx` обновлены ('Шаблон проекта'/'В разработке' → 'Gateway Lava.Top'/'Прокси-слой к API Lava.Top'). `PROJECT_NAME`='Lava.Top Gateway' и `PROJECT_TITLE`='Lava.Top' уже соответствовали соглашению — не менялись.
+- 2026-05-27: **поля настроек шлюза в админке** — в `pages/AdminPage.vue` добавлены три карточки для редактирования настроек Lava.Top: тестовый API-ключ (`lava_test_apikey`), секрет вебхуков (`lava_webhook_secret`) и базовый URL (`lava_base_url`). Раньше эти ключи имели готовый бэкенд (`lib/settings.lib.ts`, роуты `api/settings/save|get`), но не было UI — из-за чего форма «Создать запрос» выдавала «Не заданы в настройках проекта: lava_test_apikey». Паттерн зеркалит LifePay: дебаунс-автосохранение (300 мс), статус OK/ERR, откат при ошибке; apikey/секрет — `password`-поля и непустые, базовый URL нормализуется (`normalizeLavaBaseUrlInput`, пустой ввод → дефолт). Изменения только в клиентском UI.
+- 2026-05-27: **дропдаун операций «Создать запрос» — группировка по доступности** — операции в `<select>` (`components/RequestTestTab.vue`) разбиты на `<optgroup>` «Доступные» (enabled) и «Недоступные» (остальные availability) через computed `enabledOps`/`otherOps`: сначала доступные, затем разделитель и недоступные. Одинаково применено во всех гейтвеях (`gc`/`lavatop`/`lifepay`).
+- 2026-05-27: реализован полноценный gateway Lava.Top (был каркас-заготовка): публичный контур `invoices_v1` (createInvoice/getInvoiceStatus/listProducts/updateOfferPrice/operations), webhook-relay (приём PurchaseWebhookLog, дедупликация, маппинг contractId→callback_url, форвард best-effort), панель оператора с KPI и вкладкой «Вебхуки», внутренняя система доступов (panelAccess/panelInvites), 6 новых Heap-таблиц, юнит-набор gateway (~21 кейс). Добавлены ADR-0003 (webhook-relay), docs/architecture.md, docs/api.md, docs/data.md обновлены.
+- 2026-05-26: исправлены интеграционные тесты `regression_payload_not_object_object` и `e2e_log_payload_roundtrip` — падали при `log_level != Debug` (payload по дизайну отсекается на не-Debug). Тесты теперь временно выставляют `Debug` на время прогона и восстанавливают прежний уровень через `try/finally` (паттерн как в `logger_writeServerLog_filter`). Поведение логгера не менялось. Портировано из `lifepay`.
+- 2026-05-26: адаптация копии шаблона под новый шлюз `lavatop` (Lava.Top): `PROJECT_ROOT` → `p/gateways/lavatop`, `.dir.json`, уникальные ключи Heap-таблиц `t__saas-gw-lavatop__setting__pGtfce` / `t__saas-gw-lavatop__log__4RhPFp`, юнит-тест `routes_PROJECT_ROOT`, SSR-маркер `saas-gw-lavatop-page`; убран хардкод пути в `TestsPage.vue` (теперь через проп `projectRoot` из `config/routes.PROJECT_ROOT`); название проекта по умолчанию → «Lava.Top». Обновлены `docs/data.md`, `docs/api.md`, README, `.CHATIUM-LLM.md`. Удалён `docs/run.md` (инструкция по адаптации шаблона выполнена).
+- 2026-05-26: строгая проверка типов приведена к 0 ошибок (паритет с соседними `lifepay`/`gc`), исправления портированы из них: новый `lib/htmlRedirect.ts` (типобезопасный редирект из html-роутов, заменил `ctx.resp.redirect` в `web/profile` и `web/tests`); маппинг severity → уровень `ctx.account.log` в `lib/logger.lib.ts`; `?? 'Info'` в `api/settings/save.ts`; `limit` как строка в `.query()` (`AdminPage.vue`, `TestsPage.vue`, `lib/tests/integrationSuite.ts`); защита от `undefined` при индексации массивов логов (`for…of .entries()`, guard `first`) в `AdminPage.vue` и `TestsPage.vue`; хранение функции отписки WebSocket (`logsSocketUnsubscribe`) в `TestsPage.vue`.
+- 2026-04-05: разделение логирования по уровням Info/Debug — trace-логи (карта вызовов) severity 6, видны при Info; payload (сырые данные) автоматически отсекается при уровне != Debug; shouldIncludePayload в lib/logger.lib.ts, фильтрация non-string args в shared/logger.ts; добавлены недостающие trace-логи на сервере (api/logger/browser, api/tests/list) и в Vue-компонентах (onBeforeUnmount, saveProjectName, loadProjectName, setupLogsWebSocket, loadRecentLogs и др.).
+- 2026-04-05: browserRemoteLogger подключён на всех страницах (главная, админка, профиль, тесты); logLevel SSR добавлен на страницу логина; подробное логирование этапов загрузки с сырыми данными на каждой странице; AdminPage — sink комбинирует дашборд-счётчики и remote logger.
+- 2026-04-05: админка и тесты — восстановлена полная ширина полотна: `.app-layout`, `<main>`, `.ap`/`.tp` с `width: 100%` и `min-w-0` где нужно; первая колонка сетки `minmax(240px, 1fr)` вместо `minmax(0, 1fr)`, чтобы основной контент не сжимался.
+- 2026-04-05: админка и тесты — вертикальный скролл перенесён с `<main>` на левую колонку (`.ap-main` / `.tp-main`); сетка с `minmax(0,1fr)` задаёт высоту ряда между шапкой и футером, колонка логов не двигается при прокрутке слева; `content-wrapper` на левой колонке для скроллбара. Узкий экран: снова скроллится `<main>`.
+- 2026-04-05: `customScrollbarStyles` — приглушённый нейтральный скроллбар (тёмно-серый на почти чёрной дорожке, 6px, без акцента и свечения), в духе CRT остаётся только геометрия без скруглений.
+- 2026-04-05: админка и `/web/tests`: хедер и футер закреплены в пределах экрана; `body.boot-complete` без вертикального скролла; стили `.app-layout` в `AdminPage.vue` и `TestsPage.vue`. Обновлены `docs/architecture.md`, `styles.tsx` (комментарий к скроллбару).
+- 2026-04-04: логирование провалов юнит/интеграционных тестов: `lib/tests/logTestRunFailures.ts`, вызов из `api/tests/unit` и `api/tests/integration`; severity 3 на каждый FAIL и на итог при `failed > 0`. Обновлены `docs/api.md`, `docs/imports.md`.
+- 2026-04-04: расширены тесты шаблона: `lib/tests/templateUnitSuite.ts`, `lib/tests/integrationSuite.ts`; обновлён `shared/testCatalog.ts`; `TestsPage.vue` — вкладки Юнит / Интеграция / HTTP (без «Архив»), метрики по вкладке, HTTP-проверки с SSR; `shared/logger` — чтение `globalThis.window` для серверных проверок `shouldLog`. Документация и `docs/imports.md` обновлены.
+- 2026-03-31: `pages/TestsPage.vue` — интерфейс тестов приближен к `p/units/aom/lava_gc_integration`: добавлен точечный запуск одного теста из строки (unit/integration/http), состояние одиночного прогона и блокировка групповой кнопки во время одиночного запуска.
+- 2026-03-29: тесты синхронизированы с `k/assistant`: `shared/testCatalog.ts`, `api/tests/unit`, `api/tests/integration`, обновлён `api/tests/list`; удалён `api/tests/endpoints-check/`; `pages/TestsPage.vue` и `web/tests/index.tsx` — новый UI и прогоны; документация обновлена.
+- 2026-02-04: фиксированная высота (400px) блока логов на странице тестов — TestsPage.vue, класс .tests-logs-output.
+- 2026-02-04: исправлена рекурсия Maximum call stack size exceeded при обращении к проекту (p/neso/crm/index): в repos/settings.repo.ts убраны все вызовы logger.lib — getSetting/getLogLevel/getLogWebhook вызываются из writeServerLog и используют findByKey, иначе цепочка зациливалась. Обновлён docs/imports.md.
+- 2026-02-04: в lib/logger.lib: в ctx.log передаётся только сообщение (без payload), в ctx.account.log — сообщение и payload (level, json). Обновлён JSDoc writeServerLog.
+- 2026-02-04: покрытие debug-логами всех слоёв: при уровне Debug трассировка в lib (logger.lib через ctx.log без рекурсии; settings.lib, dashboard.lib — вход/выход и переменные), repos (settings.repo, logs.repo; в logs.repo.create логи не пишутся, чтобы не было рекурсии), api (парсинг, переменные, возвраты), web и index (шаги и переменные), shared/logger (setLogSink). В settings.lib не логируют getSetting, getLogLevel, getLogWebhook — они вызываются из logger.lib. Обновлены docs/imports.md.
+- 2026-02-03: страница тестов разбита на шесть блоков по слоям: Проверка эндпоинтов (маршруты), Библиотека настроек, Репозиторий настроек, Библиотека логов, Репозиторий логов, Библиотека админки. API тестов расширен: config, settings-lib, settings-repo, logger-lib, logs-repo, dashboard-lib (каждый возвращает results[]). В репозиториях соблюдён порядок «создание до чтения» (create/upsert перед read); в logs.repo добавлен тест create. Документация api.md и imports.md обновлены.
+- 2026-02-03: страница тестов — блок «Проверка эндпоинтов»: реальные HTTP-проверки (health, ping), список тестов с [TODO]/[SUCCESS]/[FAIL], описания и техническая информация по каждому тесту, легенда статусов, понятные формулировки для тестировщика; кнопка «Запустить проверку эндпоинтов»; дашборд метрик обновляется по результатам прогона.
+- 2026-02-03: API слой для тестов: api/tests/list (каталог категорий и тестов), api/tests/endpoints-check/ (категория «проверка эндпоинтов») с health и ping — по одному эндпоинту «/» в файле; docs/api.md и docs/imports.md обновлены.
+- 2026-02-03: страница тестов (TestsPage): дашборд с метриками (всего/пройдено/провалено/пропущено), кнопка «Запустить все тесты»; блок «Проверка эндпоинтов» с кнопкой «Запустить тесты группы». Обработчики пока заглушки под будущий API.
+- 2026-02-02: админка — поле «Название проекта»: debounce уменьшен с 2 с до 300 мс; снят :disabled при сохранении, чтобы поле не теряло фокус при отправке запроса.
+- 2026-02-02: название проекта из настроек (input#project-name в админке) используется при серверном рендере: заголовок h1 в шапке — «название из настроек / Название страницы», document title — «Название страницы - Название из настроек». config/project: getPageTitle(pageName, projectName), getHeaderText(pageName, projectName); index, web/admin, web/profile читают project_name через settingsLib.getSettingString и передают в getPageTitle/getHeaderText; Header.vue — в h1 только projectTitle (убран отдельный вывод pageName).
+- 2026-02-02: дашборд админки: счётчики ошибок и предупреждений после таймштампа сброса; настройка dashboard_reset_at, lib/admin/dashboard.lib, GET /api/admin/dashboard/counts, POST /api/admin/dashboard/reset; repos/logs.repo — countBySeverityAfter, countErrorsAfter, countWarningsAfter (несколько countBy по severity); при новых логах (sink/WebSocket) инкремент только если entry.timestamp >= dashboardResetAt.
+- 2026-02-02: админка — блок логов: кнопка «Загрузить ещё 50» ~90% ширины, рядом квадратная кнопка «Очистить логи» (корзина); при очистке таймштамп сдвигается на текущий (Date.now()), кнопка «Загрузить ещё 50» восстанавливает последние логи с сервера.
+- 2026-02-02: стили скроллбара (customScrollbarStyles в styles.tsx): body, .content-wrapper, .custom-scrollbar; подключены на главной, админке, логине и профиле; исправление для Chrome 121+ через @supports not selector(::-webkit-scrollbar).
+- 2026-02-02: оптимизирована функция findBeforeTimestamp в repos/logs.repo — использует нативную фильтрацию Heap API через `where: { timestamp: { $lt } }` вместо загрузки избыточных данных и фильтрации в памяти.
+- 2026-02-02: добавлена пагинация логов в админке: GET /api/admin/logs/recent (последние N логов), GET /api/admin/logs/before (N логов старше timestamp); repos/logs.repo.findBeforeTimestamp; AdminPage загружает историю при монтировании и может догружать старые логи по кнопке «Загрузить ещё 50».
+- 2026-02-02: админка: индикаторы «Сохранено»/«Ошибка» в правом верхнем углу карточек «Настройки проекта» и «Уровень логирования» после ответа сервера (3 с); автосохранение поля «Название проекта» с debounce 2 с без ожидания blur.
+- 2026-02-02: исправлен вызов GET api/settings/get в AdminPage: query передаётся через getSettingRoute.query({ key }).run(ctx) вместо .run(ctx, { query }), по inner/docs (002-routing, 001-run).
+- 2026-02-02: сериализация payload при записи в Heap (lib/logger.lib): JSON.stringify для объектов, чтобы в таблице логов отображался корректный JSON вместо "[object Object]".
+- 2026-02-02: серверные логи: таблица logs, repos/logs.repo, lib/logger.lib, api/logger/log (POST), админка — encodedLogsSocketId и подписка на new-log; сокет без accountId. Body API: только message (обяз.), severity? (0–7), payload?; timestamp и level вычисляются в lib; имя модуля в тексте message. Формат вывода: `[DD.MM.YYYY HH:mm:ss.SSS] [LEVEL] message` (пробелы между группами в скобках).
+- 2026-02-01: клиентская часть покрыта логами (createComponentLogger, setLogSink, sink в AdminPage дашборде; HomePage, AdminPage, ProfilePage, LoginPage, Header, AppFooter, GlobalGlitch, LogoutModal).
+- 2026-02-01: добавлен уровень логирования Debug (кнопка в админке перед Info, lib LOG_LEVELS, logger CONFIG_LEVELS и порог, API save -1–4), порядок: Debug, Info, Warn, Error, Disable.
+- 2026-02-01: уровень логирования -1 (логи выключены): LOG_LEVEL_OFF в shared/logger, приём -1 в `window.__BOOT__.logLevel`, API save принимает -1 → Disable.
+- 2026-02-01: shared/logger — логгер для браузера (logInfo, logWarn, logError с проверкой уровня по `window.__BOOT__.logLevel`), импорт в HomePage, AdminPage, ProfilePage.
+- 2026-02-01: чтение уровня логирования при загрузке страницы — shared/logLevel.ts, вызов getLogLevel в lib, скрипт `window.__BOOT__.logLevel` на главной, админке и профиле (без логина).
+- 2026-02-01: мгновенное сохранение уровня логирования в админке (кнопки → .run() → POST /api/settings/save), нормализация чисел 0–3 и строк в API.
+- 2026-02-01: добавлен ADR-0002 — настройки в Heap и слоистая архитектура API (решения коммита aaf4a0a).
+- 2026-02-01: обновлено «Текущее состояние» — отражены API настроек, таблица, репозиторий, lib.
+- 2026-01-31: создана базовая структура и первичная документация.

@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Уведомление агента об открытии WebApp",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@ai-templates/templates/webapp-opened"
+  }
+}

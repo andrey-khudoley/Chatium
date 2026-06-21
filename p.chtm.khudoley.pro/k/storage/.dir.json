@@ -1,0 +1,9 @@
+{
+  "name": "[INNER] p/kht/storage",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "codeIsPublic": false,
+    "searchable": false,
+    "isolatedExample": false
+  }
+}

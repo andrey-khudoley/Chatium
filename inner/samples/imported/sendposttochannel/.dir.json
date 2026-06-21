@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] sendPostToChannel",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@sender/plugin/start/templates/sendPostToTelegram"
+  }
+}

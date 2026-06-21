@@ -1,0 +1,172 @@
+/* Стили для режима выбора сообщений */
+
+/* Панель выбора сообщений */
+.selection-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 1rem;
+  background: var(--primary-color);
+  border-bottom: 1px solid var(--border-color);
+  min-height: 3.75rem;
+  flex-shrink: 0;
+  color: white;
+}
+
+.selection-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.selection-header .btn-icon {
+  color: white;
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.selection-header .btn-icon:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.selection-count {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.selection-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.selection-btn {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.125rem;
+  transition: all 0.2s;
+}
+
+.selection-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.selection-btn.danger {
+  background: rgba(239, 68, 68, 0.8);
+}
+
+.selection-btn.danger:hover {
+  background: rgba(239, 68, 68, 1);
+}
+
+.selection-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Чекбокс выбора сообщения */
+.message-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.5rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.checkbox-circle {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  background: var(--bg-primary);
+}
+
+.checkbox-circle.checked {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.checkbox-circle i {
+  font-size: 0.75rem;
+  color: white;
+}
+
+/* Режим выбора сообщений */
+.message-selection-mode {
+  cursor: pointer;
+}
+
+.message-selected .message-bubble {
+  background: var(--selection-bg, rgba(0, 128, 105, 0.15));
+  box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+.message-own.message-selected .message-bubble {
+  background: var(--selection-own-bg, rgba(0, 128, 105, 0.25));
+}
+
+/* Анимация появления чекбокса */
+.message-checkbox {
+  animation: checkboxAppear 0.2s ease-out;
+}
+
+@keyframes checkboxAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Мобильная адаптация */
+@media (max-width: 768px) {
+  .selection-header {
+    padding: 0.5rem 0.75rem;
+    min-height: 3.5rem;
+  }
+
+  .selection-count {
+    font-size: 0.9375rem;
+  }
+
+  .selection-btn {
+    width: 2.25rem;
+    height: 2.25rem;
+    font-size: 1rem;
+  }
+
+  .checkbox-circle {
+    width: 1.375rem;
+    height: 1.375rem;
+  }
+
+  .message-checkbox {
+    padding: 0 0.375rem;
+  }
+}
+
+/* Темная тема */
+[data-theme='dark'] .checkbox-circle {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme='dark'] .checkbox-circle.checked {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+}

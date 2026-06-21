@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Лендинг квиз пример 2",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@pro/templates/lands/lending-kviz-primer-2"
+  }
+}

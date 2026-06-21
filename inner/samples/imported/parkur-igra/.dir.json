@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Паркур игра",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@pro/parkur-game"
+  }
+}

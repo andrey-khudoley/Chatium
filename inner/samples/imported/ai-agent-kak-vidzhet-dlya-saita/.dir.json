@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] AI-агент как виджет для сайта",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@templates/start/botan/templates/sender/widget"
+  }
+}

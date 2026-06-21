@@ -1,0 +1,9 @@
+{
+  "name": "[TODO] saas/analytics/telegram/channel",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "codeIsPublic": false,
+    "searchable": false,
+    "isolatedExample": false
+  }
+}

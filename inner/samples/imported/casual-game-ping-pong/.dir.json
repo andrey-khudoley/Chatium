@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] casual game ping pong",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@tim-day-4/casual-game-ping-pong"
+  }
+}

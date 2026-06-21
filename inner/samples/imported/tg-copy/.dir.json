@@ -1,0 +1,7 @@
+{
+  "name": "pwa с пушами на firebase",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@kunitcan/tg-copy"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Лендинг регистрации на марафон",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@pro/templates/lands/utm-sbor"
+  }
+}

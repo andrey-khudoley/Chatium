@@ -1,0 +1,187 @@
+# Russian translations for Chatium Documentation Editor
+
+# Common
+- key: Loading...
+  val: Загрузка...
+
+- key: Save
+  val: Сохранить
+
+- key: Saving...
+  val: Сохранение...
+
+- key: Cancel
+  val: Отмена
+
+- key: Delete
+  val: Удалить
+
+- key: Back
+  val: Назад
+
+- key: Edit
+  val: Редактировать
+
+- key: View
+  val: Просмотр
+
+- key: Search...
+  val: Поиск...
+
+- key: Settings
+  val: Настройки
+
+- key: Export
+  val: Экспорт
+
+# Page types
+- key: Page
+  val: Страница
+
+- key: Section
+  val: Секция
+
+# MainPage
+- key: Chatium Documentation
+  val: Документация Chatium
+
+- key: Menu
+  val: Меню
+
+- key: Select a document from the sidebar
+  val: Выберите документ из боковой панели
+
+- key: The database is empty. Start by creating sample documentation.
+  val: База данных пуста. Начните с создания примерной документации.
+
+- key: Start
+  val: Начать
+
+- key: Creating...
+  val: Создание...
+
+- key: Are you sure you want to delete this document?
+  val: Вы уверены, что хотите удалить этот документ?
+
+- key: Database successfully seeded!
+  val: База успешно заполнена!
+
+- key: Failed to seed the database. Please try again.
+  val: Не удалось заполнить базу данных. Попробуйте еще раз.
+
+# EditorView
+- key: Loading document...
+  val: Загрузка документа...
+
+- key: Next article
+  val: Следующая статья
+
+# SettingsPage
+- key: Settings
+  val: Настройки
+
+- key: Documentation Settings Management
+  val: Управление настройками документации
+
+- key: Loading settings...
+  val: Загрузка настроек...
+
+- key: URL Type
+  val: Тип URL
+
+- key: Select URL format for documentation pages
+  val: Выберите формат URL для страниц документации
+
+- key: Slug-based URLs
+  val: URL на основе слагов
+
+- key: Use readable URLs with slug fields of pages
+  val: Использовать читаемые URL с slug полями страниц
+
+- key: Slug-only URLs
+  val: URL только по слагу страницы
+
+- key: Use only page slug without full path
+  val: Использовать только slug страницы без полного пути
+
+- key: ID-based URLs
+  val: URL на основе ID
+
+- key: Use direct URLs with document IDs
+  val: Использовать прямые URL с ID документов
+
+- key: Settings successfully saved
+  val: Настройки успешно сохранены
+
+- key: Failed to load settings
+  val: Не удалось загрузить настройки
+
+- key: Failed to save settings
+  val: Не удалось сохранить настройки
+
+# EditModal
+- key: Create Section
+  val: Создать секцию
+
+- key: Create Page
+  val: Создать страницу
+
+- key: Edit Section
+  val: Редактировать секцию
+
+- key: Edit Page
+  val: Редактировать страницу
+
+- key: Title
+  val: Название
+
+- key: Enter title
+  val: Введите название
+
+- key: Slug (URL)
+  val: Slug (URL)
+
+- key: Leave empty for auto-generation
+  val: Оставьте пустым для автогенерации
+
+- key: Type
+  val: Тип
+
+- key: Order
+  val: Порядок
+
+- key: Sort order
+  val: Порядок сортировки
+
+- key: Published
+  val: Опубликовано
+
+- key: Unpublished pages are visible only to administrators
+  val: Неопубликованные страницы видны только администраторам
+
+# Header
+- key: Knowledge Base
+  val: База знаний
+
+- key: Documentation
+  val: Документация
+
+- key: Add Section
+  val: Добавить секцию
+
+- key: Add Page
+  val: Добавить страницу
+
+- key: No results found
+  val: Ничего не найдено
+
+# Sidebar
+- key: Drop here to move to root level
+  val: Перетащите сюда, чтобы переместить на корневой уровень
+
+# TreeNode
+- key: url-friendly-slug
+  val: url-friendly-slug
+
+- key: Failed to update icon. Please try again.
+  val: Не удалось обновить иконку. Попробуйте еще раз.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "To Prod"
+  short_description: "Promote committed diff to prod"
+  default_prompt: "Use $to-prod to promote a committed dev diff to prod and run Chatium sync."

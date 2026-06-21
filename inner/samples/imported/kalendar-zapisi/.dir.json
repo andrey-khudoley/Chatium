@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Календарь записи",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@pro/kalendar-zapisi"
+  }
+}

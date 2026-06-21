@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es2021",
+    "module": "es2020",
+    "moduleResolution": "node",
+    "jsx": "react",
+    "jsxFactory": "jsx",
+    "jsxFragmentFactory": "jsx.Fragment",
+    "baseUrl": ".",
+    "paths": {
+      "/*": ["../../*"]
+    }
+  },
+  "vueCompilerOptions": {
+    "target": 3,
+    "globalTypesPath": "../../vue-global.d.ts"
+  },
+  "include": ["**/*"]
+}

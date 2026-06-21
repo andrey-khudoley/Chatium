@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Метрика страниц созданных на Сhatium",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@pro/lend-metrika"
+  }
+}

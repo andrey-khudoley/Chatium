@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Ленинг регистрация",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@pro/templates/lands/lening-registratsiya"
+  }
+}

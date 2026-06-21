@@ -1,0 +1,3276 @@
+/* Отступ контейнера страницы оплаты */
+/* xdgetId: r4063 | invisibleTo: admins */
+.main-page-block .container {
+  padding-left: 7%;
+}
+
+/***** Настройка цветовой схемы страницы *****/
+/* Единый источник истины палитры — JS-константы в скрипте 13 (13-color-scheme.js):
+   он переопределяет эти переменные инлайном на <html>, поэтому значения ниже —
+   дефолты-фоллбэк (страница остаётся оформленной, даже если скрипт не отработал).
+   Менять акцентный цвет/палитру удобнее в скрипте 13 — одна точка на всю страницу. */
+:root {
+  --main-color: #f85c50; /* акцент: кнопки, рамки, ссылки, иконки */
+  --card-bg: #f5f5f5; /* нейтральный фон/рамка карточки метода оплаты */
+  --panel-bg: #fafafa; /* мягкая плашка: состав заказа, плательщик, частичная */
+  --panel-border: #ececec; /* рамка мягкой плашки */
+  --btn-disabled: #d3d3d3; /* фон заблокированной кнопки оплаты */
+  --btn-secondary: #2b2b2b; /* вторичная кнопка в карточке метода (рассрочки/безнал): графит в покое, коралл на hover */
+}
+/********************************************/
+
+/***** Настройка оптимизации размеров главных контейнеров *****/
+.main-page-block {
+  width: 98.5%;
+}
+
+.main-page-block .container {
+  width: 100%;
+  padding-right: 9%;
+}
+/*************************************************************/
+
+/* Штатный логотип GC заменяем проектным логотипом страницы оплаты (.pp-page-logo). */
+.gc-account-logo {
+  display: none !important;
+}
+
+/******************* Правая часть *******************/
+.sticky {
+  position: sticky;
+  top: 20px;
+}
+
+.total-cost {
+  border-radius: 8px;
+  padding: 25px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.total-cost .deal-positions {
+  display: none;
+}
+
+.total-cost .deal-finish-price-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline; /* метка и крупное число — по общей базовой линии */
+  flex-wrap: wrap; /* в узкой колонке метка и число встают стопкой, а не рвутся по словам */
+  gap: 2px 12px;
+  font-size: 17px; /* метка «Сумма для оплаты:» — спокойная, не кричит */
+  font-weight: 600;
+  color: #333;
+  line-height: 1.25;
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+
+/* Значение «79 999 руб.» — акцент блока: крупно, жирно, всегда одной строкой */
+.total-cost .deal-finish-price-title b {
+  flex: none;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #1a1a1a;
+  white-space: nowrap;
+}
+
+.total-cost .confirm-pay,
+.confirm-mobile,
+.balance-pay {
+  background-color: var(--main-color);
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-weight: bold;
+}
+
+.balance-pay {
+  background-color: #5cb85c;
+  display: none;
+}
+
+.total-cost .confirm-pay:hover {
+  filter: brightness(110%);
+}
+
+.total-cost .confirm-pay:focus {
+  outline: none;
+}
+
+.balance-pay:focus {
+  outline: none;
+}
+
+/* Активная кнопка оплаты — указатель-рука и лёгкий hover (для мобильной .confirm-mobile тоже) */
+.confirm-pay:not(.pay-disabled),
+.confirm-mobile:not(.pay-disabled) {
+  cursor: pointer;
+}
+.confirm-mobile:not(.pay-disabled):hover {
+  filter: brightness(110%);
+}
+
+@keyframes pp-confirm-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: none;
+  }
+  50% {
+    transform: scale(1.045);
+    box-shadow: 0 8px 24px rgba(248, 92, 80, 0.35);
+  }
+}
+
+.confirm-mobile.pp-confirm-pulse:not(.pay-disabled) {
+  animation: pp-confirm-pulse 0.55s ease-in-out 3;
+  transform-origin: center;
+  will-change: transform, box-shadow;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirm-mobile.pp-confirm-pulse:not(.pay-disabled) {
+    animation: none;
+  }
+}
+
+/* Заблокированная кнопка оплаты: способ не выбран → серая, неактивная.
+   Класс .pay-disabled ставит/снимает скрипт 05 по наличию выбранного метода (.picked). */
+.confirm-pay.pay-disabled,
+.confirm-mobile.pay-disabled {
+  background-color: var(--btn-disabled) !important;
+  color: #fff !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+.confirm-pay.pay-disabled:hover,
+.confirm-mobile.pay-disabled:hover {
+  background-color: var(--btn-disabled) !important;
+  filter: none !important;
+}
+
+.total-cost .part {
+  border: 2px solid var(--main-color);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  padding: 15px !important;
+}
+
+.total-cost .part span,
+.total-cost .part div {
+  color: #333 !important;
+  text-align: center;
+}
+
+.total-cost .part a {
+  color: #fff !important;
+  font-weight: bold;
+  outline: none;
+  border: none;
+  border-radius: 4px;
+  background: var(--main-color) !important;
+  margin-bottom: 10px;
+}
+
+/* Клон частичной оплаты под мобильной кнопкой (.confirm-mobile), создаёт скрипт 11.
+   По умолчанию скрыт — на десктопе частичную оплату даёт .total-cost .part (справа).
+   Виден только на стопке ≤991px. Дизайн ПОЛНОСТЬЮ повторяет десктопную карточку
+   (мягкая плашка + контурная вторичная кнопка), см. блок .total-cost .part в @media ≥992px. */
+.order-left-side .part-mobile {
+  display: none;
+}
+@media (max-width: 991px) {
+  .order-left-side .part-mobile {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e6e6e6;
+    border-radius: 10px;
+    padding: 16px !important;
+    margin: 16px 0 0;
+    max-width: 760px;
+    background: var(--panel-bg);
+  }
+  .order-left-side .part-mobile span,
+  .order-left-side .part-mobile div {
+    font-size: 13px;
+    color: #777 !important;
+    text-align: center;
+    line-height: 1.45;
+  }
+  .order-left-side .part-mobile a {
+    background: #fff !important;
+    color: var(--main-color) !important;
+    font-weight: bold;
+    outline: none;
+    border: 2px solid var(--main-color) !important;
+    border-radius: 8px;
+    padding: 9px 16px !important;
+    margin-bottom: 10px;
+    text-decoration: none;
+    transition:
+      background 0.15s,
+      color 0.15s;
+  }
+  .order-left-side .part-mobile a:hover {
+    background: var(--main-color) !important;
+    color: #fff !important;
+  }
+}
+
+/* Под последней позицией состава GC-пунктир (li) убираем — раздел закрывает
+   единый сплошной разделитель состав↔итог (.deal-positions border-bottom).
+   Между несколькими позициями пунктир остаётся как разделитель. Глобально (и ПК,
+   и мобайл): состав на ПК — в .total-cost (правая колонка, вне .order-left-side),
+   на мобайле — в .order-left-side .main-info, поэтому селектор без префикса. */
+.deal-positions li:last-child {
+  border-bottom: none !important;
+}
+
+/* ===== «Данные плательщика» — карточка ВНУТРИ сводки заказа =====
+   Скрипт 11 переносит блок плательщика в сводку, между составом и «Суммой для оплаты»,
+   клонируя его в обе раскладки (.payer-card-desktop → правый .total-cost; .payer-card-mobile →
+   левая колонка между .main-info и .mobile-total-cost). Стиль column-independent (.payer-card),
+   т.к. .total-cost НЕ внутри .order-left-side. Заголовок — аккуратный подзаголовок; данные —
+   мягкая плашка (как частичная оплата / промо). Если данных нет — скрипт карточки не строит. */
+.payer-card .payer-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 10px;
+}
+.payer-card .payer-heading:before {
+  content: '\f007'; /* FontAwesome user */
+  font-family: FontAwesome;
+  font-size: 14px;
+  color: var(--main-color);
+}
+.payer-card .payer-info {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #666;
+}
+/* Имя (первая строка) — акцентом; остальные данные — спокойнее */
+.payer-card .payer-info > *:first-child {
+  color: #1a1a1a;
+  font-weight: 600;
+  font-size: 15px;
+}
+.payer-card .payer-info b,
+.payer-card .payer-info strong {
+  color: #1a1a1a;
+}
+.payer-card .payer-info a {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--main-color);
+  font-weight: 600;
+  text-decoration: none;
+}
+.payer-card .payer-info a:hover {
+  text-decoration: underline;
+}
+
+/* Видимость карточек по раскладке. Десктоп-копия живёт в .total-cost (скрыт ≤991 → авто-скрытие
+   на стопке); мобильная копия в левой колонке — скрыта по умолчанию (=ПК), видна только ≤991. */
+.payer-card-mobile {
+  display: none;
+}
+/* ПК: отступ карточки плательщика до «Суммы для оплаты» (плашка .payer-info — сама визуальный блок) */
+.total-cost .right-info .payer-card {
+  margin: 0 0 18px;
+}
+
+/* ===== «Состав заказа» — единый стиль с «Данные плательщика» =====
+   Скрипт 11 вставляет заголовок .summary-heading перед составом и вешает .summary-box на
+   список позиций. Заголовок и плашка повторяют «Данные плательщика», чтобы блоки сводки
+   читались как одна система (иконка-корзина вместо иконки-пользователя). */
+.summary-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 10px;
+}
+.summary-heading:before {
+  content: '\f07a'; /* FontAwesome shopping-cart */
+  font-family: FontAwesome;
+  font-size: 14px;
+  color: var(--main-color);
+}
+/* В левой сводке (.main-info = .order-info) общее правило прячет div-потомков order-info
+   (GC-суммы, ≈стр.527) — заголовок состава из-под него возвращаем. */
+.order-left-side .order-info > .summary-heading {
+  display: flex !important;
+}
+
+/******************* Стилизация зоны промокода *****************************/
+
+.promo-zone {
+  border-radius: 8px;
+  padding: 22px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.promo-zone .deal-positions,
+.promo-zone .deal-finish-price-title,
+.total-cost a.dotted-link,
+.total-cost #promoCode,
+.total-cost .order-info > span {
+  display: none;
+}
+
+.promo-zone #promoCode {
+  color: var(--main-color);
+  font-weight: 600;
+  margin-top: 16px;
+  text-align: left;
+}
+
+.promo-zone input[type='text'] {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 14px;
+  outline: none;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.15s;
+}
+
+.promo-zone input[type='text']:focus {
+  border-color: var(--main-color);
+}
+
+.promo-zone button[type='submit'] {
+  display: block;
+  width: 100%;
+  outline: none;
+  border: none;
+  background-color: var(--main-color);
+  color: #fff;
+  font-weight: bold;
+  padding: 11px 16px;
+  border-radius: 8px;
+  margin-top: 10px;
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+
+.promo-zone button[type='submit']:hover {
+  filter: brightness(108%);
+}
+
+.promo-zone button[type='submit']:focus {
+  outline: none;
+}
+
+.promo-zone .errorSummary {
+  width: 100%;
+  text-align: center;
+  background: transparent;
+  color: crimson;
+  font-size: 1.3em;
+  border: 2px solid crimson;
+  border-radius: 4px;
+}
+
+/* «Знаете промокод?» — вторичное действие-тоггл в общем стиле (контурный коралловый
+   «таблеткой», пунктирная рамка = «введите код», hover-залив). Единый вид на ПК и мобайле. */
+.promo-zone a.dotted-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: 1px dashed var(--main-color);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--main-color);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.promo-zone a.dotted-link:hover {
+  background: var(--main-color);
+  color: #fff;
+}
+.promo-zone a.dotted-link:focus {
+  outline: none;
+}
+/* Иконка-ярлычок перед текстом (FontAwesome уже используется в проекте) */
+.promo-zone a.dotted-link:before {
+  content: '\f02b';
+  font-family: FontAwesome;
+  font-size: 13px;
+  line-height: 1;
+}
+/* убираем старую стрелку ⇐ */
+.promo-zone a.dotted-link:after {
+  content: none;
+}
+
+/*******************************************************/
+
+/******** Стилизация предупреждающего текста и Таймера оплаты **********/
+
+.total-cost .order-info > div {
+  margin: 10px 0px;
+}
+
+/* Предупреждение/таймер GC — кримсон по центру. Исключаем нашу карточку плательщика
+   (.payer-card — тоже прямой div .order-info=.right-info), иначе её заголовок и имя
+   красились бы кримсоном по центру вместо нейтрального вида «Состава заказа». */
+.total-cost .order-info > div:not(.payer-card) div:first-child {
+  color: crimson !important;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.total-cost .order-info > div div:first-child br {
+  display: none;
+}
+
+.total-cost .order-info > div .is-countdown {
+  border: 1px solid #ccc;
+  background-color: transparent;
+  color: #333;
+  font-weight: bold;
+  border-radius: 8px;
+}
+
+/******************************************************************/
+
+/******* Стилизация балансов пользователя *********/
+
+.total-cost .order-info p:not(.deal-finish-price-title) {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+}
+
+/**** Скрытие баланса пользователя в виджетах кроме total-cost *****/
+
+.order-left-side .order-info p,
+.promo-zone .order-info p {
+  display: none;
+}
+
+/************************************ КОНЕЦ ПРАВОЙ СТОРОНЫ ******************************************/
+/****************************************************************************************************/
+
+/************************************ ЛЕВАЯ ЧАСТЬ *************************************************/
+
+.order-left-side .deal-finish-price-title {
+  display: none;
+}
+
+.order-left-side h3 {
+  font-size: 28px;
+}
+
+.confirm-mobile {
+  display: none;
+}
+
+.deal-positions li {
+  border-bottom: 1px dotted #ccc;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+}
+
+.deal-positions li .type- {
+  background: transparent !important;
+  padding-left: 30px;
+}
+
+.deal-positions .position-actual-title {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.deal-positions .deal-position-price {
+  display: flex;
+  flex-direction: column;
+}
+
+.deal-positions .deal-position-price {
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.deal-positions .deal-position-price .source-price {
+  order: 1;
+  color: #8b8b8b;
+  font-size: 16px;
+  text-align: right;
+}
+
+/***********************  Стилизация модификаторов ***********************/
+
+.deal-positions li .type- .btn {
+  background: #fff;
+  color: var(--main-color);
+  font-size: 14px;
+  font-weight: bold;
+  padding: 5px 10px;
+  border: 2px solid var(--main-color);
+  display: block;
+}
+
+.deal-positions li button[name='delete_modifier'] {
+  margin-top: 10px;
+}
+
+.deal-positions li .type- .btn:hover {
+  background: var(--main-color);
+  color: #fff;
+}
+
+.deal-positions li .type- div:last-child {
+  font-weight: bold;
+  padding-right: 0 !important;
+}
+
+.deal-positions li .type- .text-muted {
+  font-weight: normal !important;
+}
+
+.row.type- {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin: 0;
+}
+
+div[class='row type-'] div:first-child {
+  padding-top: 10px !important;
+  padding-left: 0 !important;
+}
+
+div[class='row type-'] div:first-child:before {
+  content: '\f12e';
+  font-family: FontAwesome;
+  color: var(--main-color);
+  margin-right: 5px;
+}
+
+div[class='row type-'] div:first-child:hover {
+  color: var(--main-color);
+}
+
+/****************************************************************/
+
+/***** Скрываем ненужную инфу в виджетах левой стороны *********/
+
+.order-left-side a.dotted-link,
+.order-left-side #promoCode,
+.order-left-side .order-info > span {
+  display: none;
+}
+
+.order-left-side .order-info > div,
+.promo-zone .order-info > div {
+  display: none;
+}
+
+/******************** Стилизация дополнительного мобильного блока с итоговой ценой ********************************/
+
+@media (max-width: 768px) {
+  .confirm-mobile,
+  .mobile-total-cost {
+    display: none !important;
+  }
+}
+
+.mobile-total-cost .deal-positions {
+  display: none !important;
+}
+
+.mobile-total-cost {
+  display: none !important;
+}
+
+.mobile-total-cost .deal-finish-price-title {
+  display: none !important;
+}
+
+/********************************************************************************************/
+
+/*****************************  СЕТКИ ВАРИАНТОВ ОПЛАТЫ И ИХ СТИЛИЗАЦИЯ ***************************************/
+.order-left-side .card-title,
+.order-left-side .credit-title,
+.order-left-side .other-title {
+  display: none !important;
+}
+
+.order-left-side .xdget-payform {
+  display: flex;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  column-gap: 25px;
+}
+
+.order-left-side .xdget-payform td {
+  padding: 0 !important;
+}
+
+.order-left-side .xdget-payform img {
+  display: block;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 !important;
+  margin-top: 15px;
+}
+
+/* ===== КАРТОЧКИ ОБЫЧНЫХ МЕТОДОВ ОПЛАТЫ ===== */
+
+.order-left-side #YaKassa_AC,
+.order-left-side #YaKassa_SB,
+.order-left-side #YaKassa_AB,
+.order-left-side #YaKassa_PB,
+.order-left-side #YaKassa_GP,
+.order-left-side #YaKassa_QW,
+.order-left-side #YaKassa_CR,
+.order-left-side .gc-payment-method-card,
+.order-left-side #PAYPAL,
+.order-left-side #YANDEXMONEY,
+.order-left-side #robokassa,
+.order-left-side form[name="payment"],
+.order-left-side div[name="ShopForm_SB"],
+.order-left-side div[name="ShopForm_AB"],
+.order-left-side div[name="ShopForm_PB"],
+.order-left-side div[name="ShopForm_CR"],
+.order-left-side div[name="ShopForm_GP"],
+.order-left-side div[name="ShopForm_QW"],
+.order-left-side div[name="ShopForm_AC"],
+.order-left-side div[name="ShopForm_installments"],
+.order-left-side #co2,
+.order-left-side #rbkmoney_new,
+.order-left-side #zpayment,
+.order-left-side #kvit,
+.order-left-side #invoice,
+.order-left-side #WalletOneRUB,
+.order-left-side form[name="tinkoff_sbp"],
+.order-left-side #sber-pay,
+.order-left-side #tinkoff-pay,
+.order-left-side #yandex-pay,
+/* === НОВЫЕ МЕТОДЫ 2024–2025 === */
+.order-left-side #sbp-pay,
+.order-left-side #wb-pay,
+.order-left-side #alpha-pay,
+.order-left-side #sber-sbp {
+  /*flex: 0 0 250px;*/
+  background-color: var(--card-bg) !important;
+  border-radius: 15px;
+  border: 3px solid var(--card-bg) !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  margin: 25px 0;
+  width: calc(25% - 20px) !important;
+  height: 200px !important;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Hover */
+.order-left-side #YaKassa_AC:hover,
+.order-left-side #YaKassa_SB:hover,
+.order-left-side #YaKassa_AB:hover,
+.order-left-side #YaKassa_PB:hover,
+.order-left-side #YaKassa_GP:hover,
+.order-left-side #YaKassa_QW:hover,
+.order-left-side #YaKassa_CR:hover,
+.order-left-side .gc-payment-method-card:hover,
+.order-left-side #PAYPAL:hover,
+.order-left-side #YANDEXMONEY:hover,
+.order-left-side #robokassa:hover,
+.order-left-side form[name='payment']:hover,
+.order-left-side div[name='ShopForm_SB']:hover,
+.order-left-side div[name='ShopForm_AB']:hover,
+.order-left-side div[name='ShopForm_PB']:hover,
+.order-left-side div[name='ShopForm_CR']:hover,
+.order-left-side div[name='ShopForm_GP']:hover,
+.order-left-side div[name='ShopForm_QW']:hover,
+.order-left-side div[name='ShopForm_AC']:hover,
+.order-left-side div[name='ShopForm_installments']:hover,
+.order-left-side #co2:hover,
+.order-left-side #rbkmoney_new:hover,
+.order-left-side #zpayment:hover,
+.order-left-side #kvit:hover,
+.order-left-side #invoice:hover,
+.order-left-side #WalletOneRUB:hover,
+.order-left-side form[name='tinkoff_sbp']:hover,
+.order-left-side #sber-pay:hover,
+.order-left-side #tinkoff-pay:hover,
+.order-left-side #yandex-pay:hover,
+.order-left-side #sbp-pay:hover,
+.order-left-side #wb-pay:hover,
+.order-left-side #alpha-pay:hover,
+.order-left-side #sber-sbp:hover {
+  background-color: transparent !important;
+  border: 3px solid var(--main-color) !important;
+}
+
+/* td / border */
+.order-left-side #YANDEXMONEY td,
+.order-left-side #YaKassa_AC td,
+.order-left-side #YaKassa_SB td,
+.order-left-side #YaKassa_AB td,
+.order-left-side #YaKassa_PB td,
+.order-left-side #YaKassa_GP td,
+.order-left-side #YaKassa_QW td,
+.order-left-side #YaKassa_CR td,
+.order-left-side div[name='ShopForm_SB'] td,
+.order-left-side div[name='ShopForm_AB'] td,
+.order-left-side div[name='ShopForm_PB'] td,
+.order-left-side div[name='ShopForm_CR'] td,
+.order-left-side div[name='ShopForm_GP'] td,
+.order-left-side div[name='ShopForm_QW'] td,
+.order-left-side div[name='ShopForm_AC'] td,
+.order-left-side div[name='ShopForm_installments'] td,
+.order-left-side form[name='tinkoff_sbp'],
+.order-left-side #sber-pay td,
+.order-left-side #tinkoff-pay,
+.order-left-side #yandex-pay td,
+.order-left-side #sbp-pay td,
+.order-left-side #wb-pay td,
+.order-left-side #alpha-pay td,
+.order-left-side #sber-sbp td {
+  border: none !important;
+  padding: 0 !important;
+  width: auto !important;
+}
+
+/* tr display:flex (центрирование содержимого) */
+.order-left-side #YaKassa_AC tr,
+.order-left-side #YaKassa_SB tr,
+.order-left-side #YaKassa_AB tr,
+.order-left-side #YaKassa_PB tr,
+.order-left-side #YaKassa_GP tr,
+.order-left-side #YaKassa_QW tr,
+.order-left-side #YaKassa_CR tr,
+.order-left-side #PAYPAL tr,
+.order-left-side #YANDEXMONEY tr,
+.order-left-side #co2 tr,
+.order-left-side #rbkmoney_new tr,
+.order-left-side #zpayment tr,
+.order-left-side #kvit tr,
+.order-left-side #invoice tr,
+.order-left-side #WalletOneRUB tr,
+.order-left-side form[name='tinkoff_sbp'] tr,
+.order-left-side #sber-pay tr,
+.order-left-side #tinkoff-pay tr,
+.order-left-side #sber-sbp tr {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Скрыть вторую td (текст/кнопку) у старых методов */
+.order-left-side #YANDEXMONEY tr td:last-child,
+.order-left-side #co2 tr td:last-child,
+.order-left-side #rbkmoney_new tr td:last-child,
+.order-left-side #zpayment tr td:last-child,
+.order-left-side #kvit tr td:last-child,
+.order-left-side #WalletOneRUB tr td:last-child,
+.order-left-side #YaKassa_AC tr td:last-child,
+.order-left-side #YaKassa_SB tr td:last-child,
+.order-left-side #YaKassa_AB tr td:last-child,
+.order-left-side #YaKassa_PB tr td:last-child,
+.order-left-side #YaKassa_GP tr td:last-child,
+.order-left-side #YaKassa_QW tr td:last-child,
+.order-left-side #YaKassa_CR tr td:last-child,
+.order-left-side div[name='ShopForm_SB'] tr td:last-child,
+.order-left-side div[name='ShopForm_AB'] tr td:last-child,
+.order-left-side div[name='ShopForm_PB'] tr td:last-child,
+.order-left-side div[name='ShopForm_CR'] tr td:last-child,
+.order-left-side div[name='ShopForm_GP'] tr td:last-child,
+.order-left-side div[name='ShopForm_QW'] tr td:last-child,
+.order-left-side div[name='ShopForm_AC'] tr td:last-child,
+.order-left-side div[name='ShopForm_installments'] tr td:last-child {
+  display: none;
+}
+
+.order-left-side #sber-pay tr td {
+  border: none;
+}
+
+.order-left-side #YANDEXMONEY tr td:last-child div {
+  margin-bottom: 0 !important;
+}
+
+.gc-payment-method-card > div:only-child {
+  background: transparent !important;
+}
+
+.order-left-side .xdget-payform .btn-info {
+  display: none;
+}
+
+.order-left-side #robokassa tr,
+.order-left-side form[name='payment'] tr {
+  display: flex;
+  justify-content: center;
+}
+
+.order-left-side .cloudpayments-block td:nth-child(2) {
+  display: none;
+}
+
+/* ===== НОВЫЕ МЕТОДЫ: растяжка внутренних контейнеров ===== */
+
+/* Inner wrapper div */
+.order-left-side #sber-sbp > div {
+  width: 100% !important;
+}
+
+/* Inner .table */
+.order-left-side #sber-sbp .table {
+  width: 100% !important;
+  margin-bottom: 0 !important;
+}
+
+/* Картинки card-методов (yandex-pay — эталон, sbp/wb/alpha приведены к нему).
+   Единое правило: бокс идентичен, отличается только сама картинка (src). */
+.order-left-side #yandex-pay img,
+.order-left-side #sbp-pay img,
+.order-left-side #wb-pay img,
+.order-left-side #alpha-pay img {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  height: auto !important;
+  margin: 0 auto !important;
+  margin-top: 0 !important;
+  padding: 0 !important;
+  border-radius: 12px !important;
+  filter: none !important;
+}
+
+/* AlphaPay — кнопка-обёртка тянется на весь бокс, чтобы <img> вёл себя как голая картинка yandex-pay */
+.order-left-side #alpha-pay .pay-btn-alpha-pay {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  display: block !important;
+  width: 100% !important;
+}
+
+/* SberPay — логотип-ассет это 300×300 PNG (зелёный «pill» по центру + встроенная тень),
+   из-за чего он рендерился мелким и «плавал» с тенью на фоне полноразмерных баннеров
+   ЯПэй/Альфы. Приводим к их виду: кнопку-обёртку растягиваем на весь бокс (как у AlphaPay),
+   логотип на фикс. базе 170px увеличиваем transform: scale (прозрачные поля ассета режет
+   overflow карточки; transform-origin:center центрирует симметрично на ЛЮБОЙ раскладке —
+   в отличие от width в %, который на мобайле уезжал вбок), тень снимаем. */
+.order-left-side #sber-pay .pay-btn-sber-pay {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  display: block !important;
+  width: 100% !important;
+  box-shadow: none !important;
+}
+.order-left-side #sber-pay img {
+  display: block !important;
+  width: 170px !important;
+  max-width: none !important;
+  max-height: none !important;
+  height: auto !important;
+  margin: 0 auto !important;
+  margin-top: 0 !important;
+  transform: scale(1.3) !important;
+  transform-origin: center center !important;
+  filter: none !important;
+}
+
+/* sber-sbp — скрыть текстовый лейбл, оставить только логотип */
+.order-left-side #sber-sbp .sbp-label {
+  display: none !important;
+}
+
+.order-left-side #sber-sbp img {
+  display: block !important;
+  max-width: 130px !important;
+  max-height: 80px !important;
+  margin: 0 auto !important;
+  margin-top: 0 !important;
+}
+
+/* ===================================================== */
+
+.order-left-side .alternative-payments-block-main {
+  flex: 0 0 100%;
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+.order-left-side .alternative-payments-block-main .alternative-payments-block {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  border-bottom: 2px dotted var(--main-color);
+}
+
+.order-left-side .alternative-payments-block-main a {
+  display: block;
+  width: 41%;
+  text-align: center;
+  margin: 0 auto;
+  white-space: nowrap;
+  border-bottom: none !important;
+}
+
+/***** Отдельный метод Тинькофф Кредита + Остальные рассрочки *****/
+
+.order-left-side .xdget-payform #sber-pokupay,
+.order-left-side .xdget-payform #vsegdada,
+.order-left-side .xdget-payform #tinkoff-dolyame,
+.order-left-side .xdget-payform #alpha-bank-podeli,
+.order-left-side .xdget-payform #yandex-split {
+  margin: 10px 0 20px 0 !important;
+}
+
+.order-left-side .xdget-payform #tinkoffcredit,
+.order-left-side .xdget-payform #sber-pokupay,
+.order-left-side .xdget-payform #vsegdada,
+.order-left-side .xdget-payform #tinkoff-dolyame,
+.order-left-side .xdget-payform #alpha-bank-podeli,
+.order-left-side .xdget-payform #yandex-split,
+/* === НОВЫЕ КРЕДИТНЫЕ / РАССРОЧЕЧНЫЕ БЛОКИ ===
+   GC использует calc(50% - 15px) для credit-блоков при лейауте с боковой панелью (~670px payform).
+   Это даёт те же ~320px что и у vsegdada/tinkoffcredit. */
+.order-left-side .xdget-payform #yandex-split-improved,
+.order-left-side .xdget-payform #fresh-credit,
+.order-left-side .xdget-payform #tinkoffcredit-2,
+.order-left-side .xdget-payform #poscredit,
+.order-left-side .xdget-payform #resource-razvitie {
+  border-radius: 15px !important;
+  border: 3px solid var(--card-bg) !important;
+  background-color: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  order: 2 !important;
+  margin: 10px 0 20px 0 !important;
+  width: calc(50% - 15px) !important;
+  min-height: 230px !important;
+  height: auto !important;
+  position: relative !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+  padding: 15px !important;
+}
+
+/* Hover для новых кредитных блоков */
+.order-left-side .xdget-payform #yandex-split-improved:hover,
+.order-left-side .xdget-payform #fresh-credit:hover,
+.order-left-side .xdget-payform #tinkoffcredit-2:hover,
+.order-left-side .xdget-payform #poscredit:hover,
+.order-left-side .xdget-payform #resource-razvitie:hover {
+  background-color: transparent !important;
+  border: 3px solid var(--main-color) !important;
+}
+
+/* Внутренние обёртки */
+.order-left-side #yandex-split-improved > div,
+.order-left-side #fresh-credit > div,
+.order-left-side #poscredit > div,
+.order-left-side #resource-razvitie > div {
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.order-left-side #yandex-split-improved table,
+.order-left-side #fresh-credit table,
+.order-left-side #tinkoffcredit-2 table,
+.order-left-side #poscredit table,
+.order-left-side #resource-razvitie table {
+  width: 100% !important;
+  margin-bottom: 0 !important;
+}
+
+/* Изображения */
+.order-left-side #yandex-split-improved img {
+  width: 165px !important;
+  height: auto !important;
+}
+.order-left-side #fresh-credit img {
+  width: 150px !important;
+  height: auto !important;
+}
+.order-left-side #tinkoffcredit-2 img {
+  width: 130px !important;
+  height: auto !important;
+}
+.order-left-side #poscredit img {
+  width: 140px !important;
+  height: auto !important;
+}
+.order-left-side #resource-razvitie img {
+  max-height: 42px !important;
+  width: auto !important;
+  max-width: 200px !important;
+}
+
+/* Лейблы — nowrap + 13px, как у vsegdada по смыслу */
+.order-left-side #yandex-split-improved label,
+.order-left-side #fresh-credit label,
+.order-left-side #tinkoffcredit-2 label,
+.order-left-side #poscredit label,
+.order-left-side #resource-razvitie label {
+  white-space: nowrap !important;
+  font-size: 13px !important;
+  display: block !important;
+}
+
+/* Кнопки */
+.order-left-side .xdget-payform #yandex-split-improved .gc-payment-method-button,
+.order-left-side .xdget-payform #fresh-credit .gc-payment-method-button,
+.order-left-side .xdget-payform #tinkoffcredit-2 .gc-payment-method-button,
+.order-left-side .xdget-payform #poscredit .gc-payment-method-button,
+.order-left-side .xdget-payform #resource-razvitie .gc-payment-method-button {
+  margin-top: 10px !important;
+  border-radius: 8px !important;
+  font-weight: bold !important;
+  padding: 10px 25px !important;
+  outline: none !important;
+  white-space: nowrap !important;
+}
+
+.order-left-side .xdget-payform #yandex-split-improved .gc-payment-method-button:focus,
+.order-left-side .xdget-payform #fresh-credit .gc-payment-method-button:focus,
+.order-left-side .xdget-payform #tinkoffcredit-2 .gc-payment-method-button:focus,
+.order-left-side .xdget-payform #poscredit .gc-payment-method-button:focus,
+.order-left-side .xdget-payform #resource-razvitie .gc-payment-method-button:focus {
+  outline: none !important;
+}
+
+/* Скрыть описательный текст */
+.order-left-side #yandex-split-improved .split-desc {
+  display: none !important;
+}
+
+.order-left-side #tinkoffcredit-2 > table > tbody > tr:nth-child(2) {
+  display: none !important;
+}
+
+.order-left-side #resource-razvitie > div > table > tbody > tr:nth-child(2) {
+  display: none !important;
+}
+
+/* Hover для новых кредитных блоков */
+.order-left-side .xdget-payform #yandex-split-improved:hover,
+.order-left-side .xdget-payform #fresh-credit:hover,
+.order-left-side .xdget-payform #tinkoffcredit-2:hover,
+.order-left-side .xdget-payform #poscredit:hover,
+.order-left-side .xdget-payform #resource-razvitie:hover {
+  background-color: transparent !important;
+  border: 3px solid var(--main-color) !important;
+}
+
+.order-left-side .xdget-payform #tinkoffcredit tr:nth-child(2) td {
+  display: flex;
+  flex-direction: column;
+}
+
+.order-left-side .xdget-payform #tinkoffcredit tr:nth-child(2) td .btn,
+.order-left-side .xdget-payform #sber-pokupay tr:nth-child(2) td .btn,
+.order-left-side .xdget-payform #vsegdada tr:nth-child(2) td .btn,
+.order-left-side .xdget-payform #tinkoff-dolyame tr:nth-child(3) td .btn,
+.order-left-side .xdget-payform #alpha-bank-podeli tr td .btn,
+.order-left-side .xdget-payform #yandex-split .btn,
+/* Кнопки внутри новых блоков */
+.order-left-side .xdget-payform #yandex-split-improved .gc-payment-method-button,
+.order-left-side .xdget-payform #fresh-credit .gc-payment-method-button,
+.order-left-side .xdget-payform #tinkoffcredit-2 .gc-payment-method-button,
+.order-left-side .xdget-payform #poscredit .gc-payment-method-button,
+.order-left-side .xdget-payform #resource-razvitie .gc-payment-method-button {
+  margin-top: 10px;
+  border-radius: 8px;
+  font-weight: bold;
+  padding: 10px 25px;
+  outline: none;
+}
+
+.order-left-side .xdget-payform #tinkoffcredit tr:nth-child(2) td .btn:focus,
+.order-left-side .xdget-payform #sber-pokupay tr:nth-child(2) td .btn:focus,
+.order-left-side .xdget-payform #vsegdada tr:nth-child(2) td .btn:focus,
+.order-left-side .xdget-payform #alpha-bank-podeli tr td .btn:focus,
+.order-left-side .xdget-payform #yandex-split .btn:focus,
+.order-left-side .xdget-payform #yandex-split-improved .gc-payment-method-button:focus,
+.order-left-side .xdget-payform #fresh-credit .gc-payment-method-button:focus,
+.order-left-side .xdget-payform #tinkoffcredit-2 .gc-payment-method-button:focus,
+.order-left-side .xdget-payform #poscredit .gc-payment-method-button:focus,
+.order-left-side .xdget-payform #resource-razvitie .gc-payment-method-button:focus {
+  outline: none;
+}
+
+/* ============================================================
+   РАЗДЕЛ «БЕЗНАЛИЧНАЯ ОПЛАТА» (2026-06-04)
+   «Счёт на безналичную оплату» (#invoice) и «Квитанция для оплаты
+   в банке» (#kvit) — размещены рядом, в одном card-дизайне с
+   остальными методами (серая плашка var(--card-bg), скругление, коралл на
+   hover/выборе, колонка по центру: логотип → название → кнопка).
+   Форма реквизитов #invoice свёрнута по умолчанию (inline display:none)
+   и раскрывается по клику «Сформировать» (штатный generateInvoice GC) —
+   поэтому обе карточки компактные и одинаковые.
+   ============================================================ */
+
+/* — Обе карточки: в конец потока (order:3), 2 в ряд, единая плашка — */
+.order-left-side .xdget-payform #invoice,
+.order-left-side .xdget-payform #kvit {
+  order: 3 !important;
+  width: calc(50% - 15px) !important;
+  flex: 0 0 calc(50% - 15px) !important;
+  align-self: flex-start !important;
+  min-height: 240px !important;
+  height: auto !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+  margin: 10px 0 20px 0 !important; /* отступ секции даёт сам .label-invoice (margin-top:60px); карточкам — малый, как у кредитных */
+  padding: 26px 20px !important;
+  background-color: var(--card-bg) !important;
+  border: 3px solid var(--card-bg) !important;
+  border-radius: 15px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  position: relative !important;
+}
+
+/* — hover / выбранная — коралловая рамка, как у card-методов — */
+.order-left-side .xdget-payform #invoice:hover,
+.order-left-side .xdget-payform #kvit:hover,
+.order-left-side .xdget-payform #invoice.picked,
+.order-left-side .xdget-payform #kvit.picked {
+  background-color: transparent !important;
+  border: 3px solid var(--main-color) !important;
+}
+
+/* — Заголовок раздела — теперь настоящий full-width лейбл .label-invoice (вставляет скрипт 11),
+     а НЕ ::before у карточки. ::before не переносил строку и «плыл» во 2-ю колонку, когда выше
+     было мало методов (карточка #invoice вставала рядом со «Сплит»). ::before отключён. — */
+.order-left-side .xdget-payform #invoice:before,
+.order-left-side .xdget-payform #kvit:before {
+  content: none !important;
+}
+/* Лейбл «Безналичная оплата»: full-width, order:3 — форсирует новую строку перед #invoice/#kvit */
+.order-left-side .label-invoice {
+  order: 3 !important;
+  flex-basis: 100% !important;
+  width: 100% !important;
+  margin: 60px 0 0 !important;
+  font-size: 28px !important;
+  font-weight: bold !important;
+  line-height: 1.2 !important;
+}
+
+/* — Внутренняя таблица в колонку на всю ширину карточки — */
+.order-left-side .xdget-payform #invoice .table,
+.order-left-side .xdget-payform #kvit .table,
+.order-left-side .xdget-payform #invoice tbody,
+.order-left-side .xdget-payform #kvit tbody,
+.order-left-side .xdget-payform #invoice tr,
+.order-left-side .xdget-payform #kvit tr {
+  display: block !important;
+  width: 100% !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+/* — Логотип (1-я td) и контент (последняя td) — блоки по центру.
+     Служебные td «Сумма»/«Валюта» остаются скрытыми своим inline display:none. — */
+.order-left-side .xdget-payform #invoice td:first-child,
+.order-left-side .xdget-payform #kvit td:first-child,
+.order-left-side .xdget-payform #invoice tr > td:last-child,
+.order-left-side .xdget-payform #kvit tr > td:last-child {
+  display: block !important;
+  width: 100% !important;
+  padding: 0 !important;
+  border: none !important;
+  text-align: center !important;
+}
+
+/* — Логотип: единый размер, по центру, отступ снизу — */
+.order-left-side #invoice img,
+.order-left-side #kvit img {
+  display: block !important;
+  margin: 0 auto 18px !important;
+  max-height: 46px !important;
+  max-width: 150px !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+}
+
+/* — Название метода (только подпись во ВНЕШНЕЙ таблице карточки; `> table > tbody`
+     не даёт правилу протекать на подписи полей во вложенной таблице формы) — */
+.order-left-side #invoice > table > tbody > tr > td:last-child > label,
+.order-left-side #kvit > table > tbody > tr > td:last-child > label {
+  display: block !important;
+  font-size: 15px !important;
+  font-weight: bold !important;
+  margin-bottom: 12px !important;
+  line-height: 1.3 !important;
+}
+
+/* — Кнопка-CTA: единый вид у обоих методов, идентичный кнопкам рассрочек
+     («Оформить рассрочку»): КОНТУР с сохранением цвета — в покое прозрачный фон +
+     графитовая рамка/текст var(--btn-secondary), на hover/focus заливка кораллом
+     var(--main-color) + белый текст + рамка-коралл + тень. Перебиваем синий .btn-info
+     (bg #FFEB72, текст #333). — */
+.order-left-side .xdget-payform #invoice .btn,
+.order-left-side .xdget-payform #kvit .btn {
+  display: block !important;
+  width: 100% !important;
+  max-width: 280px !important;
+  margin: 14px auto 0 !important;
+  padding: 11px 20px !important;
+  border-radius: 8px !important;
+  font-weight: bold !important;
+  font-size: 14px !important;
+  box-sizing: border-box !important;
+  /* вторичное действие в карточке — контур-графит в покое, коралл на hover (как у рассрочек) */
+  background-color: transparent !important;
+  color: var(--btn-secondary) !important;
+  border: 1px solid var(--btn-secondary) !important;
+  transition:
+    background-color 0.15s,
+    color 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s !important;
+}
+.order-left-side .xdget-payform #invoice .btn:hover,
+.order-left-side .xdget-payform #kvit .btn:hover,
+.order-left-side .xdget-payform #invoice .btn:focus,
+.order-left-side .xdget-payform #kvit .btn:focus {
+  background-color: var(--main-color) !important;
+  color: #fff !important;
+  border-color: var(--main-color) !important;
+  box-shadow: 0 4px 12px rgba(248, 92, 80, 0.28) !important;
+  outline: none !important;
+}
+
+/* — Форма реквизитов #invoice (раскрывается по клику) — на всю ширину карточки.
+     НЕ форсим display: остаётся inline display:none до раскрытия штатным JS GC. — */
+.order-left-side .xdget-payform #invoice .invoice-data {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 10px auto 0 !important;
+  background: transparent !important;
+}
+.invoice-data div:first-child {
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 8px;
+}
+.invoice-data td,
+.invoice-data input {
+  width: 100%;
+}
+.invoice-data label {
+  font-size: 90% !important;
+}
+/* Поля формы: подпись вплотную к своему полю. GC-разметка — «<label>…</label><br><input>»:
+   <br> давал лишний разрыв в целую строку между подписью и полем (выглядело, будто подпись
+   относится к полю выше). Убираем <br> в таблице формы и задаём подписи блок с малым отступом
+   снизу (к своему полю) и отступом сверху (отделить от предыдущего поля). */
+.order-left-side #invoice .invoice-data table br {
+  display: none !important;
+}
+.order-left-side #invoice .invoice-data table label {
+  display: block !important;
+  margin: 14px 0 3px !important;
+  line-height: 1.3 !important;
+}
+.order-left-side #invoice .invoice-data table input {
+  margin-top: 0 !important;
+}
+
+/* — Мобильный: по одной карточке в ряд — */
+@media (max-width: 768px) {
+  .order-left-side .xdget-payform #invoice,
+  .order-left-side .xdget-payform #kvit {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+  }
+  /* в стопке верхний отступ под заголовок нужен только первой карточке (#invoice);
+       у #kvit убираем большой margin, чтобы не было лишнего зазора между карточками */
+  .order-left-side .xdget-payform #kvit {
+    margin-top: 25px !important;
+  }
+}
+
+/*************** Выставление ширины основного метода оплаты (для каждого проекта по-разному) ***************/
+
+/*#YaKassa_bank_card {
+	flex: 1 0 100%;
+}*/
+
+/***************  ВЫРАВНИВАНИЕ КАРТИНОК ПО РАЗМЕРУ У НЕАЛЬТЕРНАТИВНЫХ СПОСОБОВ ******************/
+
+.order-left-side div[name="ShopForm_SB"] > div:only-child > table:only-child tr:only-child > td:first-of-type,
+.order-left-side div[name="ShopForm_AB"] > div:only-child > table:only-child tr:only-child > td:first-of-type,
+.order-left-side div[name="ShopForm_PB"] > div:only-child > table:only-child tr:only-child > td:first-of-type,
+.order-left-side div[name="ShopForm_CR"] > div:only-child > table:only-child tr:only-child > td:first-of-type,
+.order-left-side div[name="ShopForm_GP"] > div:only-child > table:only-child tr:only-child > td:first-of-type,
+.order-left-side div[name="ShopForm_QW"] > div:only-child > table:only-child tr:only-child > td:first-of-type,
+.order-left-side div[name="ShopForm_AC"] > div:only-child > table:only-child tr:only-child > td:first-of-type,
+.order-left-side div[name="ShopForm_installments"] > div:only-child > table:only-child tr:only-child > td:first-of-type,
+.order-left-side form[name="YaKassa_AC"] td:first-child,
+.order-left-side form[name="YaKassa_SB"] td:first-child,
+.order-left-side form[name="YaKassa_AB"] td:first-child,
+.order-left-side form[name="YaKassa_PB"] td:first-child,
+.order-left-side form[name="YaKassa_GP"] td:first-child,
+.order-left-side form[name="YaKassa_QW"] td:first-child,
+.order-left-side form[name="YaKassa_CR"] td:first-child,
+.order-left-side form[name="co2"] td:first-child,
+.order-left-side form[name="yandex"] td:first-child,
+.order-left-side form[name="rbkmoney_new"] td:first-child,
+.order-left-side form[name="robokassa"] td:first-child,
+.order-left-side form[name="zpayment"] td:first-child,
+.order-left-side form[name="kvit"] td:first-child,
+.order-left-side form[name="payment"] td:first-child,
+.order-left-side form[name="WalletOneRUB"] td:first-child,
+.order-left-side form[name="tinkoff_sbp"] td:first-child,
+.order-left-side #tinkoff-pay td:first-child,
+.order-left-side #sber-pay td:first-child,
+.order-left-side #yandex-pay td:first-child,
+/* === НОВЫЕ card-методы: тот же бокс картинки (td:first-child 170px), что у #yandex-pay === */
+.order-left-side #sbp-pay td:first-child,
+.order-left-side #wb-pay td:first-child,
+.order-left-side #alpha-pay td:first-child {
+  width: 170px !important;
+}
+
+form td {
+  border: none !important;
+}
+
+/************************  СПЕЦКЛАСС PICKED  **************************/
+
+.order-left-side div.picked,
+.order-left-side form.picked,
+.order-left-side #sber-pay.picked,
+.order-left-side #kvit.picked,
+.order-left-side #tinkoff-pay.picked,
+.order-left-side #yandex-pay.picked,
+/* id-специфичность, иначе базовое серое #PAYPAL (1,1,0 !important) перебивает form.picked */
+.order-left-side #PAYPAL.picked,
+/* Новые card-методы */
+.order-left-side #sbp-pay.picked,
+.order-left-side #wb-pay.picked,
+.order-left-side #alpha-pay.picked,
+.order-left-side #sber-sbp.picked,
+/* Новые credit-блоки */
+.order-left-side #yandex-split-improved.picked,
+.order-left-side #fresh-credit.picked,
+.order-left-side #tinkoffcredit-2.picked,
+.order-left-side #poscredit.picked,
+.order-left-side #resource-razvitie.picked {
+  background-color: transparent !important;
+  border: 3px solid var(--main-color) !important;
+}
+
+/*******************************************************************************************************************/
+
+/******************************************/
+/***           АДАПТАЦИЯ                ***/
+/******************************************/
+@media (max-width: 1380px) {
+  .deal-positions li .type- {
+    padding-left: 0;
+  }
+
+  .deal-positions li .type- .btn {
+    font-size: 12px;
+  }
+
+  .order-left-side .alternative-payments-block-main a {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 1234px) {
+  .promo-zone #promoCode {
+    text-align: left;
+  }
+
+  .promo-zone #promoCode input {
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .promo-zone #promoCode button {
+    margin-top: 10px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .total-cost .deal-finish-price-title,
+  .countdown-amount,
+  .deal-positions .deal-position-price,
+  .mobile-total-cost .deal-finish-price-title {
+    font-size: 20px;
+  }
+
+  .total-cost .part a {
+    font-size: 0px !important;
+  }
+
+  .total-cost .part a:before {
+    content: 'Частичная оплата';
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .text-muted {
+    width: 100% !important;
+  }
+
+  .total-cost .part a {
+    font-weight: normal;
+    font-size: 12px;
+  }
+
+  .row.type- div:first-child {
+    font-size: 14px;
+    width: 100%;
+  }
+
+  .deal-positions li .type- div:nth-child(2) {
+    width: 100%;
+    padding: 0 !important;
+    max-width: 45px;
+  }
+
+  .deal-positions li .type- div:last-child {
+    width: 100%;
+    font-size: 14px;
+  }
+
+  .promo-zone a.dotted-link {
+    font-size: 18px;
+  }
+
+  .order-left-side #YANDEXMONEY tr td:last-child,
+  .deal-positions .deal-position-price .source-price {
+    font-size: 12px;
+  }
+
+  .gc-payment-method-card > div:only-child > table:only-child tr:only-child > td:first-of-type {
+    padding-right: 0 !important;
+  }
+
+  .order-left-side #YANDEXMONEY img {
+    padding-left: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-page-block .container {
+    padding-right: 20px;
+  }
+
+  .total-cost {
+    margin-top: 30px;
+  }
+
+  .promo-zone a.dotted-link {
+    font-size: 16px;
+  }
+
+  .confirm-mobile,
+  .mobile-total-cost {
+    display: block;
+  }
+
+  .order-left-side #YaKassa_AC:hover,
+  .order-left-side #YaKassa_SB:hover,
+  .order-left-side #YaKassa_AB:hover,
+  .order-left-side #YaKassa_PB:hover,
+  .order-left-side #YaKassa_GP:hover,
+  .order-left-side #YaKassa_QW:hover,
+  .order-left-side #YaKassa_CR:hover,
+  .order-left-side .gc-payment-method-card:hover,
+  .order-left-side #PAYPAL:hover,
+  .order-left-side #YANDEXMONEY:hover,
+  .order-left-side #robokassa:hover,
+  .order-left-side form[name='payment']:hover,
+  .order-left-side div[name='ShopForm_SB']:hover,
+  .order-left-side div[name='ShopForm_AB']:hover,
+  .order-left-side div[name='ShopForm_PB']:hover,
+  .order-left-side div[name='ShopForm_CR']:hover,
+  .order-left-side div[name='ShopForm_GP']:hover,
+  .order-left-side div[name='ShopForm_QW']:hover,
+  .order-left-side div[name='ShopForm_AC']:hover,
+  .order-left-side div[name='ShopForm_installments']:hover,
+  .order-left-side #co2:hover,
+  .order-left-side #rbkmoney_new:hover,
+  .order-left-side #zpayment:hover,
+  .order-left-side #kvit:hover,
+  .order-left-side #WalletOneRUB:hover,
+  .order-left-side form[name='tinkoff_sbp']:hover,
+  .order-left-side #sber-pay:hover,
+  .order-left-side #tinkoff-pay:hover,
+  .order-left-side #yandex-pay:hover,
+  .order-left-side #sbp-pay:hover,
+  .order-left-side #wb-pay:hover,
+  .order-left-side #alpha-pay:hover,
+  .order-left-side #sber-sbp:hover {
+    background-color: var(--card-bg);
+    border: 3px solid var(--card-bg);
+  }
+
+  .order-left-side
+    div[name='ShopForm_SB']
+    > div:only-child
+    > table:only-child
+    tr:only-child
+    > td:first-of-type,
+  .order-left-side
+    div[name='ShopForm_AB']
+    > div:only-child
+    > table:only-child
+    tr:only-child
+    > td:first-of-type,
+  .order-left-side
+    div[name='ShopForm_PB']
+    > div:only-child
+    > table:only-child
+    tr:only-child
+    > td:first-of-type,
+  .order-left-side
+    div[name='ShopForm_CR']
+    > div:only-child
+    > table:only-child
+    tr:only-child
+    > td:first-of-type,
+  .order-left-side
+    div[name='ShopForm_GP']
+    > div:only-child
+    > table:only-child
+    tr:only-child
+    > td:first-of-type,
+  .order-left-side
+    div[name='ShopForm_QW']
+    > div:only-child
+    > table:only-child
+    tr:only-child
+    > td:first-of-type,
+  .order-left-side
+    div[name='ShopForm_AC']
+    > div:only-child
+    > table:only-child
+    tr:only-child
+    > td:first-of-type,
+  .order-left-side
+    div[name='ShopForm_installments']
+    > div:only-child
+    > table:only-child
+    tr:only-child
+    > td:first-of-type,
+  .order-left-side form[name='YaKassa_AC'] td:first-child,
+  .order-left-side form[name='YaKassa_SB'] td:first-child,
+  .order-left-side form[name='YaKassa_AB'] td:first-child,
+  .order-left-side form[name='YaKassa_PB'] td:first-child,
+  .order-left-side form[name='YaKassa_GP'] td:first-child,
+  .order-left-side form[name='YaKassa_QW'] td:first-child,
+  .order-left-side form[name='YaKassa_CR'] td:first-child,
+  .order-left-side form[name='co2'] td:first-child,
+  .order-left-side form[name='yandex'] td:first-child,
+  .order-left-side form[name='rbkmoney_new'] td:first-child,
+  .order-left-side form[name='robokassa'] td:first-child,
+  .order-left-side form[name='zpayment'] td:first-child,
+  .order-left-side form[name='kvit'] td:first-child,
+  .order-left-side form[name='payment'] td:first-child,
+  .order-left-side form[name='WalletOneRUB'] td:first-child,
+  .order-left-side form[name='tinkoff_sbp'] td:first-child,
+  .order-left-side #tinkoff-pay td:first-child,
+  .order-left-side #sber-pay td:first-child,
+  .order-left-side #yandex-pay td:first-child,
+  .order-left-side #sbp-pay td:first-child,
+  .order-left-side #wb-pay td:first-child,
+  .order-left-side #alpha-pay td:first-child {
+    width: inherit !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .order-left-side #YANDEXMONEY tr td:last-child {
+    padding-left: 10px;
+  }
+
+  .deal-positions li .type- div:last-child {
+    width: 50%;
+    white-space: nowrap;
+  }
+
+  .deal-positions .position-actual-title {
+    display: block;
+    width: 50%;
+  }
+
+  .order-left-side .alternative-payments-block-main a {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .order-left-side .xdget-payform {
+    flex-wrap: wrap;
+  }
+
+  .deal-positions .position-actual-title {
+    font-size: 14px;
+  }
+
+  .deal-positions .text-muted,
+  .row.type- div:first-child {
+    font-size: 12px;
+  }
+
+  .order-left-side h3 {
+    font-size: 21px;
+  }
+
+  .promo-zone a.dotted-link {
+    font-size: 14px;
+  }
+
+  #YaKassa_bank_card img {
+    width: 120px;
+  }
+}
+
+/******************************* ДОП АДАПТАЦИЯ МЕТОДОВ ОПЛАТЫ *********************************/
+
+@media (max-width: 1370px) {
+  .order-left-side #YaKassa_AC,
+  .order-left-side #YaKassa_SB,
+  .order-left-side #YaKassa_AB,
+  .order-left-side #YaKassa_PB,
+  .order-left-side #YaKassa_GP,
+  .order-left-side #YaKassa_QW,
+  .order-left-side #YaKassa_CR,
+  .order-left-side .gc-payment-method-card,
+  .order-left-side #YANDEXMONEY,
+  .order-left-side #PAYPAL,
+  .order-left-side #robokassa,
+  .order-left-side form[name='payment'],
+  .order-left-side div[name='ShopForm_SB'],
+  .order-left-side div[name='ShopForm_AB'],
+  .order-left-side div[name='ShopForm_PB'],
+  .order-left-side div[name='ShopForm_CR'],
+  .order-left-side div[name='ShopForm_GP'],
+  .order-left-side div[name='ShopForm_QW'],
+  .order-left-side div[name='ShopForm_AC'],
+  .order-left-side div[name='ShopForm_installments'],
+  .order-left-side #co2,
+  .order-left-side #rbkmoney_new,
+  .order-left-side #zpayment,
+  .order-left-side #kvit,
+  .order-left-side #invoice,
+  .order-left-side #WalletOneRUB,
+  .order-left-side form[name='tinkoff_sbp'],
+  .order-left-side #sber-pay,
+  .order-left-side #tinkoff-pay,
+  .order-left-side #yandex-pay,
+  .order-left-side #sbp-pay,
+  .order-left-side #wb-pay,
+  .order-left-side #alpha-pay,
+  .order-left-side #sber-sbp {
+    width: calc(33% - 15px) !important;
+    height: 200px !important;
+  }
+}
+
+/* Новые credit-блоки 2-в-ряд при calc(50% - 15px). Переход в 1 колонку — ниже, на 768px
+   (когда контейнер уже не вмещает 2 карты без переполнения лейблов). */
+
+@media (max-width: 1120px) {
+  .order-left-side #YaKassa_AC,
+  .order-left-side #YaKassa_SB,
+  .order-left-side #YaKassa_AB,
+  .order-left-side #YaKassa_PB,
+  .order-left-side #YaKassa_GP,
+  .order-left-side #YaKassa_QW,
+  .order-left-side #YaKassa_CR,
+  .order-left-side .gc-payment-method-card,
+  .order-left-side #YANDEXMONEY,
+  .order-left-side #PAYPAL,
+  .order-left-side #robokassa,
+  .order-left-side form[name='payment'],
+  .order-left-side div[name='ShopForm_SB'],
+  .order-left-side div[name='ShopForm_AB'],
+  .order-left-side div[name='ShopForm_PB'],
+  .order-left-side div[name='ShopForm_CR'],
+  .order-left-side div[name='ShopForm_GP'],
+  .order-left-side div[name='ShopForm_QW'],
+  .order-left-side div[name='ShopForm_AC'],
+  .order-left-side div[name='ShopForm_installments'],
+  .order-left-side #co2,
+  .order-left-side #rbkmoney_new,
+  .order-left-side #zpayment,
+  .order-left-side #kvit,
+  .order-left-side #invoice,
+  .order-left-side #WalletOneRUB,
+  .order-left-side form[name='tinkoff_sbp'],
+  .order-left-side #sber-pay,
+  .order-left-side #tinkoff-pay,
+  .order-left-side #yandex-pay,
+  .order-left-side #sbp-pay,
+  .order-left-side #wb-pay,
+  .order-left-side #alpha-pay,
+  .order-left-side #sber-sbp {
+    height: 170px !important;
+  }
+}
+
+@media (max-width: 991px) {
+  .order-left-side form[name='tinkoff_sbp'] td:first-child,
+  .order-left-side #tinkoff-pay td:first-child,
+  .order-left-side #sber-pay td:first-child,
+  .order-left-side #yandex-pay td:first-child,
+  .order-left-side #sbp-pay td:first-child,
+  .order-left-side #wb-pay td:first-child,
+  .order-left-side #alpha-pay td:first-child {
+    width: inherit !important;
+  }
+  .order-left-side .pp-callout {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 545px) {
+  .order-left-side #YaKassa_AC,
+  .order-left-side #YaKassa_SB,
+  .order-left-side #YaKassa_AB,
+  .order-left-side #YaKassa_PB,
+  .order-left-side #YaKassa_GP,
+  .order-left-side #YaKassa_QW,
+  .order-left-side #YaKassa_CR,
+  .order-left-side .gc-payment-method-card,
+  .order-left-side #YANDEXMONEY,
+  .order-left-side #PAYPAL,
+  .order-left-side #robokassa,
+  .order-left-side form[name='payment'],
+  .order-left-side div[name='ShopForm_SB'],
+  .order-left-side div[name='ShopForm_AB'],
+  .order-left-side div[name='ShopForm_PB'],
+  .order-left-side div[name='ShopForm_CR'],
+  .order-left-side div[name='ShopForm_GP'],
+  .order-left-side div[name='ShopForm_QW'],
+  .order-left-side div[name='ShopForm_AC'],
+  .order-left-side div[name='ShopForm_installments'],
+  .order-left-side #co2,
+  .order-left-side #rbkmoney_new,
+  .order-left-side #zpayment,
+  .order-left-side #kvit,
+  .order-left-side #invoice,
+  .order-left-side #WalletOneRUB,
+  .order-left-side form[name='tinkoff_sbp'],
+  .order-left-side #sber-pay,
+  .order-left-side #tinkoff-pay,
+  .order-left-side #yandex-pay,
+  .order-left-side #sbp-pay,
+  .order-left-side #wb-pay,
+  .order-left-side #alpha-pay,
+  .order-left-side #sber-sbp {
+    width: calc(50% - 15px) !important;
+    height: 150px !important;
+  }
+
+  .order-left-side #kvit tr td:first-child {
+    width: 170px !important;
+  }
+}
+
+/* Карточки рассрочки/кредита — по одной на строку, когда контейнер уже не
+   вмещает 2 карты по ~322px (контейнер < ~669px ≈ viewport ≤ 768px).
+   Иначе при 2-в-ряд карта сужается до ~250px и nowrap-лейблы
+   («Беспроцентная рассрочка на N месяцев») вылезают за край — ломают вёрстку. */
+@media (max-width: 768px) {
+  .order-left-side .xdget-payform #tinkoffcredit,
+  .order-left-side .xdget-payform #sber-pokupay,
+  .order-left-side .xdget-payform #vsegdada,
+  .order-left-side .xdget-payform #tinkoff-dolyame,
+  .order-left-side .xdget-payform #alpha-bank-podeli,
+  .order-left-side .xdget-payform #yandex-split {
+    width: 100% !important;
+  }
+
+  .order-left-side .xdget-payform #yandex-split-improved,
+  .order-left-side .xdget-payform #fresh-credit,
+  .order-left-side .xdget-payform #tinkoffcredit-2,
+  .order-left-side .xdget-payform #poscredit,
+  .order-left-side .xdget-payform #resource-razvitie {
+    width: 100% !important;
+    padding: 15px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .order-left-side #YaKassa_AC tr td:first-child,
+  .order-left-side #YaKassa_SB tr td:first-child,
+  .order-left-side #YaKassa_AB tr td:first-child,
+  .order-left-side #YaKassa_PB tr td:first-child,
+  .order-left-side #YaKassa_GP tr td:first-child,
+  .order-left-side #YaKassa_QW tr td:first-child,
+  .order-left-side #YaKassa_CR tr td:first-child,
+  .order-left-side #YANDEXMONEY tr td:first-child,
+  .order-left-side #PAYPAL tr td:first-child,
+  .order-left-side #robokassa tr td:first-child,
+  .order-left-side #co2 tr td:first-child,
+  .order-left-side #rbkmoney_new tr td:first-child,
+  .order-left-side #zpayment tr td:first-child,
+  .order-left-side #kvit tr td:first-child,
+  .order-left-side #WalletOneRUB tr td:first-child,
+  .order-left-side form[name='payment'] tr td:first-child {
+    width: 84px !important;
+  }
+
+  .order-left-side .gc-payment-method-card,
+  .order-left-side #YANDEXMONEY,
+  .order-left-side #PAYPAL,
+  .order-left-side #robokassa,
+  .order-left-side form[name='payment'],
+  .order-left-side div[name='ShopForm_SB'],
+  .order-left-side div[name='ShopForm_AB'],
+  .order-left-side div[name='ShopForm_PB'],
+  .order-left-side div[name='ShopForm_CR'],
+  .order-left-side div[name='ShopForm_GP'],
+  .order-left-side div[name='ShopForm_QW'],
+  .order-left-side div[name='ShopForm_AC'],
+  .order-left-side div[name='ShopForm_installments'],
+  .order-left-side #co2,
+  .order-left-side #YaKassa_AC,
+  .order-left-side #YaKassa_SB,
+  .order-left-side #YaKassa_AB,
+  .order-left-side #YaKassa_PB,
+  .order-left-side #YaKassa_GP,
+  .order-left-side #YaKassa_QW,
+  .order-left-side #YaKassa_CR,
+  .order-left-side #rbkmoney_new,
+  .order-left-side #zpayment,
+  .order-left-side #kvit,
+  .order-left-side #invoice,
+  .order-left-side #WalletOneRUB,
+  .order-left-side form[name='tinkoff_sbp'],
+  .order-left-side #sber-pay,
+  .order-left-side #tinkoff-pay,
+  .order-left-side #yandex-pay,
+  .order-left-side #sbp-pay,
+  .order-left-side #wb-pay,
+  .order-left-side #alpha-pay,
+  .order-left-side #sber-sbp {
+    margin: 15px 0 !important;
+    height: 100px !important;
+  }
+
+  .invoice-data tr:nth-child(2) td:last-child label {
+    font-size: 69% !important;
+  }
+
+  .order-left-side .xdget-payform #invoice:before {
+    font-size: 24px;
+  }
+}
+
+/* Коррекция методов, т.к. ГК опять всё молча поменяли */
+
+/* ВНИМАНИЕ: обёртки методов (.alternative-payments-block, #alternative-methods-container,
+   .credit-payments-block, #pay-methods) НЕ скрываем через CSS. Их скрывает скрипт 01
+   (extract-alt-payment-methods) и только ПОСЛЕ того, как вынес все методы наружу.
+   Слепое `display:none` на этих контейнерах прятало бы метод, который скрипт не успел/не смог
+   извлечь (сбой JS, новый тег метода от GC). Безопасный режим: лучше показать обёртку, чем
+   потерять метод оплаты. */
+
+.xdget-payform .gcp-oferta-buyer {
+  display: none !important;
+}
+
+.text-made-card {
+  display: none !important;
+}
+
+#tinkoff-dolyame,
+#yandex-split,
+#yandex-split-improved {
+  margin-top: auto !important;
+  max-width: inherit !important;
+}
+
+#tinkoff-dolyame tr:nth-child(2) td {
+  display: none;
+}
+
+.xdget-payform #alternative-methods-container {
+  border-radius: 15px;
+  border: 3px solid var(--card-bg);
+  background: var(--card-bg);
+}
+
+.xdget-payform #alternative-methods-container .table {
+  margin-bottom: 0;
+}
+
+.xdget-payform #alternative-methods-container [name='tinkoff_sbp'] {
+  padding: 15px;
+}
+
+.xdget-payform #alternative-methods-container [name='tinkoff_sbp'] tr {
+  display: flex;
+  align-items: center;
+}
+
+.xdget-payform #alternative-methods-container [name='tinkoff_sbp'] tr img {
+  margin-top: 0 !important;
+}
+
+.order-left-side .xdget-payform #alpha-bank-podeli tr td .btn,
+.order-left-side .xdget-payform #alpha-bank-podeli tr td .btn-info {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 280px;
+  min-height: 44px;
+  margin: 0 auto;
+  overflow: hidden;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  text-align: center;
+  white-space: nowrap;
+}
+
+#alpha-bank-podeli table {
+  margin-bottom: 0 !important;
+}
+
+.order-left-side #yandex-split > div {
+  margin-bottom: inherit !important;
+}
+
+.order-left-side .xdget-payform #alpha-bank-podeli tr td .btn:before,
+.order-left-side .xdget-payform #alpha-bank-podeli tr td .btn-info:before {
+  content: 'Разделить оплату';
+  font-size: 14px;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.order-left-side #stripe_card {
+  order: 2;
+}
+
+.order-left-side .label-credit,
+.order-left-side .label-payparts {
+  order: 2;
+  flex-basis: 100%;
+  margin-top: 60px;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+/* Кредитные блоки после извлечения из .xdget-payform теряют селектор — фиксируем order напрямую */
+.order-left-side #fresh-credit,
+.order-left-side #tinkoffcredit-2,
+.order-left-side #poscredit,
+.order-left-side #resource-razvitie,
+.order-left-side #yandex-split-improved {
+  order: 2 !important;
+}
+
+.order-left-side [name='tinkoff_sbp'] label {
+  display: none;
+}
+
+#tinkoff-pay .table {
+  margin-bottom: 0;
+}
+
+#sber-pay .pay-btn-sber-pay,
+#sber-pay .pay-btn-sber-pay img,
+#yandex-pay img {
+  margin-top: 0 !important;
+}
+
+/* ============================================================
+   ЕДИНЫЙ ВИД КАРТОЧЕК РАССРОЧКИ / ОПЛАТЫ ПО ЧАСТЯМ (2026-06-04)
+   Все кредит/сплит-методы приводятся к одному шаблону и согласуются
+   с card-методами: серая плашка var(--card-bg), рамка-коралл на hover/выборе,
+   содержимое колонкой по центру — логотип сверху → варианты → кнопка.
+   Карточка / hover / логотип — по id-спискам (перебивают точечные
+   правила выше); внутренние обёртки и лейблы — по классу.
+   ============================================================ */
+
+/* — Карточка: серый фон, вертикальная колонка по центру — */
+.order-left-side .xdget-payform #fresh-credit,
+.order-left-side .xdget-payform #tinkoffcredit,
+.order-left-side .xdget-payform #tinkoffcredit-2,
+.order-left-side .xdget-payform #vsegdada,
+.order-left-side .xdget-payform #poscredit,
+.order-left-side .xdget-payform #resource-razvitie,
+.order-left-side .xdget-payform #sber-pokupay,
+.order-left-side .xdget-payform #yandex-split-improved,
+.order-left-side .xdget-payform #yandex-split,
+.order-left-side .xdget-payform #alpha-bank-podeli,
+.order-left-side .xdget-payform #tinkoff-dolyame {
+  background-color: var(--card-bg) !important;
+  border: 3px solid var(--card-bg) !important;
+  border-radius: 15px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+  padding: 26px 20px !important;
+  min-height: 240px !important;
+  height: auto !important;
+}
+
+/* — hover / выбранная — коралловая рамка, как у card-методов — */
+.order-left-side .xdget-payform #fresh-credit:hover,
+.order-left-side .xdget-payform #tinkoffcredit:hover,
+.order-left-side .xdget-payform #tinkoffcredit-2:hover,
+.order-left-side .xdget-payform #vsegdada:hover,
+.order-left-side .xdget-payform #poscredit:hover,
+.order-left-side .xdget-payform #resource-razvitie:hover,
+.order-left-side .xdget-payform #sber-pokupay:hover,
+.order-left-side .xdget-payform #yandex-split-improved:hover,
+.order-left-side .xdget-payform #yandex-split:hover,
+.order-left-side .xdget-payform #alpha-bank-podeli:hover,
+.order-left-side .xdget-payform #tinkoff-dolyame:hover,
+.order-left-side .xdget-payform #fresh-credit.picked,
+.order-left-side .xdget-payform #tinkoffcredit.picked,
+.order-left-side .xdget-payform #tinkoffcredit-2.picked,
+.order-left-side .xdget-payform #vsegdada.picked,
+.order-left-side .xdget-payform #poscredit.picked,
+.order-left-side .xdget-payform #resource-razvitie.picked,
+.order-left-side .xdget-payform #sber-pokupay.picked,
+.order-left-side .xdget-payform #yandex-split-improved.picked,
+.order-left-side .xdget-payform #yandex-split.picked,
+.order-left-side .xdget-payform #alpha-bank-podeli.picked,
+.order-left-side .xdget-payform #tinkoff-dolyame.picked {
+  background-color: transparent !important;
+  border: 3px solid var(--main-color) !important;
+}
+
+/* — Рассрочки / оплата по частям + безналичные (Оплата от юр. лица / Квитанция):
+     НЕ выделять карточку рамкой и фоном ни при выборе (`.picked`), ни при наведении (`:hover`).
+     У этих методов выбор/запуск делается собственными кнопками внутри карточки
+     (Оформить рассрочку, Сформировать, Распечатать), поэтому карточный визуальный выбор/подсветка
+     избыточны и сбивают с толку. Карточка всегда в нейтральном виде.
+     id-специфичность (1,3,0) перебивает и общий `div.picked` (спецкласс PICKED выше),
+     и credit/invoice hover/picked-правила выше. — */
+.order-left-side .xdget-payform #fresh-credit:hover,
+.order-left-side .xdget-payform #tinkoffcredit:hover,
+.order-left-side .xdget-payform #tinkoffcredit-2:hover,
+.order-left-side .xdget-payform #vsegdada:hover,
+.order-left-side .xdget-payform #poscredit:hover,
+.order-left-side .xdget-payform #resource-razvitie:hover,
+.order-left-side .xdget-payform #sber-pokupay:hover,
+.order-left-side .xdget-payform #yandex-split-improved:hover,
+.order-left-side .xdget-payform #yandex-split:hover,
+.order-left-side .xdget-payform #alpha-bank-podeli:hover,
+.order-left-side .xdget-payform #tinkoff-dolyame:hover,
+.order-left-side .xdget-payform #fresh-credit.picked,
+.order-left-side .xdget-payform #tinkoffcredit.picked,
+.order-left-side .xdget-payform #tinkoffcredit-2.picked,
+.order-left-side .xdget-payform #vsegdada.picked,
+.order-left-side .xdget-payform #poscredit.picked,
+.order-left-side .xdget-payform #resource-razvitie.picked,
+.order-left-side .xdget-payform #sber-pokupay.picked,
+.order-left-side .xdget-payform #yandex-split-improved.picked,
+.order-left-side .xdget-payform #yandex-split.picked,
+.order-left-side .xdget-payform #alpha-bank-podeli.picked,
+.order-left-side .xdget-payform #tinkoff-dolyame.picked,
+.order-left-side .xdget-payform #invoice:hover,
+.order-left-side .xdget-payform #kvit:hover,
+.order-left-side .xdget-payform #invoice.picked,
+.order-left-side .xdget-payform #kvit.picked {
+  background-color: var(--card-bg) !important;
+  border: 3px solid var(--card-bg) !important;
+}
+
+/* — Внутренние обёртки/таблицы → на всю ширину, контент по центру — */
+.order-left-side .xdget-payform .gc-payment-method-credit > div,
+.order-left-side .xdget-payform .gc-payment-method-credit table,
+.order-left-side .xdget-payform .gc-payment-method-credit tbody,
+.order-left-side .xdget-payform .gc-payment-method-credit tr,
+.order-left-side .xdget-payform .gc-payment-method-credit td {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+  border: none !important;
+  background: transparent !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+/* — Логотип: единый размер, по центру, фикс. отступ снизу — */
+.order-left-side #fresh-credit img,
+.order-left-side #tinkoffcredit img,
+.order-left-side #tinkoffcredit-2 img,
+.order-left-side #vsegdada img,
+.order-left-side #poscredit img,
+.order-left-side #resource-razvitie img,
+.order-left-side #sber-pokupay img,
+.order-left-side #yandex-split-improved img,
+.order-left-side #yandex-split img,
+.order-left-side #alpha-bank-podeli img,
+.order-left-side #tinkoff-dolyame img {
+  display: block !important;
+  margin: 0 auto 18px !important;
+  max-height: 40px !important;
+  width: auto !important;
+  max-width: 150px !important;
+  height: auto !important;
+  object-fit: contain !important;
+}
+
+/* — Варианты: единый кегль и вертикальный ритм у всех карт —
+   display:block + margin задают одинаковый шаг между опциями независимо от того,
+   block или inline-block были у лейблов по умолчанию (часть id-списков их не покрывала). */
+.order-left-side .xdget-payform .gc-payment-method-credit label {
+  display: block !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  margin: 0 !important;
+}
+
+/* — Разделители <br> между вариантами убираем: при block-лейблах они давали
+   «пустые строки» (двойной перенос), при inline-block — слипание.
+   Шаг между опциями держит margin лейбла выше. — */
+.order-left-side .xdget-payform .gc-payment-method-credit br {
+  display: none !important;
+}
+
+/* ============================================================
+   СЕКЦИИ КАРТОЧНОЙ ЗОНЫ (2026-06-04)
+   Четыре раздела сверху вниз, размещение держит CSS `order`
+   (а не DOM-порядок). Заголовки секций вставляет скрипт 11
+   (.label-recommended / .label-pay-methods / .label-rf-cards /
+   .label-foreign-cards), он же скрывает штатный внешний заголовок
+   «Оплата банковскими картами».
+
+     order -12/-11 : Рекомендуемые способы оплаты — #sbp-pay
+     order -10/-9  : Pay-методы — yandex/sber/alpha-pay, sber-sbp …
+     order  -8/-7  : Оплата картами из РФ — .gc-payment-method-card.made-RF
+     order  -6/-5  : Оплата зарубежными картами — .made-world + #PAYPAL
+     order   2     : Рассрочки / Оплата по частям (без изменений)
+     order   3     : Безналичная оплата #invoice/#kvit (без изменений)
+
+   Метод без явного order (новый тег от GC) остаётся на order:0 —
+   видим между зарубежными картами и «Рассрочки», не теряется.
+   ============================================================ */
+
+/* — Общий вид заголовка секции (как у .label-credit/.label-payparts) — */
+.order-left-side .pay-section-label {
+  flex-basis: 100% !important;
+  width: 100% !important;
+  margin: 60px 0 0 !important;
+  font-size: 28px !important;
+  font-weight: bold !important;
+  line-height: 1.2 !important;
+}
+/* «Рекомендуемые» получают такой же межсекционный отступ сверху, как и прочие секции
+   (раньше был margin-top:10px, когда блок шёл самым первым — теперь выше идёт блок
+   «Данные плательщика»/оферта, и 10px делали секцию «слепленной» с ним). */
+
+/* — Расстановка секций и методов по order — */
+.pp-page-logo {
+  flex-basis: 100% !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  margin: 0 0 14px !important;
+  pointer-events: none !important;
+}
+
+.order-left-side .xdget-payform .pp-page-logo {
+  order: -16 !important;
+}
+
+.order-left-side .pp-page-logo img {
+  display: block !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+  height: auto !important;
+  object-fit: contain !important;
+}
+
+.order-left-side .label-recommended {
+  order: -12 !important;
+}
+
+/* Коллаут-блок (staff HTML): выше .label-recommended (order:-12), full-width.
+   Визуально повторяет карточки сводки: «Состав заказа» и «Данные плательщика». */
+.order-left-side .pp-callout-heading {
+  order: -14 !important;
+  flex-basis: 100% !important;
+  width: 100% !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 10px;
+  box-sizing: border-box;
+}
+.order-left-side .pp-callout-heading:before {
+  content: '\f05a';
+  font-family: FontAwesome;
+  font-size: 14px;
+  color: var(--main-color);
+}
+.order-left-side .pp-callout {
+  order: -13 !important;
+  flex-basis: 100% !important;
+  width: 100% !important;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 0 0 18px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #666;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+}
+.order-left-side .pp-callout a {
+  color: var(--main-color);
+  font-weight: 600;
+  text-decoration: none;
+}
+.order-left-side .pp-callout a:hover,
+.order-left-side .pp-callout a:focus {
+  text-decoration: underline;
+}
+
+/* Админский коллаут «Карточка заказа в CRM» (.pp-callout-crm): тот же стиль, что и
+   пользовательский коллаут (наследует .pp-callout), но order:-15 — выше заголовка
+   пользовательского коллаута (-14). Вставляется скриптом 11 только у админов. */
+.order-left-side .pp-callout-crm {
+  order: -15 !important;
+}
+
+/* Страховка: даже если GC всё же пометит коллаут классом .picked (выбранный метод оплаты) —
+   внешний вид не меняем. Основную защиту даёт click-guard в pp-script-11 (.picked не
+   проставляется), это резерв на случай иного пути активации. */
+.order-left-side .pp-callout-heading.picked {
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.order-left-side .pp-callout.picked {
+  border: 1px solid var(--panel-border) !important;
+  background: var(--panel-bg) !important;
+}
+
+/* Мобильный коллаут: такая же карточка, как следующие блоки сводки.
+   JS переносит пользовательский .pp-callout выше .main-info
+   на экранах ≤991px; CRM-коллаут остаётся служебным блоком внутри списка методов. */
+@media (max-width: 991px) {
+  .order-left-side .pp-callout-heading {
+    order: initial !important;
+    flex-basis: auto !important;
+    width: 100% !important;
+    margin: 0 0 10px !important;
+  }
+
+  .order-left-side .pp-callout:not(.pp-callout-crm) {
+    display: block;
+    width: 100% !important;
+    flex-basis: auto !important;
+    order: initial !important;
+    margin: 0 0 18px !important;
+    padding: 14px 16px !important;
+    background: var(--panel-bg) !important;
+    border: 1px solid var(--panel-border) !important;
+    border-radius: 12px !important;
+    color: #666;
+    line-height: 1.6;
+  }
+
+  .order-left-side .pp-callout:not(.pp-callout-crm).picked {
+    background: var(--panel-bg) !important;
+    border: 1px solid var(--panel-border) !important;
+  }
+}
+
+/* ============================================================
+   ПОДПИСЬ МЕТОДА (.pp-method-caption) — 2026-06-07
+   Описательная строка под методом, задаётся в панели вместо
+   скрытых системных текстов GetCourse. Блок вставляет скрипт 11
+   последним потомком карточки метода и вешает на карточку класс
+   .pp-has-caption (флаг наличия подписи).
+
+   Все карточки методов — flex с центровкой (align/justify center).
+   .pp-has-caption переводит карточку в колоночную раскладку:
+   лого сверху, подпись снизу. Карточные методы фикс-высотой 200px
+   (overflow:hidden) — ограничиваем высоту лого, чтобы подпись
+   уместилась; кредитные/рассрочечные блоки растут (height:auto,
+   overflow:visible) — лого не ужимаем.
+   ============================================================ */
+.order-left-side .xdget-payform .pp-has-caption {
+  flex-direction: column !important;
+  gap: 6px;
+}
+/* Карточные методы фикс-высоты: ограничиваем лого и снимаем верхний отступ,
+   чтобы подпись (до 2 строк) уместилась в 200px без обрезки. */
+.order-left-side .xdget-payform .pp-has-caption img {
+  max-height: 88px;
+  margin-top: 0 !important;
+  object-fit: contain;
+}
+/* Кредитные/рассрочечные блоки растут по высоте — лого оставляем как есть */
+.order-left-side .xdget-payform .gc-payment-method-credit.pp-has-caption img {
+  max-height: none;
+}
+/* Кредитные блоки: pp-script-11 ставит им инлайн justify-content:space-between
+   (контент к верху, подпись к низу — выравнивание краёв у соседних карточек).
+   Отступ сверху, чтобы при высоком контенте подпись не липла к кнопке. */
+.order-left-side .xdget-payform .gc-payment-method-credit.pp-has-caption .pp-method-caption {
+  padding-top: 12px;
+}
+/* Сжимаем нижний отступ контент-блока GC (инлайн margin-bottom:40px), чтобы подпись
+   шла ближе к кнопке. CSS !important перебивает инлайн-стиль (единственный случай, когда
+   author-!important сильнее inline). Вместе со снятой min-height (JS) даёт компактную
+   карточку с небольшим зазором кнопка→подпись. Контент-блок — единственный прямой
+   потомок-не-подпись (проверено по всем кредитным методам). */
+.order-left-side
+  .xdget-payform
+  .gc-payment-method-credit.pp-has-caption
+  > *:not(.pp-method-caption) {
+  margin-bottom: 6px !important;
+}
+.order-left-side .xdget-payform .pp-method-caption {
+  flex: 0 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 10px;
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 400;
+  color: #707070;
+  text-align: center;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  /* Не более двух строк — длинная подпись усекается аккуратным многоточием */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.order-left-side #sbp-pay {
+  order: -11 !important;
+}
+
+.order-left-side .label-pay-methods {
+  order: -10 !important;
+}
+
+/* Спойлер второстепенных способов оплаты: появляется только когда есть рекомендованные методы.
+   Нативный details оставляет блок доступным с клавиатуры, а визуально ведёт себя как спокойный
+   разделитель между основным выбором и длинным списком остальных вариантов. */
+.order-left-side .xdget-payform .pp-other-methods-spoiler {
+  flex-basis: 100% !important;
+  width: 100% !important;
+  margin: 26px 0 0 !important;
+  border-top: 1px solid #ececec;
+  box-sizing: border-box;
+}
+
+.order-left-side .xdget-payform .pp-other-methods-spoiler > summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 0 10px;
+  color: #606060;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  box-sizing: border-box;
+  transition: color 0.15s;
+}
+
+.order-left-side .xdget-payform .pp-other-methods-spoiler > summary::-webkit-details-marker {
+  display: none;
+}
+
+.order-left-side .xdget-payform .pp-other-methods-spoiler > summary:after {
+  content: '\f107';
+  font-family: FontAwesome;
+  font-size: 12px;
+  line-height: 1;
+  color: #a5a5a5;
+  transition:
+    color 0.15s,
+    transform 0.15s;
+}
+
+.order-left-side .xdget-payform .pp-other-methods-spoiler > summary:hover,
+.order-left-side .xdget-payform .pp-other-methods-spoiler > summary:focus {
+  color: #333;
+  outline: none;
+}
+
+.order-left-side .xdget-payform .pp-other-methods-spoiler > summary:hover:after,
+.order-left-side .xdget-payform .pp-other-methods-spoiler > summary:focus:after {
+  color: var(--main-color);
+}
+
+.order-left-side .xdget-payform .pp-other-methods-spoiler[open] > summary:after {
+  transform: rotate(180deg);
+}
+
+.order-left-side .xdget-payform .pp-other-methods-body {
+  display: flex;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  column-gap: 25px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.order-left-side .xdget-payform .pp-other-methods-body .pay-section-label {
+  margin-top: 34px !important;
+  font-size: 24px !important;
+}
+
+.order-left-side #yandex-pay,
+.order-left-side #sber-pay,
+.order-left-side #alpha-pay,
+.order-left-side #sber-sbp,
+.order-left-side #wb-pay,
+.order-left-side #tinkoff-pay,
+.order-left-side form[name='tinkoff_sbp'] {
+  order: -9 !important;
+}
+
+.order-left-side .label-rf-cards {
+  order: -8 !important;
+}
+.order-left-side .xdget-payform .gc-payment-method-card.made-RF {
+  order: -7 !important;
+}
+
+.order-left-side .label-foreign-cards {
+  order: -6 !important;
+}
+.order-left-side .xdget-payform .gc-payment-method-card.made-world,
+.order-left-side #PAYPAL {
+  order: -5 !important;
+}
+
+/* — Кнопка: единый CTA на всю ширину, по центру — */
+.order-left-side .xdget-payform .gc-payment-method-credit .btn {
+  display: block !important;
+  width: 100% !important;
+  max-width: 280px !important;
+  margin: 18px auto 0 !important;
+  padding: 11px 20px !important;
+  border-radius: 8px !important;
+  font-weight: bold !important;
+  font-size: 14px !important;
+  box-sizing: border-box !important;
+}
+
+/* — Цвет кнопок рассрочек/кредитов: ВТОРИЧНОЕ действие в карточке (по умолчанию GC давал
+     жёлтый #ffeb72, пробовали сплошной коралл — спорил с главным CTA, затем залитый графит —
+     по запросу залитый тёмный признан слишком агрессивным). Текущее UX-решение: КОНТУР с
+     сохранением цвета — в покое прозрачный фон + графитовая рамка/текст var(--btn-secondary)
+     (спокойнее заливки, не «тёмное пятно»); на hover/focus — заливка брендовым кораллом
+     var(--main-color) (явная обратная связь, коралл по-прежнему «активное» состояние, а в покое
+     закреплён за главным CTA). Покрываем .btn / .btn-info / .gc-payment-method-button. Только
+     цвет/фон/рамку — раскладку (размер/шрифт) НЕ трогаем, чтобы не сломать font-size:0 + :before
+     у #alpha-bank-podeli .btn-info. — */
+.order-left-side .xdget-payform .gc-payment-method-credit .btn,
+.order-left-side .xdget-payform .gc-payment-method-credit .btn-info,
+.order-left-side .xdget-payform .gc-payment-method-credit .gc-payment-method-button {
+  background-color: transparent !important;
+  color: var(--btn-secondary) !important;
+  border: 1px solid var(--btn-secondary) !important;
+  transition:
+    background-color 0.15s,
+    color 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s !important;
+}
+.order-left-side .xdget-payform .gc-payment-method-credit .btn:hover,
+.order-left-side .xdget-payform .gc-payment-method-credit .btn-info:hover,
+.order-left-side .xdget-payform .gc-payment-method-credit .gc-payment-method-button:hover,
+.order-left-side .xdget-payform .gc-payment-method-credit .btn:focus,
+.order-left-side .xdget-payform .gc-payment-method-credit .btn-info:focus,
+.order-left-side .xdget-payform .gc-payment-method-credit .gc-payment-method-button:focus {
+  background-color: var(--main-color) !important;
+  color: #fff !important;
+  border-color: var(--main-color) !important;
+  box-shadow: 0 4px 12px rgba(248, 92, 80, 0.28) !important;
+  outline: none !important;
+}
+
+/* — Описание Сплита скрываем у обоих методов (единообразие) — */
+.order-left-side #yandex-split .split-desc,
+.order-left-side #yandex-split-improved .split-desc {
+  display: none !important;
+}
+
+/* ============================================================
+   ИТОГ «Сумма для оплаты» в узкой колонке (2026-06-04)
+   На ≤1200px колонка ~274px — метка и число не помещаются в строку,
+   поэтому встают стопкой (flex-wrap выше). Перебиваем размер 20px из
+   media-блока ≈стр.1117: метка спокойнее (16px/#555), число (b) держит
+   акцент 26px и одну строку. Идёт ПОСЛЕ того media-блока → выигрывает.
+   ============================================================ */
+@media (max-width: 1200px) {
+  .total-cost .deal-finish-price-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #555;
+    row-gap: 2px;
+  }
+}
+
+/* ============================================================
+   ВОССТАНОВЛЕНИЕ ШТАТНОЙ ЛОГИКИ СВОДКИ/CTA (2026-06-04)
+   Источник истины — исходный конструктор страницы: в левой колонке есть
+   штатные мобильные блоки `.mobile-total-cost` (dealInfo с суммами) и кнопка
+   `.confirm-mobile`, а справа — sticky `.total-cost`. Оригинальная адаптивная
+   логика GetCourse:
+     • десктоп (≥992, 2 колонки): работает правый sticky `.total-cost`
+       (суммы + «ОПЛАТИТЬ ЗАКАЗ»); левые мобильные блоки скрыты (дефолт-скрытие
+       ≈стр.229 `.confirm-mobile` и ≈стр.345 `.mobile-total-cost`);
+       `.main-info` под «Состав заказа» показывает только состав (≈стр.212/328).
+     • стопка (≤991): правый `.total-cost` скрываем; сводку и кнопку даёт левая
+       колонка сразу под «Состав заказа» — `.mobile-total-cost` (суммы) +
+       `.confirm-mobile` (CTA). Один блок, без дублей и без «уезда» в конец.
+   До этого CSS намертво прятал мобильные блоки и никогда не прятал `.total-cost`
+   → сводка и дублировалась, и уезжала вниз. Здесь штатная логика возвращена.
+   !important перебивает дефолт-скрытия и контрадикторный media ≤768 выше.
+   ============================================================ */
+@media (max-width: 991px) {
+  /* Правый desktop-итог в стопке не нужен — его роль берёт левая мобильная сводка */
+  .total-cost {
+    display: none !important;
+  }
+
+  /* «Данные плательщика» — карточка между составом (.main-info) и суммой (.mobile-total-cost).
+       Плашка .payer-info — сама визуальный блок; разделитель не нужен, только отступ. */
+  .order-left-side .payer-card-mobile {
+    display: block;
+    margin: 0 0 18px;
+  }
+
+  /* Мобильная сводка под «Состав заказа»: показываем блок и его суммы
+       (перебиваем общие скрытия левых order-info ≈стр.212/328/345/349) */
+  .order-left-side .mobile-total-cost {
+    display: block !important;
+    margin-top: 4px;
+  }
+  .order-left-side .mobile-total-cost > p {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 4px 12px;
+    font-size: 15px;
+    color: #777;
+    margin: 6px 0 0;
+  }
+  .order-left-side .mobile-total-cost > p.deal-finish-price-title {
+    display: flex !important;
+    flex-wrap: wrap;
+    font-size: 17px;
+    font-weight: 600;
+    color: #333;
+    margin-top: 12px;
+  }
+  .order-left-side .mobile-total-cost > p.deal-finish-price-title b {
+    flex: none;
+    font-size: 26px; /* как на десктопе (.total-cost .deal-finish-price-title b) */
+    font-weight: 800;
+    line-height: 1.1;
+    color: #1a1a1a;
+    white-space: nowrap;
+  }
+  /* Состав в мобильной сводке не дублируем — он уже в `.main-info` («Состав заказа») */
+  .order-left-side .mobile-total-cost .deal-positions {
+    display: none !important;
+  }
+  /* Лишний <br> (между скрытой промо-формой и итогом) убираем — он давал ~19px
+       пустоты и раздувал отступ «состав → сумма». На десктопе скрыт у .right-info. */
+  .order-left-side .main-info > br,
+  .order-left-side .mobile-total-cost > br {
+    display: none !important;
+  }
+  /* Сумма примыкает к разделителю состава без лишнего воздуха */
+  .order-left-side .mobile-total-cost {
+    margin-top: 0 !important;
+  }
+  .order-left-side .mobile-total-cost > p.deal-finish-price-title {
+    margin-top: 0 !important;
+  }
+
+  /* Состав заказа — мягкая плашка, как «Данные плательщика» (как на десктопе) */
+  .order-left-side .main-info .deal-positions {
+    margin: 0 0 18px !important;
+    padding: 14px 16px !important;
+    background: var(--panel-bg) !important;
+    border: 1px solid var(--panel-border) !important;
+    border-radius: 12px !important;
+    list-style: none !important;
+  }
+  .order-left-side .main-info .position-actual-title {
+    font-size: 16px;
+    line-height: 1.35;
+  }
+
+  /* Штатная мобильная кнопка оплаты — как десктопный CTA (коралл задан правилом ≈стр.41) */
+  .confirm-mobile {
+    display: block !important;
+    width: 100%;
+    height: 52px !important;
+    font-size: 15px !important;
+    border-radius: 8px !important;
+    margin-top: 16px;
+  }
+
+  /* На мобайле межсекционные отступы компактнее (на ПК остаётся 60px). Метки секций
+       имели margin-top:60px → вместе с нижним margin карточек давали слишком большой
+       отступ (заметно вокруг «Безналичной оплаты»). */
+  .order-left-side .pay-section-label,
+  .order-left-side .label-credit,
+  .order-left-side .label-payparts,
+  .order-left-side .label-invoice {
+    margin-top: 34px !important;
+  }
+}
+
+/* ============================================================
+   ПК (≥992px): вся сводка в правом блоке .total-cost (2026-06-04)
+   На десктопе описание заказа (верхний левый блок «Состав заказа») и оплата
+   (правый sticky .total-cost) были разнесены. Объединяем ВСЁ справа: показываем
+   состав заказа в .total-cost (он уже есть в right-info, но скрыт), а верхний
+   левый блок прячем. Порядок в правом блоке: состав + сумма → кнопка → частичная.
+   Мобайл (≤991) НЕ затронут — там сводка сверху, .total-cost скрыт (см. выше).
+   ============================================================ */
+@media (min-width: 992px) {
+  /* Состав заказа показываем в правом блоке (перебиваем общее скрытие ≈стр.30) */
+  .total-cost .deal-positions {
+    display: block !important;
+  }
+  /* Верхний левый блок описания заказа прячем (дублируется справа) */
+  .order-left-side .left-side-content > h3 {
+    /* заголовок «Состав заказа:» */
+    display: none !important;
+  }
+  .order-left-side .main-info {
+    display: none !important;
+  }
+
+  /* — Единая карточка-сводка: ровный вертикальный ритм между секциями —
+         состав+сумма (right-info) → кнопка → частичная. gap убирает «прилипание»
+         суммы к кнопке. — */
+  .total-cost {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    padding: 26px;
+  }
+  .total-cost .right-info {
+    order: 1;
+  }
+  .total-cost .confirm-pay {
+    order: 2;
+    margin: 0 !important;
+  }
+  .total-cost .balance-pay {
+    order: 2;
+    margin: 0 !important;
+  }
+  .total-cost .part {
+    order: 3;
+    margin: 0 !important;
+  }
+
+  /* — Состав заказа — мягкая плашка, как «Данные плательщика» — */
+  .total-cost .right-info .deal-positions {
+    margin: 0 0 18px !important;
+    padding: 14px 16px !important;
+    background: var(--panel-bg) !important;
+    border: 1px solid var(--panel-border) !important;
+    border-radius: 12px !important;
+    list-style: none !important;
+  }
+  .total-cost .right-info .deal-positions li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    grid-template-areas:
+      'title price'
+      'meta price';
+    column-gap: 12px;
+    row-gap: 2px;
+    align-items: start;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-bottom: 0 !important;
+  }
+  .total-cost .right-info .deal-positions li:not(:last-child) {
+    margin-bottom: 12px !important;
+    padding-bottom: 12px !important;
+    border-bottom: 1px solid var(--panel-border) !important;
+  }
+  .total-cost .right-info .deal-positions .position-actual-title {
+    grid-area: title;
+    min-width: 0;
+    font-size: 16px;
+    line-height: 1.35;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+  }
+  .total-cost .right-info .deal-positions .deal-position-price {
+    grid-area: price;
+    align-items: flex-end;
+    min-width: 92px;
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.18;
+    color: #333;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .total-cost .right-info .deal-positions .deal-position-price .source-price {
+    font-size: 14px;
+    line-height: 1.2;
+  }
+  .total-cost .right-info .deal-positions .text-muted {
+    grid-area: meta;
+    min-width: 0;
+    color: #777 !important;
+    font-size: 12px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  /* лишний перенос/дубль промо-линка между составом и итогом убираем
+       (отдельная промо-зона есть ниже под карточкой) */
+  .total-cost .right-info > br,
+  .total-cost .right-info a.dotted-link {
+    display: none !important;
+  }
+
+  /* — Итог: отступы держит gap карточки, своих margin не добавляем — */
+  .total-cost .deal-finish-price-title {
+    margin: 0 !important;
+  }
+
+  /* — Основной CTA — */
+  .total-cost .confirm-pay {
+    height: 52px !important;
+    font-size: 15px !important;
+    border-radius: 8px !important;
+  }
+
+  /* — Частичная оплата — вторичное действие: мягкая плашка + контурная кнопка,
+         чтобы не конкурировать с основным CTA — */
+  .total-cost .part {
+    border: 1px solid #e6e6e6 !important;
+    border-radius: 10px !important;
+    padding: 16px !important;
+    background: var(--panel-bg);
+  }
+  .total-cost .part a {
+    background: #fff !important;
+    color: var(--main-color) !important;
+    border: 2px solid var(--main-color) !important;
+    border-radius: 8px !important;
+    padding: 9px 16px !important;
+    margin-bottom: 10px;
+    transition:
+      background 0.15s,
+      color 0.15s;
+  }
+  .total-cost .part a:hover {
+    background: var(--main-color) !important;
+    color: #fff !important;
+  }
+  .total-cost .part span,
+  .total-cost .part div {
+    font-size: 13px;
+    color: #777 !important;
+    line-height: 1.45;
+  }
+
+  /* ============================================================
+       ДЛИННЫЙ ЗАКАЗ / НИЗКИЙ ЭКРАН — сводка не уходит за нижнюю границу.
+       При многих позициях (или малой высоте окна) карточка-сводка росла вниз
+       и выталкивала «Данные плательщика», «Сумму для оплаты» и кнопку за экран.
+       Теперь высота карточки ограничена вьюпортом, а ПРОКРУЧИВАЕТСЯ только СОСТАВ
+       заказа; заголовок, плательщик, сумма и кнопки оплаты всегда закреплены и видны.
+       (sticky-колонка имеет top:20px; снизу оставляем 20px воздуха.)
+       Состав короткий / экран высокий → max-height не достигается, скролла нет —
+       обычный заказ выглядит как раньше.
+       ============================================================ */
+  .total-cost {
+    max-height: calc(100vh - 40px);
+  }
+  /* right-info — гибкая колонка (состав+плательщик+сумма); кнопки ниже не сжимаются */
+  .total-cost .right-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0; /* критично: иначе flex-элемент не отдаёт высоту под скролл */
+  }
+  .total-cost .confirm-pay,
+  .total-cost .balance-pay,
+  .total-cost .part {
+    flex-shrink: 0; /* действие всегда на виду */
+  }
+  /* Внутри right-info закреплены заголовок, плательщик и сумма — прокручивается только состав */
+  .total-cost .right-info > .summary-heading,
+  .total-cost .right-info > .payer-card,
+  .total-cost .right-info > .deal-finish-price-title {
+    flex-shrink: 0;
+  }
+  .total-cost .right-info .deal-positions {
+    flex: 0 1 auto; /* не растягивается на пустом месте; сжимается + скролл при нехватке */
+    min-height: 0; /* должен сжиматься до конца, иначе right-info переполняет и сумма налезает на кнопку */
+    overflow-y: auto;
+    overscroll-behavior: contain; /* прокрутка состава не «пробивает» на страницу */
+    scrollbar-width: thin;
+    scrollbar-color: #d9d9d9 transparent;
+  }
+  /* Тонкий ненавязчивый скроллбар состава (WebKit) */
+  .total-cost .right-info .deal-positions::-webkit-scrollbar {
+    width: 6px;
+  }
+  .total-cost .right-info .deal-positions::-webkit-scrollbar-thumb {
+    background: #d9d9d9;
+    border-radius: 3px;
+  }
+}
+
+/* ============================================================
+   РАССРОЧКИ / КРЕДИТЫ В 2-КОЛОНОЧНОМ LAYOUT (992–1200px) — ПО ОДНОЙ В РЯД (2026-06-06)
+   На ≥992px действует 2-колоночная раскладка с правой sticky-сводкой (.total-cost),
+   из-за чего левая колонка (.xdget-payform) узкая (~590px при viewport 1100px). Карточки
+   рассрочек/кредитов при 2-в-ряд (calc(50% - 15px) ≈ 279px) не вмещают nowrap-лейблы
+   вариантов и кнопки — текст и кнопки вылезали за рамку (проблема видна на 990–1200px).
+   На ≤991px правая сводка скрывается (≈стр.2197), левая колонка расширяется до ~806px
+   и 2 карты по ~388px помещаются — поэтому ниже 992px проблемы нет. Здесь воспроизводим
+   тот же результат раньше, НЕ ломая 2-колоночную раскладку: в диапазоне 992–1200px ставим
+   карточки по одной в ряд (на всю ширину левой колонки) — лейблы/кнопки помещаются, правая
+   sticky-сводка сохраняется. ≤768px (одноколоночная стопка) уже даёт 1-в-ряд своим блоком
+   (≈стр.1716), 769–991px оставляем 2-в-ряд (контейнер уже достаточно широкий).
+   Набор id — как в ≤768-блоке (все 11 кредит/сплит-методов). Селекторы и спецификутность
+   (1,2,0)+!important совпадают с базовыми width-правилами, блок идёт последним → выигрывает. */
+@media (min-width: 992px) and (max-width: 1200px) {
+  .order-left-side .xdget-payform #tinkoffcredit,
+  .order-left-side .xdget-payform #sber-pokupay,
+  .order-left-side .xdget-payform #vsegdada,
+  .order-left-side .xdget-payform #tinkoff-dolyame,
+  .order-left-side .xdget-payform #alpha-bank-podeli,
+  .order-left-side .xdget-payform #yandex-split,
+  .order-left-side .xdget-payform #yandex-split-improved,
+  .order-left-side .xdget-payform #fresh-credit,
+  .order-left-side .xdget-payform #tinkoffcredit-2,
+  .order-left-side .xdget-payform #poscredit,
+  .order-left-side .xdget-payform #resource-razvitie {
+    width: 100% !important;
+  }
+}
+
+/* ============================================================
+   НИЗКИЙ ЭКРАН ПО ВЫСОТЕ (≤820px) на ПК/планшете — сводку НЕ пиним (2026-06-07)
+   Механизм max-height + внутренний скролл .deal-positions (блок «ДЛИННЫЙ ЗАКАЗ / НИЗКИЙ
+   ЭКРАН» в @media min-width:992px выше) держит сумму/кнопку на виду, прокручивая только
+   состав. Но при карточке «Данные плательщика» (фикс. ~132px, flex-shrink:0) на коротком
+   экране (планшет, высота ~650px) фиксированный контент (заголовок + плательщик + сумма +
+   кнопка + частичная) не оставлял составу места — .deal-positions сжимался в нечитаемую
+   полоску ~30px со скроллом (состав «обрезан»).
+   На экранах высотой ≤820px отключаем ограничение высоты и внутренний скролл: сводка обретает
+   естественную высоту и листается вместе со страницей (sticky-колонка выше вьюпорта
+   прокручивается штатно). Состав, плательщик, сумма и кнопки видны полностью при прокрутке,
+   без collapse. На экранах выше 820px контент сводки помещается, и пиннинг (для длинных
+   заказов) сохраняется. Идёт ПОСЛЕ блока пиннинга → перебивает его при совпадении условий. */
+@media (min-width: 992px) and (max-height: 820px) {
+  .total-cost {
+    max-height: none;
+  }
+  .total-cost .right-info .deal-positions {
+    flex: 0 0 auto;
+    overflow-y: visible;
+  }
+}
+
+/* ============================================================
+   МОБАЙЛ: позиция состава — название и цена не наплывают (2026-06-07)
+   В мобильной сводке (.main-info .deal-positions, ≤991px) GC-разметка позиции:
+   <li> = .deal-position-price (float:right, крупная) + .position-actual-title + .text-muted.
+   Длинный неразрывный токен в названии (напр. «systemic_Системный») при
+   overflow-wrap:normal не переносился и вылезал из своей колонки ПОД floated-цену
+   («60 000 руб.») справа → визуальный наплыв на узком экране (360px).
+   Раскладываем позицию флексом: название — гибкое (flex:1) с переносом длинных токенов
+   (overflow-wrap:anywhere), цена — фикс. справа (float снят), подпись .text-muted — на всю
+   ширину новой строкой. Десктопную правую плашку (.total-cost) не трогаем: там позиционная
+   цена в GC-разметке пустая, наплыва нет. */
+@media (max-width: 991px) {
+  .order-left-side .main-info .deal-positions li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 10px;
+  }
+  .order-left-side .main-info .deal-positions .position-actual-title {
+    flex: 1 1 0;
+    min-width: 0;
+    order: 1;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  .order-left-side .main-info .deal-positions .deal-position-price {
+    flex: 0 0 auto;
+    float: none;
+    order: 2;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.15;
+    color: #333;
+    text-align: right;
+  }
+  .order-left-side .main-info .deal-positions .text-muted {
+    flex: 1 1 100%;
+    order: 3;
+  }
+}
+
+/* ============================================================
+   «Карточка заказа в CRM» — оставляем только одну ссылку (2026-06-07)
+   Admin-ссылка a[href*="/sales/control/deal/update"] (видна только staff/admin,
+   visible-to-bg-) дублируется в каждом dealInfo-виджете. Прячем её в составе заказа
+   (.main-info) и в промо-зоне (.promo-zone .order-info) — остаётся одна: в мобильной
+   сводке .mobile-total-cost (мобайл) и в .total-cost .right-info (десктоп, не затронут). */
+.order-left-side .main-info a[href*='/sales/control/deal/update'],
+.promo-zone a[href*='/sales/control/deal/update'] {
+  display: none !important;
+}
+
+/* ============================================================
+   КАСТОМНЫЕ МЕТОДЫ ОПЛАТЫ (.pp-custom-method) — 2026-06-07
+   Контейнер создаётся скриптом pp-script-11.js для методов isSystem=false.
+   Дизайн идентичен .gc-payment-method-card: серая плашка, скругление,
+   коралл на hover и при выборе (.picked).
+   ============================================================ */
+
+/* — Карточка: по образцу .gc-payment-method-card — */
+.order-left-side .xdget-payform .pp-custom-method {
+  background-color: var(--card-bg) !important;
+  border-radius: 15px;
+  border: 3px solid var(--card-bg) !important;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 25px 0;
+  width: calc(25% - 20px) !important;
+  min-height: 200px;
+  height: auto !important;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 15px;
+  text-align: center;
+}
+
+/* — Hover / picked — коралловая рамка — */
+.order-left-side .xdget-payform .pp-custom-method:hover,
+.order-left-side .xdget-payform .pp-custom-method.picked {
+  background-color: transparent !important;
+  border: 3px solid var(--main-color) !important;
+}
+
+/* ===== РОЛЬ «credit» (widget) — карточка как блок рассрочки .gc-payment-method-credit =====
+   Роль назначает скрипт pp-script-11 по interactionMode='widget' (класс pp-role-credit).
+   Геометрия и внутренние стили подогнаны 1:1 под боевой .gc-payment-method-credit
+   (ширина 309px ≈ calc(50% - 15px), min-height 240px, padding 26/20, лого 40px, кнопка). */
+
+/* Не выделять рамкой при выборе/наведении — взаимодействие с меню/кнопкой внутри. */
+.order-left-side .xdget-payform .pp-custom-method.pp-role-credit:hover,
+.order-left-side .xdget-payform .pp-custom-method.pp-role-credit.picked {
+  background-color: var(--card-bg) !important;
+  border: 3px solid var(--card-bg) !important;
+}
+
+/* Геометрия рассрочки: широкая карта (2 в ряд), высокая, контент не обрезается.
+   Специфичность .pp-role-credit (0,4,0) перебивает базовую .pp-custom-method (0,3,0)
+   и её адаптивные правила 1370/545px ниже по файлу. */
+.order-left-side .xdget-payform .pp-custom-method.pp-role-credit {
+  background-color: var(--card-bg) !important;
+  border: 3px solid var(--card-bg) !important;
+  border-radius: 15px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: calc(50% - 15px) !important;
+  min-height: 240px !important;
+  height: auto !important;
+  margin: 10px 0 20px 0 !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+  padding: 26px 20px !important;
+  text-align: center !important;
+}
+
+/* Лого как у рассрочки (40px, отступ снизу 18px) — у карточки выбора оно крупнее (80px). */
+.order-left-side .xdget-payform .pp-role-credit .pp-custom-img {
+  display: block !important;
+  max-height: 40px !important;
+  max-width: 150px !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+  margin: 0 auto 18px !important;
+}
+
+/* Пункты меню — как варианты рассрочки (block + тот же вертикальный ритм). */
+.order-left-side .xdget-payform .pp-role-credit .pp-custom-menu {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto 8px !important;
+  text-align: center !important;
+}
+
+.order-left-side .xdget-payform .pp-role-credit .pp-custom-menu label {
+  display: block !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  margin: 0 !important;
+  text-align: center !important;
+}
+
+/* Кнопка — отступы как у кнопок рассрочки (цвет/контур уже из базового .pp-custom-btn). */
+.order-left-side .xdget-payform .pp-role-credit .pp-custom-btn {
+  display: block !important;
+  width: 100% !important;
+  max-width: 280px !important;
+  margin: 10px auto 0 !important;
+  padding: 10px 25px !important;
+}
+
+/* — С подписью: переключаем в flex-column (лого/меню/кнопка/подпись) — */
+.order-left-side .xdget-payform .pp-custom-method.pp-has-caption {
+  justify-content: space-between;
+}
+
+/* — Изображение в карточке — */
+.order-left-side .xdget-payform .pp-custom-method .pp-custom-img {
+  display: block;
+  max-width: 100%;
+  max-height: 80px;
+  object-fit: contain;
+  margin-bottom: 8px;
+}
+
+/* Recommended может смешивать два режима, но каждый метод сохраняет свой тип:
+   standard/card выглядит как системная карточка выбора, widget/credit — как рассрочка. */
+.order-left-side .xdget-payform .pp-custom-method.pp-section-recommended.pp-role-card {
+  width: calc(25% - 20px) !important;
+  min-height: 200px !important;
+  margin: 25px 0 !important;
+  padding: 15px !important;
+  justify-content: center !important;
+  gap: 8px;
+  overflow: hidden !important;
+}
+
+.order-left-side
+  .xdget-payform
+  .pp-custom-method.pp-section-recommended.pp-role-card
+  .pp-custom-img {
+  width: auto !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: 80px !important;
+  object-fit: contain !important;
+  margin: 0 auto !important;
+}
+
+.order-left-side
+  .xdget-payform
+  .pp-custom-method.pp-section-recommended.pp-role-card
+  .pp-method-caption {
+  padding: 0 8px !important;
+}
+
+.order-left-side
+  .xdget-payform.pp-recommended-mixed-custom
+  .pp-custom-method.pp-section-recommended.pp-role-card {
+  min-height: 240px !important;
+  margin: 10px 0 20px !important;
+}
+
+.order-left-side .xdget-payform .pp-custom-method.pp-section-recommended.pp-role-credit {
+  width: calc(50% - 15px) !important;
+  min-height: 240px !important;
+  margin: 10px 0 20px !important;
+  padding: 26px 20px !important;
+  justify-content: center !important;
+  overflow: visible !important;
+}
+
+.order-left-side
+  .xdget-payform
+  .pp-custom-method.pp-section-recommended.pp-role-credit
+  .pp-custom-img {
+  width: auto !important;
+  height: auto !important;
+  max-width: 150px !important;
+  max-height: 56px !important;
+  object-fit: contain !important;
+  margin: 0 auto 14px !important;
+}
+
+.order-left-side
+  .xdget-payform
+  .pp-custom-method.pp-section-recommended.pp-role-credit
+  .pp-custom-menu {
+  margin: 0 auto 8px !important;
+}
+
+.order-left-side
+  .xdget-payform
+  .pp-custom-method.pp-section-recommended.pp-role-credit
+  .pp-custom-btn {
+  margin: 10px auto 0 !important;
+}
+
+/* — Radio-меню пунктов кастомного метода — */
+.order-left-side .xdget-payform .pp-custom-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.order-left-side .xdget-payform .pp-custom-menu label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* — Кнопка кастомного метода: по образцу кнопок рассрочки — */
+.order-left-side .xdget-payform .pp-custom-btn {
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  margin: 8px auto 0;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  box-sizing: border-box;
+  cursor: pointer;
+  /* Вторичное действие: контур-графит в покое, коралл на hover */
+  background-color: transparent;
+  color: var(--btn-secondary);
+  border: 1px solid var(--btn-secondary);
+  transition:
+    background-color 0.15s,
+    color 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.order-left-side .xdget-payform .pp-custom-btn:hover,
+.order-left-side .xdget-payform .pp-custom-btn:focus {
+  background-color: var(--main-color);
+  color: #fff;
+  border-color: var(--main-color);
+  box-shadow: 0 4px 12px rgba(248, 92, 80, 0.28);
+  outline: none;
+}
+
+/* — Адаптация ширины на малых экранах (по образцу .gc-payment-method-card) — */
+@media (max-width: 1370px) {
+  .order-left-side .xdget-payform .pp-custom-method {
+    width: calc(33% - 15px) !important;
+  }
+
+  .order-left-side .xdget-payform .pp-custom-method.pp-section-recommended.pp-role-card {
+    width: calc(33% - 15px) !important;
+  }
+}
+
+@media (max-width: 545px) {
+  .order-left-side .xdget-payform .pp-custom-method {
+    width: calc(50% - 15px) !important;
+  }
+
+  .order-left-side .xdget-payform .pp-custom-method.pp-section-recommended.pp-role-card {
+    width: calc(50% - 15px) !important;
+  }
+}
+
+/* Роль credit — как кредитные блоки: по одной карте в ряд, когда контейнер уже не
+   вмещает две (≤768px). Идёт ПОСЛЕ базового правила роли (та же специфичность 0,4,0) —
+   при совпадении ширины побеждает по порядку, перекрывая calc(50%). */
+@media (max-width: 768px) {
+  .order-left-side .xdget-payform .pp-custom-method.pp-role-credit {
+    width: 100% !important;
+  }
+
+  .order-left-side .xdget-payform .pp-custom-method.pp-section-recommended.pp-role-credit {
+    width: 100% !important;
+  }
+
+  .order-left-side
+    .xdget-payform.pp-recommended-mixed-custom
+    .pp-custom-method.pp-section-recommended.pp-role-card {
+    min-height: 200px !important;
+    margin: 25px 0 !important;
+  }
+}

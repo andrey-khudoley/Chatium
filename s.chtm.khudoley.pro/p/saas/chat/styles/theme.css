@@ -1,0 +1,427 @@
+:root {
+  /* Светлая тема (по умолчанию) */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f0f2f5;
+  --bg-tertiary: #f9fafb;
+  --bg-hover: rgba(0, 0, 0, 0.05);
+
+  --text-primary: #111b21;
+  --text-secondary: #667781;
+  --text-muted: #8696a0;
+  --text-inverse: #ffffff;
+
+  --border-color: #d1d7db;
+  --border-light: #e0e0e0;
+
+  --bubble-own: #d9fdd3;
+  --bubble-other: #ffffff;
+  --bubble-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+
+  --input-bg: #ffffff;
+  --input-border: transparent;
+  --input-placeholder: #8696a0;
+
+  --header-bg: #f0f2f5;
+  --panel-bg: #ffffff;
+  --modal-bg: #ffffff;
+  --menu-bg: #ffffff;
+  --menu-hover: #f0f2f5;
+  --menu-divider: #e0e0e0;
+
+  --primary-color: #008069;
+  --primary-hover: #007a62;
+
+  /* Цвета статусов (c-*) */
+  --c-primary: #008069;
+  --c-primary-dark: #007a62;
+  --c-success: #25d366;
+  --c-danger: #ef4444;
+  --c-warning: #f59e0b;
+  --c-info: #3b82f6;
+  --c-text-primary: #111b21;
+  --c-text-secondary: #667781;
+  --c-surface: #ffffff;
+  --c-bg-secondary: #f0f2f5;
+  --c-bg-hover: rgba(0, 0, 0, 0.05);
+  --c-border: #d1d7db;
+
+  /* Accent цвета */
+  --accent-color: #008069;
+  --accent-primary: #008069;
+  --accent-hover: #007a62;
+  --accent-light: rgba(0, 128, 105, 0.1);
+
+  /* Кнопки управления */
+  --btn-control-bg: rgba(0, 0, 0, 0.05);
+  --btn-control-hover: rgba(0, 0, 0, 0.1);
+  --btn-control-color: #667781;
+  --btn-control-hover-color: #008069;
+
+  --danger-color: #e74c3c;
+  --danger-hover: #c0392b;
+  --danger-bg: #fee2e2;
+
+  --warning-color: #f59e0b;
+  --warning-hover: #d97706;
+  --warning-bg: #fef3c7;
+
+  --secondary-btn-bg: #f0f2f5;
+  --secondary-btn-hover: #e0e2e5;
+
+  --system-bg: rgba(0, 0, 0, 0.05);
+  --system-text: #667781;
+
+  --reaction-bg: rgba(0, 0, 0, 0.05);
+  --reaction-active: rgba(0, 128, 105, 0.1);
+  --reaction-border: #e0e0e0;
+
+  --pinned-bg: #ffffff;
+  --pinned-border: #e0e0e0;
+  --pinned-nav-bg: #f9fafb;
+
+  --role-owner-bg: #fef3c7;
+  --role-owner-text: #92400e;
+  --role-admin-bg: #dbeafe;
+  --role-admin-text: #1e40af;
+  --role-guest-bg: #f3f4f6;
+  --role-guest-text: #6b7280;
+
+  /* Даторазделитель */
+  --date-divider-bg: rgba(0, 0, 0, 0.08);
+  --date-divider-text: #667781;
+
+  /* Статус подключения */
+  --bg-warning: #fef3c7;
+  --text-warning: #92400e;
+  --bg-info: #dbeafe;
+  --text-info: #1e40af;
+
+  /* Приглашения */
+  --invites-bg: #f8f9fa;
+  --invites-header-hover: #f0f2f5;
+  --invites-item-bg: #ffffff;
+  --invites-item-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --btn-accept-bg: #e8f5e9;
+  --btn-accept-text: #2e7d32;
+  --btn-accept-hover-bg: #2e7d32;
+  --btn-accept-hover-text: #ffffff;
+  --btn-decline-bg: #ffebee;
+  --btn-decline-text: #c62828;
+  --btn-decline-hover-bg: #c62828;
+  --btn-decline-hover-text: #ffffff;
+
+  /* Модальные окна */
+  --modal-overlay-bg: rgba(0, 0, 0, 0.65);
+  --modal-overlay-blur: 4px;
+  --modal-shadow: 0 25px 80px rgba(0, 0, 0, 0.6);
+  --modal-z-index: 9999;
+
+  /* Тени */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='dark'] {
+  /* Тёмная тема */
+  --bg-primary: #0b141a;
+  --bg-secondary: #111b21;
+  --bg-tertiary: #1f2c34;
+  --bg-hover: rgba(255, 255, 255, 0.05);
+
+  --text-primary: #e9edef;
+  --text-secondary: #8696a0;
+  --text-muted: #667781;
+  --text-inverse: #111b21;
+
+  --border-color: #2a3942;
+  --border-light: #2a3942;
+
+  --bubble-own: #005c4b;
+  --bubble-other: #202c33;
+  --bubble-shadow: none;
+
+  --input-bg: #2a3942;
+  --input-border: transparent;
+  --input-placeholder: #8696a0;
+
+  --header-bg: #111b21;
+  --panel-bg: #111b21;
+  --modal-bg: #202c33;
+  --menu-bg: #202c33;
+  --menu-hover: #2a3942;
+  --menu-divider: #2a3942;
+
+  --primary-color: #00a884;
+  --primary-hover: #00c7a0;
+
+  /* Цвета статусов (c-*) */
+  --c-primary: #00a884;
+  --c-primary-dark: #00c7a0;
+  --c-success: #25d366;
+  --c-danger: #f15c6d;
+  --c-warning: #fbbf24;
+  --c-info: #60a5fa;
+  --c-text-primary: #e9edef;
+  --c-text-secondary: #8696a0;
+  --c-surface: #202c33;
+  --c-bg-secondary: #111b21;
+  --c-bg-hover: rgba(255, 255, 255, 0.05);
+  --c-border: #2a3942;
+
+  /* Accent цвета */
+  --accent-color: #00a884;
+  --accent-primary: #00a884;
+  --accent-hover: #00c7a0;
+  --accent-light: rgba(0, 168, 132, 0.15);
+
+  /* Кнопки управления - темная тема */
+  --btn-control-bg: rgba(255, 255, 255, 0.1);
+  --btn-control-hover: rgba(255, 255, 255, 0.15);
+  --btn-control-color: #8696a0;
+  --btn-control-hover-color: #00a884;
+
+  --danger-color: #f15c6d;
+  --danger-hover: #fa6676;
+
+  --warning-color: #fbbf24;
+  --warning-hover: #fcd34d;
+  --warning-bg: rgba(251, 191, 36, 0.15);
+
+  --danger-bg: rgba(241, 92, 109, 0.15);
+
+  --secondary-btn-bg: #2a3942;
+  --secondary-btn-hover: #3b4b54;
+
+  --system-bg: rgba(255, 255, 255, 0.05);
+  --system-text: #8696a0;
+
+  --reaction-bg: rgba(255, 255, 255, 0.05);
+  --reaction-active: rgba(0, 168, 132, 0.2);
+  --reaction-border: #2a3942;
+
+  --pinned-bg: #202c33;
+  --pinned-border: #2a3942;
+  --pinned-nav-bg: #1f2c34;
+
+  --role-owner-bg: rgba(254, 243, 199, 0.2);
+  --role-owner-text: #fcd34d;
+  --role-admin-bg: rgba(219, 234, 254, 0.2);
+  --role-admin-text: #93c5fd;
+  --role-guest-bg: rgba(243, 244, 246, 0.1);
+  --role-guest-text: #9ca3af;
+
+  /* Даторазделитель */
+  --date-divider-bg: rgba(255, 255, 255, 0.1);
+  --date-divider-text: #8696a0;
+
+  /* Статус подключения */
+  --bg-warning: rgba(254, 243, 199, 0.2);
+  --text-warning: #fcd34d;
+  --bg-info: rgba(219, 234, 254, 0.2);
+  --text-info: #93c5fd;
+
+  /* Приглашения */
+  --invites-bg: #111b21;
+  --invites-header-hover: #2a3942;
+  --invites-item-bg: #202c33;
+  --invites-item-shadow: none;
+  --btn-accept-bg: rgba(0, 168, 132, 0.2);
+  --btn-accept-text: #00a884;
+  --btn-accept-hover-bg: #00a884;
+  --btn-accept-hover-text: #111b21;
+  --btn-decline-bg: rgba(241, 92, 109, 0.2);
+  --btn-decline-text: #f15c6d;
+  --btn-decline-hover-bg: #f15c6d;
+  --btn-decline-hover-text: #ffffff;
+
+  /* Модальные окна */
+  --modal-overlay-bg: rgba(0, 0, 0, 0.75);
+  --modal-overlay-blur: 4px;
+  --modal-shadow: 0 25px 80px rgba(0, 0, 0, 0.7);
+  --modal-z-index: 9999;
+
+  /* Тени */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================
+   ГЛОБАЛЬНЫЕ СТИЛИ МОДАЛЬНЫХ ОКОН
+   ============================================ */
+
+/* Overlay для модальных окон */
+.chat-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--modal-overlay-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--modal-z-index);
+  padding: 20px;
+  backdrop-filter: blur(var(--modal-overlay-blur));
+  -webkit-backdrop-filter: blur(var(--modal-overlay-blur));
+  animation: modal-fade-in 0.2s ease-out;
+}
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Контент модального окна */
+.chat-modal-content {
+  background: var(--modal-bg);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--modal-shadow);
+  color: var(--text-primary);
+  position: relative;
+  animation: modal-slide-up 0.2s ease-out;
+}
+
+@keyframes modal-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Модальное окно информации о чате */
+.chat-info-modal {
+  max-width: 400px;
+}
+
+/* Модальное окно настроек подписок */
+.subscription-settings-modal {
+  max-width: 600px;
+  max-height: 85vh;
+}
+
+/* Мобильное дополнительное меню */
+.mobile-extra-menu {
+  max-width: 320px;
+}
+
+/* Заголовок модального окна */
+.modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Список пунктов меню */
+.extra-menu-list {
+  padding: 8px 0;
+}
+
+.extra-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-align: left;
+}
+
+.extra-menu-item:hover {
+  background: var(--menu-hover);
+}
+
+.extra-menu-item i {
+  width: 24px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.extra-menu-divider {
+  height: 1px;
+  background: var(--menu-divider);
+  margin: 8px 0;
+}
+
+/* Кнопки в модальных окнах */
+.btn-full {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.btn-danger {
+  background: var(--danger-color);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: var(--danger-hover);
+}
+
+.btn-warning {
+  background: var(--warning-color);
+  color: white;
+}
+
+.btn-warning:hover {
+  background: var(--warning-hover);
+}
+
+/* Адаптивность модальных окон */
+@media (max-width: 480px) {
+  .chat-modal-overlay {
+    padding: 10px;
+    align-items: flex-end;
+  }
+
+  .chat-modal-content {
+    border-radius: 16px 16px 0 0;
+    max-height: 90vh;
+    animation: modal-slide-up-mobile 0.3s ease-out;
+  }
+
+  @keyframes modal-slide-up-mobile {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .chat-info-modal,
+  .subscription-settings-modal {
+    max-width: 100%;
+  }
+}

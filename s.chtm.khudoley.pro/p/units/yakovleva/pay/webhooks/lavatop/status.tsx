@@ -1,0 +1,27 @@
+/**
+ * GET /webhooks/lavatop/status — проверка доступности приёмника Lava.Top.
+ */
+
+import * as loggerLib from '../../lib/logger.lib'
+import * as settingsLib from '../../lib/settings.lib'
+
+const LOG_PATH = 'webhooks/lavatop/status'
+
+export const webhookLavatopStatusRoute = app.get('/', async (ctx) => {
+  const secret = (await settingsLib.getLavaWebhookSecret(ctx)).trim()
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_PATH}] GET: проверка доступности`,
+    payload: { webhookSecretConfigured: secret.length > 0 }
+  })
+  return {
+    ok: true,
+    status: 'ready',
+    message:
+      'Эндпоинт активен. Рабочие уведомления Lava.Top — POST /webhooks/lavatop с JSON-телом (PurchaseWebhookLog) и заголовком X-Api-Key (или Basic), совпадающим с настройкой lava_webhook_secret.',
+    expectedMethod: 'POST',
+    webhookSecretConfigured: secret.length > 0
+  }
+})
+
+export default webhookLavatopStatusRoute

@@ -1,0 +1,4923 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Tech API",
+    "description": "Настоящая документация описывает сценарии и методы работы с API GetCourse для интеграторов.\n  # Получение токена для работы с API\n  Token состоит из двух частей 'Ключ Разработчика' и 'Ключ Апи Школы'. <br>\n- Для получения Ключа разработчика необходимо заполнить <a href=https://getcourse.ru/issuedeveloperkey>анкету</a> <br>\n- Для получения Ключа Апи Школы необходимо обращаться непосредственно к представителям школы на платформе GetCourse. <br>\nТокен формируется как склеивание 'Ключ разработчика' и 'Ключ Апи Школы' через нижнее подчеркивание '_'. <br>\nКак пример полное значение будет 'Bearer XXXXXXXX_YYYYYYYYYYYYYYYYYYY'.\n# Подключение вебхуков\nДля подключения вебхуков необходимо использовать метод [set-uri](#operation/set-uri) ",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://example.test/pl/api/v1",
+      "description": "API для интеграторов",
+      "variables": {
+        "scheme": {
+          "enum": ["http", "https"],
+          "default": "http"
+        }
+      }
+    }
+  ],
+  "paths": {
+    "/set-uri": {
+      "post": {
+        "summary": "Добавление uri для эвента",
+        "description": "Данный метод используется чтобы подключить отправку данных по событиям GetCourse на внешние сервера.\nВ данный момент поддерживаются следующие события\n\nВходящие сообщения (event_object_id = 1)\n* Создан новый диалог по сообщению ученика (event_id = 1)\n* Переоткрыт закрытый диалог по сообщению ученика (event_id = 2)\n* Поступило новое сообщение от ученика (event_id = 3)\n\nЗаказы (event_object_id = 2)\n* Создан новый заказ (event_id = 1)\n* Смена Статуса Заказа (event_id = 2)\n* Заказ оплачен (event_id = 3)\n\nКомментарии к урокам (event_object_id = 4)\n* Добавлен ответ на урок (event_id = 1)\n\nКомментарии к ответам (event_object_id = 5)\n* Добавлен комментарий к ответу (event_id = 1)\n\nКомментарии вебинаров (event_object_id = 7)\n* Получение новых комментариев от зрителей (event_id = 1)\n",
+        "operationId": "set-uri",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/Новый диалог"
+                  },
+                  {
+                    "$ref": "#/components/schemas/Переоткрытие диалога"
+                  },
+                  {
+                    "$ref": "#/components/schemas/Создание заказа"
+                  },
+                  {
+                    "$ref": "#/components/schemas/Смена статуса заказа"
+                  },
+                  {
+                    "$ref": "#/components/schemas/Заказ оплачен"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешно"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": {
+              "type": "http",
+              "scheme": "bearer"
+            }
+          }
+        ]
+      }
+    },
+    "/common/get-groups": {
+      "get": {
+        "tags": ["Школа"],
+        "summary": "Получить все группы пользователей",
+        "description": "Получить все группы пользователей",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\common\\GetGroupsAction::run",
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "properties": {
+                              "id": {
+                                "type": "integer",
+                                "example": 2
+                              },
+                              "name": {
+                                "type": "string",
+                                "example": "Ученики №2"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/common/get-personal-managers": {
+      "get": {
+        "tags": ["Школа"],
+        "summary": "Получить список всех пользователей с правами менеджера",
+        "description": "Получить список всех пользователей с правами менеджера",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\common\\GetPersonalManagersListAction::run",
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/User"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/common/get-trainings": {
+      "get": {
+        "tags": ["Школа"],
+        "summary": "Получить все тренинги",
+        "description": "Получить все тренинги",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\common\\GetTrainingsAction::run",
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Training"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/deal/add-comment": {
+      "post": {
+        "tags": ["Заказ"],
+        "summary": "Добавить комментарий в заказ",
+        "description": "Добавить комментарий в заказ от имени указанного пользователя",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCommentToDealRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "properties": {
+                            "result": {
+                              "description": "Статус успешности добавления комментария",
+                              "type": "boolean",
+                              "example": true
+                            }
+                          },
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/deal/add-positions": {
+      "post": {
+        "tags": ["Заказ"],
+        "summary": "Добавить позиции в заказ",
+        "description": "Добавить позиции в заказ",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddDealPositionsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "example": []
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/deal/get-calls": {
+      "get": {
+        "tags": ["Заказ"],
+        "summary": "Звонки по заказу",
+        "description": "Получить все звонки по заказу",
+        "parameters": [
+          {
+            "name": "dealId",
+            "in": "query",
+            "description": "Id заказа",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "properties": {
+                              "id": {
+                                "type": "integer",
+                                "example": 1
+                              },
+                              "created_at": {
+                                "type": "string",
+                                "example": "2026-01-15 19:02:32"
+                              },
+                              "user_id": {
+                                "type": "integer",
+                                "example": "124091825"
+                              },
+                              "text": {
+                                "type": "string",
+                                "example": "Текст комментария"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/deal/get-cancel-reasons": {
+      "get": {
+        "tags": ["Заказ"],
+        "summary": "Получить список причин отказа",
+        "description": "Получить список причин отказа по всем заявкам",
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "properties": {
+                              "id": {
+                                "type": "integer",
+                                "example": 2
+                              },
+                              "name": {
+                                "type": "string",
+                                "example": "Не нужно"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/deal/get-comments": {
+      "get": {
+        "tags": ["Заказ"],
+        "summary": "Комментарии заказа",
+        "description": "Получить все комментарии заказа",
+        "parameters": [
+          {
+            "name": "dealId",
+            "in": "query",
+            "description": "Id заказа",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ContactActivity"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/deal/get-custom-fields": {
+      "get": {
+        "tags": ["Заказ"],
+        "summary": "Дополнительные поля по заказу",
+        "description": "Дополнительные поля по заказу",
+        "parameters": [
+          {
+            "name": "dealId",
+            "in": "query",
+            "description": "Id заказа",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "properties": {
+                              "id": {
+                                "type": "integer",
+                                "example": 2
+                              },
+                              "value": {
+                                "type": "string",
+                                "example": "доп.поле 1"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/deal/get-fields": {
+      "get": {
+        "tags": ["Заказ"],
+        "summary": "Информация по заказу",
+        "description": "Получить все поля по заказу",
+        "parameters": [
+          {
+            "name": "dealId",
+            "in": "query",
+            "description": "Id заказа",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Deal"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/deal/get-deals-tags": {
+      "get": {
+        "tags": ["Заказ"],
+        "summary": "Получить список заказов и их тегов",
+        "description": "Получить список заказов и их тегов",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Количество элементов",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "example": 20
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Смещение выборки",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "example": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "properties": {
+                              "dealId": {
+                                "type": "integer",
+                                "example": 1
+                              },
+                              "tags": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                },
+                                "example": ["тег 1", "тег 2", "тег 3"]
+                              }
+                            },
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/deal/remove-positions": {
+      "post": {
+        "tags": ["Заказ"],
+        "summary": "Удалить позиции из заказа",
+        "description": "Удалить позиции из заказа",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemoveDealPositionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "example": []
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/deal/update-fields": {
+      "post": {
+        "tags": ["Заказ"],
+        "summary": "Обновить поля заказа",
+        "description": "Обновить поля заказа",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDealFieldsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Deal"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/dialog/add-comment": {
+      "post": {
+        "tags": ["Диалог"],
+        "summary": "Публикация ответов от имени сотрудников школы",
+        "description": "Добавить комментарий к диалогу от имени сотрудника/администратора.\n  * Для прикрепления файлов, используйте multipart/form-data",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\dialog\\AddCommentToDialogAction::run",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCommentToDialogRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "payload": {
+                    "description": "JSON-строка со структурой",
+                    "$ref": "#/components/schemas/AddCommentToDialogRequest"
+                  },
+                  "attached_files": {
+                    "description": "До 5 файлов",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "properties": {
+                            "result": {
+                              "description": "Статус успешности добавления комментария",
+                              "type": "boolean",
+                              "example": true
+                            }
+                          },
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/dialog/change-department": {
+      "post": {
+        "tags": ["Диалог"],
+        "summary": "Изменение отдела диалога",
+        "description": "Изменить отдел, в котором размещен диалог",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeDepartmentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "properties": {
+                            "result": {
+                              "description": "Статус успешности смены отдела",
+                              "type": "boolean",
+                              "example": true
+                            }
+                          },
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/dialog/close": {
+      "post": {
+        "tags": ["Диалог"],
+        "summary": "Закрытие диалога",
+        "description": "Закрыть диалог по завершению разговора с клиентом",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloseDialogRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "properties": {
+                            "result": {
+                              "description": "Статус успешности закрытия диалога",
+                              "type": "boolean",
+                              "example": true
+                            }
+                          },
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/dialog/get-history": {
+      "get": {
+        "tags": ["Диалог"],
+        "summary": "Получение истории переписки диалога",
+        "description": "Получить историю переписки диалога в хронологическом порядке по убыванию",
+        "parameters": [
+          {
+            "name": "dialogId",
+            "in": "query",
+            "description": "ID диалога",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 123
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Количество сообщений (не более 1000)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "example": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/DialogMessage"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/lesson/add-comment-to-lesson-answer": {
+      "post": {
+        "tags": ["Урок"],
+        "summary": "Добавить комментарий к ответу в уроке",
+        "description": "Добавить комментарий к ответу в уроке",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\lesson\\AddCommentToLessonAnswerAction::run",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCommentToLessonAnswerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/LessonAnswerComment"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/lesson/change-status-answers": {
+      "post": {
+        "tags": ["Урок"],
+        "summary": "Изменить статус ответа на урок",
+        "description": "Изменить статус ответа на урок",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\lesson\\ChangeStatusAnswerAction::run",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeStatusLessonAnswerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/LessonAnswer"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/lesson/get-answers": {
+      "get": {
+        "tags": ["Урок"],
+        "summary": "Получить комментарии урока",
+        "description": "Получить комментарии урока",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\lesson\\GetLessonAnswersAction::run",
+        "parameters": [
+          {
+            "parameter": "LessonIdParam",
+            "name": "lessonId",
+            "in": "query",
+            "description": "ID урока",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/LessonAnswer"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/note/add": {
+      "post": {
+        "tags": ["Заметка"],
+        "summary": "Добавить заметку",
+        "description": "Добавляет текстовую заметку",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\note\\AddNoteAction::run",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddNoteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Success"
+          },
+          "401": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/offer/get-offer-by-id": {
+      "get": {
+        "tags": ["Предложение"],
+        "summary": "Информация по предложению",
+        "description": "Информация по предложению",
+        "parameters": [
+          {
+            "name": "offerId",
+            "in": "query",
+            "description": "Id предложения",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Offer"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/offer/get-offers-tags": {
+      "get": {
+        "tags": ["Предложение"],
+        "summary": "Список предложений и их тегов",
+        "description": "Получить список предложений и их тегов",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\offer\\GetOfferTagsAction::run",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Количество элементов",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "example": 20
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Смещение выборки",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "example": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "properties": {
+                              "offerId": {
+                                "type": "integer",
+                                "example": 1
+                              },
+                              "tags": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                },
+                                "example": ["тег 1", "тег 2", "тег 3"]
+                              }
+                            },
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/offer/get-offers": {
+      "get": {
+        "tags": ["Предложение"],
+        "summary": "Информация по всем предложениям",
+        "description": "Информация по всем предложениям",
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Offer"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/user/add-balance": {
+      "post": {
+        "tags": ["Пользователь"],
+        "summary": "Пополнить баланс",
+        "description": "Пополнить баланс",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddBalanceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "properties": {
+                              "value": {
+                                "type": "integer",
+                                "example": 250
+                              },
+                              "currency": {
+                                "type": "string",
+                                "example": "RUB"
+                              },
+                              "type": {
+                                "type": "string",
+                                "example": "virtual"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/user/add-groups": {
+      "post": {
+        "tags": ["Пользователь"],
+        "summary": "Добавить пользователя в группы",
+        "description": "Добавить пользователя из группы",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\AddUserGroupsAction::run",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetUserGroupsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "properties": {
+                              "id": {
+                                "type": "integer",
+                                "example": 2
+                              },
+                              "name": {
+                                "type": "string",
+                                "example": "Ученики №2"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/user/create-diploma": {
+      "post": {
+        "tags": ["Пользователь"],
+        "summary": "Выдать диплом пользователю",
+        "description": "Выдать диплом пользователю",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\CreateUserDiplomaAction::run",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDiplomaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "example": []
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/user/get-balance": {
+      "get": {
+        "tags": ["Пользователь"],
+        "summary": "Получить баланс",
+        "description": "Получить информацию о балансе",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetBalanceAction::run",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParam"
+          },
+          {
+            "$ref": "#/components/parameters/UserEmailParam"
+          },
+          {
+            "$ref": "#/components/parameters/BalanceTypeParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "properties": {
+                              "value": {
+                                "type": "integer",
+                                "example": 250
+                              },
+                              "currency": {
+                                "type": "string",
+                                "example": "RUB"
+                              },
+                              "type": {
+                                "type": "string",
+                                "example": "virtual"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/user/get-lesson-answers": {
+      "get": {
+        "tags": ["Пользователь"],
+        "summary": "Получить комментарии пользователя в уроках",
+        "description": "Получить комментарии пользователя в уроках",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetLessonAnswersAction::run",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParam"
+          },
+          {
+            "$ref": "#/components/parameters/UserEmailParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/LessonAnswer"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/user/get-answers": {
+      "get": {
+        "tags": ["Пользователь"],
+        "summary": "Получить ответы на анкеты",
+        "description": "Получить ответы на анкеты",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserAnswersAction::run",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParam"
+          },
+          {
+            "$ref": "#/components/parameters/UserEmailParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/user/get-user-by-telegram-chat-id": {
+      "get": {
+        "tags": ["Пользователь"],
+        "summary": "Получить пользователя по telegram chatId",
+        "description": "Получить пользователя по telegram chatId",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserByTelegramChatIdAction::run",
+        "parameters": [
+          {
+            "name": "chatId",
+            "in": "query",
+            "description": "telegram chatId",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 112345323
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/User"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/user/get-custom-fields": {
+      "get": {
+        "tags": ["Пользователь"],
+        "summary": "Получить доп. поля пользователя",
+        "description": "Получить доп. поля пользователя",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserCustomFieldsAction::run",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParam"
+          },
+          {
+            "$ref": "#/components/parameters/UserEmailParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/UserCustomFields"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/user/get-deals": {
+      "get": {
+        "tags": ["Пользователь"],
+        "summary": "Получить заказы пользователя",
+        "description": "Получить заказы пользователя",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserDealsAction::run",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParam"
+          },
+          {
+            "$ref": "#/components/parameters/UserEmailParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Deal"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/user/get-diplomas": {
+      "get": {
+        "tags": ["Пользователь"],
+        "summary": "Получить дипломы пользователя",
+        "description": "Получить дипломы пользователя",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParam"
+          },
+          {
+            "$ref": "#/components/parameters/UserEmailParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Diploma"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/user/get-fields": {
+      "get": {
+        "tags": ["Пользователь"],
+        "summary": "Получить информацию по пользователю",
+        "description": "Получить информацию по пользователю",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserFieldsAction::run",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParam"
+          },
+          {
+            "$ref": "#/components/parameters/UserEmailParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/User"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/user/get-goal-records": {
+      "get": {
+        "tags": ["Пользователь"],
+        "summary": "Получить цели пользователя",
+        "description": "Получить цели пользователя",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserGoalRecordsAction::run",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParam"
+          },
+          {
+            "$ref": "#/components/parameters/UserEmailParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/UserGoal"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/user/get-groups": {
+      "get": {
+        "tags": ["Пользователь"],
+        "summary": "Получить группы пользователя",
+        "description": "Получить группы пользователя",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserGroupsAction::run",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParam"
+          },
+          {
+            "$ref": "#/components/parameters/UserEmailParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "properties": {
+                              "id": {
+                                "type": "integer",
+                                "example": 2
+                              },
+                              "name": {
+                                "type": "string",
+                                "example": "Ученики №2"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/user/get-purchases": {
+      "get": {
+        "tags": ["Пользователь"],
+        "summary": "Получить покупки",
+        "description": "Получить покупки",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserPurchasesAction::run",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParam"
+          },
+          {
+            "$ref": "#/components/parameters/UserEmailParam"
+          },
+          {
+            "name": "productId",
+            "in": "query",
+            "description": "фильтрация по продукту",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "3123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/UserPurchase"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/user/get-schedule": {
+      "get": {
+        "tags": ["Пользователь"],
+        "summary": "Получить расписание",
+        "description": "Получить расписание",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserScheduleAction::run",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParam"
+          },
+          {
+            "$ref": "#/components/parameters/UserEmailParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/UserSchedule"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/user/get-trainings": {
+      "get": {
+        "tags": ["Пользователь"],
+        "summary": "Получить все тренинги пользователя",
+        "description": "Получить все тренинги пользователя",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserTrainingsAction::run",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UserIdParam"
+          },
+          {
+            "$ref": "#/components/parameters/UserEmailParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Training"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/user/remove-groups": {
+      "post": {
+        "tags": ["Пользователь"],
+        "summary": "Удалить пользователя из группы",
+        "description": "Удалить пользователя из группы",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\RemoveUserGroupsAction::run",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetUserGroupsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "properties": {
+                              "id": {
+                                "type": "integer",
+                                "example": 2
+                              },
+                              "name": {
+                                "type": "string",
+                                "example": "Ученики №2"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/user/set-personal-manager": {
+      "post": {
+        "tags": ["Пользователь"],
+        "summary": "Назначить/удалить персонального менеджера",
+        "description": "Назначить/удалить персонального менеджера",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\SetPersonalManagerAction::run",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetPersonalManagerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "example": []
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/user/set-groups": {
+      "post": {
+        "tags": ["Пользователь"],
+        "summary": "Добавить/удалить пользователя из групп",
+        "description": "Назначает пользователю только те группы, что переданы в запросе, остальные привязки будут удалены",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\SetUserGroupsAction::run",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetUserGroupsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "properties": {
+                              "id": {
+                                "type": "integer",
+                                "example": 2
+                              },
+                              "name": {
+                                "type": "string",
+                                "example": "Ученики №2"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/user/update-custom-fields": {
+      "post": {
+        "tags": ["Пользователь"],
+        "summary": "Изменить доп. поля пользователя",
+        "description": "Изменить доп. поля пользователя",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\UpdateUserCustomFieldsAction::run",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserCustomFieldsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/UserCustomFields"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/user/update-fields": {
+      "post": {
+        "tags": ["Пользователь"],
+        "summary": "Изменить пользователя",
+        "description": "Изменить пользователя",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\UpdateUserFieldsAction::run",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserFieldsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "example": []
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundException"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/webinar/add-comment": {
+      "post": {
+        "tags": ["Вебинары"],
+        "summary": "Публикация комментария в чат вебинара",
+        "description": "Публикация комментария в чат вебинара",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\webinar\\AddCommentWebinarAction::run",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCommentToWebinarRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          }
+        }
+      }
+    },
+    "/webinar/get-all-webinars": {
+      "get": {
+        "tags": ["Вебинары"],
+        "summary": "Получить все вебинары",
+        "description": "Получить все вебинары",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\webinar\\GetAllWebinarsAction::run",
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Webinar"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          }
+        }
+      }
+    },
+    "/webinar/get-webinars-by-ids": {
+      "post": {
+        "tags": ["Вебинары"],
+        "summary": "Получить вебинары по id",
+        "description": "Получить вебинары по id",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\webinar\\GetWebinarsByIdsAction::run",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "required": ["ids"],
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "example": [1, 4, 5]
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Webinar"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          }
+        }
+      }
+    },
+    "/webinar/moderation-comment": {
+      "post": {
+        "tags": ["Вебинары"],
+        "summary": "Модерация сообщения в чате вебинара",
+        "description": "Модерация сообщения в чате вебинара",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\webinar\\ModerationWebinarCommentAction::run",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerateWebinarChatMessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ResultResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Webinar"
+                          }
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          }
+        }
+      }
+    },
+    "/webinar/moderation-user": {
+      "post": {
+        "tags": ["Вебинары"],
+        "summary": "Модерация пользователя вебинара",
+        "description": "Изоляция пользователя в чате вебинара",
+        "operationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\webinar\\ModerationWebinarUserAction::run",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerateWebinarUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Успешный ответ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationException"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Новый диалог": {
+        "description": "Установка uri для события Входящие.Создан новый диалог учеником.",
+        "required": ["uri", "event_object_id", "event_id"],
+        "properties": {
+          "uri": {
+            "description": "uri для отправки события",
+            "type": "string",
+            "example": "https://test.ru"
+          },
+          "event_object_id": {
+            "description": "id объекта события Входящие",
+            "type": "integer",
+            "const": 1
+          },
+          "event_id": {
+            "description": "id события создан новый диалог",
+            "type": "integer",
+            "const": 1
+          }
+        },
+        "type": "object"
+      },
+      "Переоткрытие диалога": {
+        "description": "Установка uri для события Входящие.Переоткрыт старый диалог по сообщению ученика.",
+        "required": ["uri", "event_object_id", "event_id"],
+        "properties": {
+          "uri": {
+            "description": "uri для отправку события",
+            "type": "string",
+            "example": "https://test.ru"
+          },
+          "event_object_id": {
+            "description": "id объекта события Входящие",
+            "type": "integer",
+            "const": 1
+          },
+          "event_id": {
+            "description": "id события переоткрыт закрытый диалог",
+            "type": "integer",
+            "const": 2
+          }
+        },
+        "type": "object"
+      },
+      "Создание заказа": {
+        "description": "Установка uri для события Заказы. Создан новый заказ",
+        "required": ["uri", "event_object_id", "event_id"],
+        "properties": {
+          "uri": {
+            "description": "uri для отправку события",
+            "type": "string",
+            "example": "https://test.ru"
+          },
+          "event_object_id": {
+            "description": "id объекта события Заказ",
+            "type": "integer",
+            "const": 2
+          },
+          "event_id": {
+            "description": "id события создан новый",
+            "type": "integer",
+            "const": 1
+          }
+        },
+        "type": "object"
+      },
+      "Смена статуса заказа": {
+        "description": "Установка uri для события Заказы. В заказе поменялся статус",
+        "required": ["uri", "event_object_id", "event_id"],
+        "properties": {
+          "uri": {
+            "description": "uri для отправку события",
+            "type": "string",
+            "example": "https://test.ru"
+          },
+          "event_object_id": {
+            "description": "id объекта события Заказ",
+            "type": "integer",
+            "const": 2
+          },
+          "event_id": {
+            "description": "id события создан новый",
+            "type": "integer",
+            "const": 2
+          }
+        },
+        "type": "object"
+      },
+      "Заказ оплачен": {
+        "description": "Установка uri для события Заказы. Заказ оплачен",
+        "required": ["uri", "event_object_id", "event_id"],
+        "properties": {
+          "uri": {
+            "description": "uri для отправку события",
+            "type": "string",
+            "example": "https://test.ru"
+          },
+          "event_object_id": {
+            "description": "id объекта события Заказ",
+            "type": "integer",
+            "const": 2
+          },
+          "event_id": {
+            "description": "id события заказ оплачен",
+            "type": "integer",
+            "const": 3
+          }
+        },
+        "type": "object"
+      },
+      "UserSchedule": {
+        "properties": {
+          "state": {
+            "type": "string"
+          },
+          "schedule_type": {
+            "type": "string",
+            "enum": ["individual", "common"]
+          },
+          "training_title": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "title": {
+            "type": "string"
+          },
+          "start_at": {
+            "type": "string"
+          },
+          "teacher_name": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "DialogMessage": {
+        "description": "Сообщение из истории диалога",
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-01-15 10:30:00"
+          },
+          "user_id": {
+            "type": "integer",
+            "example": 123
+          },
+          "message_type": {
+            "type": "string",
+            "example": "Входящее"
+          },
+          "user_type": {
+            "type": "string",
+            "example": "Ученик"
+          },
+          "department": {
+            "description": "Отдел",
+            "properties": {
+              "id": {
+                "description": "Id отдела",
+                "type": "integer",
+                "example": 5
+              },
+              "title": {
+                "description": "Название отдела",
+                "type": "string",
+                "example": "Technical support"
+              }
+            },
+            "type": "object"
+          },
+          "comment_text": {
+            "type": "string",
+            "example": "Текст сообщения"
+          }
+        },
+        "type": "object"
+      },
+      "Diploma": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 20
+          },
+          "number": {
+            "description": "Номер диплома",
+            "type": "string",
+            "example": "15"
+          },
+          "diploma_template_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "training_id": {
+            "type": "integer",
+            "example": null,
+            "nullable": true
+          },
+          "issued_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-01-13 16:03:57"
+          },
+          "image": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "user_id": {
+            "type": "integer",
+            "example": 124091825
+          },
+          "title": {
+            "type": "string",
+            "example": "1"
+          }
+        },
+        "type": "object"
+      },
+      "LessonAnswerComment": {
+        "description": "Комментарии к ответам на уроки",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "comment_text": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "integer",
+            "example": 5
+          },
+          "files": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-01-16 11:11:40"
+          }
+        },
+        "type": "object"
+      },
+      "LessonAnswer": {
+        "description": "Ответы на уроки",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "lesson_id": {
+            "type": "integer",
+            "example": 10
+          },
+          "lesson_name": {
+            "type": "string",
+            "example": "Урок 1"
+          },
+          "answer_text": {
+            "type": "string",
+            "example": "Текст ответа"
+          },
+          "user_id": {
+            "type": "integer",
+            "example": 5
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-01-16 11:11:40"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-01-23 19:15:57"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["new", "declined", "accepted", "viewed"],
+            "example": "accepted"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["mission_answer", "free_comment"],
+            "example": "text"
+          },
+          "reviewer_user_id": {
+            "type": "integer",
+            "example": 3
+          },
+          "reviewed_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-01-23 19:15:57"
+          },
+          "review_text": {
+            "type": "string"
+          },
+          "review_file": {
+            "type": "string"
+          },
+          "training_id": {
+            "type": "integer",
+            "example": "123"
+          },
+          "training_name": {
+            "type": "string",
+            "example": "Первый тренинг"
+          },
+          "need_teacher_reaction": {
+            "type": "int",
+            "example": "1"
+          },
+          "need_teacher_reaction_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-01-23 19:15:57"
+          },
+          "response_teacher_id": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "Offer": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 3
+          },
+          "title": {
+            "type": "string",
+            "example": "Продукт 3"
+          },
+          "code": {
+            "type": "string",
+            "example": ""
+          },
+          "price": {
+            "type": "number",
+            "format": "float",
+            "example": 0
+          },
+          "discount_value": {
+            "type": "number",
+            "format": "float",
+            "example": 0
+          },
+          "final_price": {
+            "type": "number",
+            "format": "float",
+            "example": 0
+          },
+          "currency": {
+            "type": "string",
+            "example": "RUB"
+          },
+          "status": {
+            "type": "string",
+            "example": "draft"
+          },
+          "params": {
+            "type": "object",
+            "example": []
+          }
+        },
+        "type": "object"
+      },
+      "PhoneCall": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "file": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "caller": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "caller_name": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "to": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "gateway": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "date": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "duration": {
+            "type": "integer",
+            "example": null,
+            "nullable": true
+          },
+          "billsec": {
+            "type": "integer",
+            "example": null,
+            "nullable": true
+          },
+          "hangup_cause": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "atc_id": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "file_link": {
+            "type": "string",
+            "example": ""
+          }
+        },
+        "type": "object"
+      },
+      "ContactActivity": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 6
+          },
+          "user_id": {
+            "type": "integer",
+            "example": 124091828
+          },
+          "manager_user_id": {
+            "type": "integer",
+            "example": 124091825
+          },
+          "title": {
+            "type": "string",
+            "example": "sadfsdfdsf"
+          },
+          "finish_status": {
+            "type": "string",
+            "example": "contacted"
+          },
+          "failed_reason": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "example": "call"
+          },
+          "description": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "direction": {
+            "type": "string",
+            "example": "outcome"
+          },
+          "contact_time": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-01-15 13:26:48"
+          },
+          "context_type": {
+            "type": "string",
+            "example": "Deal"
+          },
+          "context_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-01-15 13:26:48"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-01-15 13:26:48"
+          },
+          "created_user_id": {
+            "type": "integer",
+            "example": 124091825
+          },
+          "updated_user_id": {
+            "type": "integer",
+            "example": null,
+            "nullable": true
+          },
+          "created_by": {
+            "type": "string",
+            "example": "user"
+          },
+          "phone_calls": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PhoneCall"
+            }
+          }
+        },
+        "type": "object"
+      },
+      "UserPurchase": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 12
+          },
+          "product_id": {
+            "type": "integer",
+            "example": 4
+          },
+          "user_id": {
+            "type": "integer",
+            "example": 124091825
+          },
+          "start_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-03-06 19:27:32"
+          },
+          "finish_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-05-05 19:27:32"
+          },
+          "period_type": {
+            "type": "string",
+            "example": "limited"
+          },
+          "is_actual": {
+            "type": "integer",
+            "example": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-03-06 19:28:10"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-12-30 19:56:33"
+          },
+          "money_sum": {
+            "type": "number",
+            "format": "float",
+            "example": 0
+          },
+          "is_payed": {
+            "type": "integer",
+            "example": 0
+          },
+          "state": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          }
+        },
+        "type": "object"
+      },
+      "Training": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 12
+          },
+          "title": {
+            "type": "string",
+            "example": "Первый тренинг"
+          },
+          "description": {
+            "type": "string",
+            "example": "Описание тренинга"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "example": "active"
+          },
+          "lesson_count": {
+            "type": "integer",
+            "example": "4"
+          }
+        },
+        "type": "object"
+      },
+      "WebinarParam": {
+        "description": "Параметры вебинара",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Вебинар 1123"
+          },
+          "teaser_description": {
+            "type": "string",
+            "example": "Короткое описание вебинара"
+          },
+          "show_page_login": {
+            "type": "integer",
+            "example": 1
+          }
+        },
+        "type": "object"
+      },
+      "Webinar": {
+        "description": "Вебинар",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 124091827
+          },
+          "user_id": {
+            "type": "integer",
+            "example": 12312431
+          },
+          "name": {
+            "type": "string",
+            "example": "Вебинар 1"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["new", "opened", "finished", "closed"],
+            "example": "finished"
+          },
+          "created_at": {
+            "type": "string",
+            "example": "2026-01-20 12:30:00"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["hangouts", "bigbluebutton"],
+            "example": "hangouts"
+          },
+          "subtype": {
+            "type": "integer",
+            "example": 1
+          },
+          "scenario_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "disabled_comments": {
+            "type": "integer",
+            "example": 1
+          },
+          "access_type": {
+            "type": "integer",
+            "example": 1
+          },
+          "url_redirrect": {
+            "type": "string"
+          },
+          "slide_id": {
+            "type": "string",
+            "example": "4545"
+          },
+          "view_type": {
+            "type": "integer",
+            "example": 1
+          },
+          "isolated_chat": {
+            "type": "integer",
+            "example": 0
+          },
+          "type_schedule": {
+            "type": "integer",
+            "example": 1
+          },
+          "params": {
+            "$ref": "#/components/schemas/WebinarParam"
+          }
+        },
+        "type": "object"
+      },
+      "Deal": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "ACCOUNT_ID": {
+            "type": "integer",
+            "example": 1368
+          },
+          "user_id": {
+            "type": "integer",
+            "example": 124091828
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-01-17 03:59:08"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-12-19 03:23:06"
+          },
+          "created_user_id": {
+            "type": "integer",
+            "example": 124091825
+          },
+          "cost": {
+            "type": "number",
+            "format": "float",
+            "example": 400
+          },
+          "currency": {
+            "type": "string",
+            "example": "RUB"
+          },
+          "status": {
+            "type": "string",
+            "example": "cancelled"
+          },
+          "is_payed": {
+            "type": "boolean",
+            "example": false
+          },
+          "title": {
+            "type": "string",
+            "example": "первый тренинг x 2\\nПродукт 3 x 2"
+          },
+          "number": {
+            "type": "integer",
+            "example": 12
+          },
+          "foreign_code": {
+            "type": "string",
+            "example": ""
+          },
+          "manager_user_id": {
+            "type": "integer",
+            "example": 124091827,
+            "nullable": true
+          },
+          "partner_user_id": {
+            "type": "integer",
+            "example": null,
+            "nullable": true
+          },
+          "partner_code_id": {
+            "type": "integer",
+            "example": null,
+            "nullable": true
+          },
+          "payed_value": {
+            "type": "number",
+            "format": "float",
+            "example": 0
+          },
+          "earned_value": {
+            "type": "number",
+            "format": "float",
+            "example": 0
+          },
+          "payed_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": null,
+            "nullable": true
+          },
+          "is_finished": {
+            "type": "boolean",
+            "example": false
+          },
+          "finished_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": null,
+            "nullable": true
+          },
+          "user_payed_money_value": {
+            "type": "number",
+            "format": "float",
+            "example": 0
+          },
+          "created_by_session_id": {
+            "type": "integer",
+            "example": null,
+            "nullable": true
+          },
+          "client_deal_number": {
+            "type": "integer",
+            "example": 0
+          },
+          "promo_code_id": {
+            "type": "integer",
+            "example": null,
+            "nullable": true
+          },
+          "cancel_reason_id": {
+            "type": "integer",
+            "example": null,
+            "nullable": true
+          },
+          "cancel_reason_comment": {
+            "type": "string",
+            "example": "Не нужен",
+            "nullable": true
+          },
+          "status_updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-01-16 22:59:08",
+            "nullable": true
+          },
+          "to_deposit_money_value": {
+            "type": "number",
+            "format": "float",
+            "example": 0
+          },
+          "created_by_visit_id": {
+            "type": "integer",
+            "example": null,
+            "nullable": true
+          },
+          "for_account_id": {
+            "type": "integer",
+            "example": null,
+            "nullable": true
+          },
+          "positions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DealPosition"
+            }
+          }
+        },
+        "type": "object"
+      },
+      "DealPosition": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 47
+          },
+          "offer_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-01-16 16:28:35"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-01-16 16:28:35"
+          },
+          "quantity": {
+            "type": "integer",
+            "example": 2
+          },
+          "title": {
+            "type": "string",
+            "example": "первый тренинг"
+          },
+          "price": {
+            "type": "number",
+            "format": "float",
+            "example": 100
+          },
+          "currency": {
+            "type": "string",
+            "example": "RUB"
+          },
+          "order_pos": {
+            "type": "integer",
+            "example": 0
+          },
+          "user_product_id": {
+            "type": "integer",
+            "example": null,
+            "nullable": true
+          },
+          "source_price": {
+            "type": "number",
+            "format": "float",
+            "example": 100
+          },
+          "start_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": null,
+            "nullable": true
+          }
+        },
+        "type": "object"
+      },
+      "User": {
+        "description": "Пользователь системы",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 124091827
+          },
+          "deleted": {
+            "type": "boolean",
+            "example": false
+          },
+          "deleted_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": null,
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "example": "teacher"
+          },
+          "profile_image": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "example": "active"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-12-19 06:10:11"
+          },
+          "profile_id": {
+            "type": "integer",
+            "example": 4
+          },
+          "activated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-12-18 17:10:53"
+          },
+          "first_name": {
+            "type": "string",
+            "example": "Federico",
+            "nullable": true
+          },
+          "last_name": {
+            "type": "string",
+            "example": "Cassis",
+            "nullable": true
+          },
+          "country": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "city": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "phone_standart": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "phone_confirmed": {
+            "type": "boolean",
+            "example": true
+          },
+          "comment": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "partner_user_id": {
+            "type": "integer",
+            "example": null,
+            "nullable": true
+          },
+          "subscribe_status": {
+            "type": "string",
+            "example": "all"
+          },
+          "timezone_offset": {
+            "type": "integer",
+            "example": 8
+          },
+          "birthday": {
+            "type": "string",
+            "format": "date",
+            "example": null,
+            "nullable": true
+          },
+          "language": {
+            "type": "string",
+            "example": ""
+          },
+          "gender": {
+            "type": "string",
+            "example": null,
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "example": "mail@example.com"
+          },
+          "is_email_confirmed": {
+            "type": "boolean",
+            "example": true
+          },
+          "geo_area_id": {
+            "type": "integer",
+            "example": null,
+            "nullable": true
+          }
+        },
+        "type": "object"
+      },
+      "ResultResponse": {
+        "properties": {
+          "status": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": ""
+          },
+          "code": {
+            "type": "integer",
+            "example": 200
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": []
+          }
+        },
+        "type": "object"
+      },
+      "AddBalanceRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/UserIdentifier"
+          },
+          {
+            "required": ["value", "type", "comment"],
+            "properties": {
+              "value": {
+                "description": "Количество",
+                "type": "integer",
+                "example": 200
+              },
+              "type": {
+                "description": "Тип баланса (default = virtual)",
+                "type": "integer",
+                "enum": ["virtual", "points"]
+              },
+              "comment": {
+                "description": "Если не заполнено, возьмется из пользователя",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "AddCommentToDealRequest": {
+        "required": ["dealId", "userId", "text"],
+        "properties": {
+          "dealId": {
+            "description": "Id заказа",
+            "type": "integer",
+            "example": 123
+          },
+          "userId": {
+            "description": "Id пользователя",
+            "type": "integer",
+            "example": 456
+          },
+          "text": {
+            "description": "Текст комментария",
+            "type": "string",
+            "example": "Комментарий к заказу"
+          }
+        },
+        "type": "object"
+      },
+      "AddCommentToDialogRequest": {
+        "required": ["dialogId", "commentText", "transport", "userId"],
+        "properties": {
+          "dialogId": {
+            "description": "Id диалога",
+            "type": "integer",
+            "example": 1
+          },
+          "commentText": {
+            "description": "Текст комментария",
+            "type": "string",
+            "example": "Работаю над вашим вопросом"
+          },
+          "transport": {
+            "description": "Набор транспортов для отправки. Возможные значения:\n *      0 - Сайт\n *       1 - Email\n *       2 - SMS\n *       3 - Telegram\n *       4 - Facebook\n *       5 - VK\n *       6 - Chatium\n *       7 - Whatsapp\n *       8 - Viber",
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "example": [1, 3, 4]
+          },
+          "userId": {
+            "description": "Id сотрудника/администратора",
+            "type": "integer",
+            "example": 12332434
+          }
+        },
+        "type": "object"
+      },
+      "AddCommentToLessonAnswerRequest": {
+        "required": ["lessonAnswerId", "text", "userId"],
+        "properties": {
+          "lessonAnswerId": {
+            "description": "id ответа на урок",
+            "type": "integer",
+            "example": 1
+          },
+          "text": {
+            "description": "Текст комментария",
+            "type": "string",
+            "example": "Очень познавательный урок"
+          },
+          "userId": {
+            "description": "id пользователя",
+            "type": "integer",
+            "example": 12332434
+          }
+        },
+        "type": "object"
+      },
+      "AddCommentToWebinarRequest": {
+        "required": ["moderatorId", "webinarId", "text"],
+        "properties": {
+          "moderatorId": {
+            "description": "ID пользователя-модератора / автора коммантария",
+            "type": "integer",
+            "example": 10
+          },
+          "webinarId": {
+            "description": "ID вебинара",
+            "type": "integer",
+            "example": 123
+          },
+          "webinarLaunchNumber": {
+            "description": "Если это автовебинар с типом &quot;Частые параллельные запуски&quot; или &quot;По расписанию&quot;,\n * то ID  запущенного автовебинара или будет выбран ближайший/запущенный",
+            "type": "integer",
+            "example": 456
+          },
+          "text": {
+            "description": "Текст сообщения",
+            "type": "string",
+            "example": "Ответ модератора"
+          },
+          "isPrivateReply": {
+            "description": "Ответить лично",
+            "type": "boolean",
+            "example": false
+          },
+          "replyToUserId": {
+            "description": "ID пользователя, на сообщение которого отвечаем",
+            "type": "integer",
+            "example": 55
+          },
+          "replyToUserType": {
+            "description": "Тип пользователя, на сообщение которого отвечаем",
+            "type": "integer",
+            "example": 55
+          }
+        },
+        "type": "object"
+      },
+      "AddDealPositionsRequest": {
+        "required": ["dealId", "positions"],
+        "properties": {
+          "dealId": {
+            "description": "id заказа",
+            "type": "integer",
+            "example": 1
+          },
+          "positions": {
+            "description": "Позиции (можно передавать несколько)",
+            "type": "array",
+            "items": {
+              "properties": {
+                "offerId": {
+                  "type": "integer",
+                  "example": 1
+                },
+                "price": {
+                  "type": "number",
+                  "format": "float",
+                  "example": 100
+                },
+                "quantity": {
+                  "type": "integer",
+                  "example": 2
+                }
+              },
+              "type": "object"
+            },
+            "example": [
+              {
+                "offerId": 1,
+                "price": 100,
+                "quantity": 2
+              },
+              {
+                "offerId": 3,
+                "price": 100
+              }
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "AddNoteRequest": {
+        "required": ["dialogId", "text"],
+        "properties": {
+          "dialogId": {
+            "description": "id диалога",
+            "type": "integer",
+            "example": 1
+          },
+          "text": {
+            "description": "Текст комментария",
+            "type": "string",
+            "example": "Текст"
+          }
+        },
+        "type": "object"
+      },
+      "ChangeDepartmentRequest": {
+        "required": ["dialogId", "newDepartmentId"],
+        "properties": {
+          "dialogId": {
+            "description": "Id диалога",
+            "type": "integer",
+            "example": 123
+          },
+          "newDepartmentId": {
+            "description": "Id нового отдела",
+            "type": "integer",
+            "example": 456
+          }
+        },
+        "type": "object"
+      },
+      "ChangeStatusLessonAnswerRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/GetLessonAnswerRequest"
+          },
+          {
+            "required": ["status"],
+            "properties": {
+              "status": {
+                "description": "Статус задания/комментария.\n *                 Для комментария: new, accepted, viewed.\n *                 Для задания: new, accepted, declined.",
+                "type": "string",
+                "enum": ["new", "accepted", "declined", "viewed"]
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "CloseDialogRequest": {
+        "required": ["dialogId"],
+        "properties": {
+          "dialogId": {
+            "description": "Id диалога",
+            "type": "integer",
+            "example": 123
+          }
+        },
+        "type": "object"
+      },
+      "CreateUserDiplomaRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/UserIdentifier"
+          },
+          {
+            "required": ["templateId"],
+            "properties": {
+              "templateId": {
+                "description": "id шаблона",
+                "type": "integer"
+              },
+              "number": {
+                "description": "Номер, если не передавать, возьмется следующий",
+                "type": "string"
+              },
+              "trainingName": {
+                "description": "Название тренинга (если не заполнено, возьмется из тренинга)",
+                "type": "string"
+              },
+              "userName": {
+                "description": "Если не заполнено, возьмется из пользователя",
+                "type": "string"
+              },
+              "allowDuplicates": {
+                "description": "Разрешать дубликаты, (default=false)",
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "GetDialogHistoryRequest": {
+        "required": ["dialogId"],
+        "properties": {
+          "dialogId": {
+            "description": "Id диалога",
+            "type": "integer",
+            "example": 123
+          },
+          "limit": {
+            "description": "Количество сообщений (не более 1000)",
+            "type": "integer",
+            "default": 100,
+            "example": 100
+          }
+        },
+        "type": "object"
+      },
+      "GetLessonAnswerRequest": {
+        "description": "ID ответа на урок",
+        "required": ["lessonAnswerId"],
+        "properties": {
+          "lessonAnswerId": {
+            "type": "integer",
+            "example": 1
+          }
+        },
+        "type": "object"
+      },
+      "UserIdentifier": {
+        "anyOf": [
+          {
+            "description": "ID пользователя (используйте, если известен ID)",
+            "required": ["userId"],
+            "properties": {
+              "userId": {
+                "type": "integer",
+                "example": 1
+              }
+            },
+            "type": "object"
+          },
+          {
+            "description": "Email пользователя (используйте, если ID неизвестен)",
+            "required": ["email"],
+            "properties": {
+              "email": {
+                "type": "string",
+                "format": "email",
+                "example": "user@example.com"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "ModerateWebinarChatMessageRequest": {
+        "description": "Модерация сообщения чата вебинара.",
+        "required": ["webinarId", "commentId", "action"],
+        "properties": {
+          "webinarId": {
+            "description": "ID вебинара",
+            "type": "integer",
+            "example": 123
+          },
+          "moderatorId": {
+            "description": "ID пользователя-модератора",
+            "type": "integer",
+            "example": 10
+          },
+          "commentId": {
+            "description": "ID сообщения в чате вебинара",
+            "type": "integer",
+            "example": 456
+          },
+          "action": {
+            "description": "Действие модерации:\n * - delete — удалить комментарий\n * - premoderation_accept — принять в премодерации\n * - premoderation_reject — отклонить в премодерации\n * - premoderation_reject_all — отклонить этот и все другие комментарии пользователя на премодерации",
+            "type": "string",
+            "enum": [
+              "delete",
+              "premoderation_accept",
+              "premoderation_reject",
+              "premoderation_reject_all"
+            ],
+            "example": "delete"
+          }
+        },
+        "type": "object"
+      },
+      "ModerateWebinarUserRequest": {
+        "description": "Модерация пользователя вебинара",
+        "required": ["webinarId", "userId", "userType", "action"],
+        "properties": {
+          "webinarId": {
+            "description": "ID вебинара",
+            "type": "integer",
+            "example": 123
+          },
+          "webinarLaunchNumber": {
+            "description": "Если это автовебинар с типом &quot;Частые параллельные запуски&quot; или &quot;По расписанию&quot;,\n * то ID  запущенного автовебинара или будет выбран ближайший/запущенный",
+            "type": "integer",
+            "example": 456
+          },
+          "moderatorId": {
+            "description": "ID пользователя-модератора",
+            "type": "integer",
+            "example": 10
+          },
+          "userId": {
+            "description": "ID пользователя",
+            "type": "integer",
+            "example": 123
+          },
+          "userType": {
+            "description": "Тип пользователя",
+            "type": "integer",
+            "example": "1 или 2"
+          },
+          "action": {
+            "description": "Действие модерации:\n * - isolation — забанить пользователя\n * - isolation_remove — разбанить пользователя",
+            "type": "string",
+            "enum": ["isolation", "isolation_remove"],
+            "example": "isolation"
+          }
+        },
+        "type": "object"
+      },
+      "RemoveDealPositionRequest": {
+        "required": ["dealId", "positionIds"],
+        "properties": {
+          "dealId": {
+            "description": "id заказа",
+            "type": "integer",
+            "example": 1
+          },
+          "positionIds": {
+            "description": "ID позиций",
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "example": [1, 3, 4]
+          }
+        },
+        "type": "object"
+      },
+      "SetPersonalManagerRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/UserIdentifier"
+          },
+          {
+            "required": ["managerId"],
+            "properties": {
+              "managerId": {
+                "description": "ID менеджера (указать пустым или не передавать, чтобы удалить)",
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "SetUserGroupsRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/UserIdentifier"
+          },
+          {
+            "required": ["groups"],
+            "properties": {
+              "groups": {
+                "description": "id групп",
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                },
+                "example": [1, 5, 3]
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "UpdateDealFieldsRequest": {
+        "required": ["dealId"],
+        "properties": {
+          "dealId": {
+            "description": "id заказа",
+            "type": "integer",
+            "example": 1
+          },
+          "manager_user_id": {
+            "description": "Назначить/Изменить менеджера",
+            "type": "integer"
+          },
+          "status": {
+            "description": "Статус заказа. Если 'cancel',\n *     можно указать cancel_reason_id и cancel_reason_comment",
+            "type": "string",
+            "enum": [
+              "new",
+              "in_work",
+              "not_confirmed",
+              "payment_waiting",
+              "waiting_for_return",
+              "part_payed",
+              "payed",
+              "cancelled",
+              "false"
+            ]
+          },
+          "cancel_reason_comment": {
+            "description": "Описание причины отказа",
+            "type": "integer"
+          },
+          "tags": {
+            "description": "теги",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["тег1", "тег2", "тег 3"]
+          }
+        },
+        "type": "object"
+      },
+      "UpdateUserCustomFieldsRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/UserIdentifier"
+          },
+          {
+            "required": ["customFields"],
+            "properties": {
+              "customFields": {
+                "description": "Описание полей в json, (3 - id доп.поля, 34 - значение)",
+                "type": "object",
+                "example": {
+                  "3": 34,
+                  "1": "Значение 1",
+                  "15": "Значение 2"
+                }
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "UpdateUserFieldsRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/UserIdentifier"
+          },
+          {
+            "properties": {
+              "gender": {
+                "description": "Пол пользователя",
+                "type": "string",
+                "enum": ["male", "female"],
+                "nullable": true
+              },
+              "country": {
+                "description": "Страна",
+                "type": "string",
+                "example": "Россия",
+                "nullable": true
+              },
+              "city": {
+                "description": "Город",
+                "type": "string",
+                "example": "Москва",
+                "nullable": true
+              },
+              "first_name": {
+                "description": "Имя",
+                "type": "string",
+                "nullable": true
+              },
+              "last_name": {
+                "description": "Фамилия",
+                "type": "string",
+                "nullable": true
+              },
+              "birthday": {
+                "description": "Дата рождения",
+                "type": "string",
+                "format": "date",
+                "example": "1991-01-12",
+                "nullable": true
+              },
+              "comment": {
+                "description": "Примечание",
+                "type": "string",
+                "example": "Он родился в январе",
+                "nullable": true
+              },
+              "phone": {
+                "description": "Номер телефона",
+                "type": "string",
+                "example": "+32321111111",
+                "nullable": true
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "UserCustomFields": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Где деньги лежат"
+          },
+          "value": {
+            "type": "string",
+            "example": "Под подушкой"
+          },
+          "type": {
+            "type": "string",
+            "example": "string"
+          },
+          "units": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "UserGoal": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "units": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "responses": {
+      "Success": {
+        "description": "Успешно",
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 200
+                },
+                "status": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "message": {
+                  "example": null,
+                  "nullable": true
+                },
+                "data": {
+                  "example": null,
+                  "nullable": true
+                }
+              },
+              "type": "object"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Нет доступа",
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "status": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Нет доступа"
+                },
+                "code": {
+                  "type": "integer",
+                  "example": 403
+                },
+                "errors": {
+                  "example": null,
+                  "nullable": true
+                },
+                "data": {
+                  "example": null,
+                  "nullable": true
+                }
+              },
+              "type": "object"
+            }
+          }
+        }
+      },
+      "ValidationException": {
+        "description": "Ошибка данных",
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "status": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Ошибка данных"
+                },
+                "code": {
+                  "type": "integer",
+                  "example": 400
+                },
+                "errors": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "example": "Не заполнено поле 1"
+                  }
+                },
+                "data": {
+                  "example": null,
+                  "nullable": true
+                }
+              },
+              "type": "object"
+            }
+          }
+        }
+      },
+      "NotFoundException": {
+        "description": "Объект не найден",
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "status": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Объект не найден"
+                },
+                "code": {
+                  "type": "integer",
+                  "example": 404
+                },
+                "errors": {
+                  "example": null,
+                  "nullable": true
+                },
+                "data": {
+                  "example": null,
+                  "nullable": true
+                }
+              },
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "BalanceTypeParam": {
+        "name": "type",
+        "in": "query",
+        "description": "Тип баланса (default: virtual)",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "enum": ["normal", "virtual", "points"],
+          "example": "virtual"
+        }
+      },
+      "LessonIdParam": {
+        "name": "lessonId",
+        "in": "query",
+        "description": "ID урока",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "example": 1
+        }
+      },
+      "UserEmailParam": {
+        "name": "email",
+        "in": "query",
+        "description": "Email пользователя (используйте, если ID неизвестен)",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "format": "email",
+          "example": "test@mail.ru"
+        }
+      },
+      "UserIdParam": {
+        "name": "userId",
+        "in": "query",
+        "description": "ID пользователя (используйте, если известен ID)",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "example": 1
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "description": "Токен доступа",
+        "bearerFormat": "JWT",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

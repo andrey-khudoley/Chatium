@@ -1,0 +1,10 @@
+{
+  "name": "[SAMPLE] Красивый сайт косметолога",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@master-s/cosmetologySite",
+    "codeIsPublic": false,
+    "searchable": false,
+    "isolatedExample": false
+  }
+}

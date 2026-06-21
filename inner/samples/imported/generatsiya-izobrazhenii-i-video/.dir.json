@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Генерация изображений и видео",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@templates/start/generatsiya-izobrazhenii-i-video"
+  }
+}

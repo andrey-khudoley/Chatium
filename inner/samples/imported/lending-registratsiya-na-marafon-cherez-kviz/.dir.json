@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Лендинг регистрация на марафон через квиз",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@pro/templates/lands/lending-registratsiya-na-marafon"
+  }
+}

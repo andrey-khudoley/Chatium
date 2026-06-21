@@ -1,0 +1,102 @@
+# English translations (key language)
+- key: Welcome
+  val: Welcome
+
+- key: Sign in to your account to continue
+  val: Sign in to your account to continue
+
+- key: Phone
+  val: Phone
+
+- key: Email
+  val: Email
+
+- key: Authentication methods are not configured
+  val: Authentication methods are not configured
+
+- key: or
+  val: or
+
+- key: Sign in with Telegram
+  val: Sign in with Telegram
+
+- key: Phone number
+  val: Phone number
+
+- key: Sign in with password
+  val: Sign in with password
+
+- key: Password
+  val: Password
+
+- key: Enter password
+  val: Enter password
+
+- key: Processing...
+  val: Processing...
+
+- key: Sign in
+  val: Sign in
+
+- key: Send code
+  val: Send code
+
+- key: Enter code
+  val: Enter code
+
+- key: Code sent to number
+  val: Code sent to number
+
+- key: Confirm
+  val: Confirm
+
+- key: Verifying...
+  val: Verifying...
+
+- key: Change number
+  val: Change number
+
+- key: Resend code
+  val: Resend code
+
+- key: Enter valid phone number
+  val: Enter valid phone number
+
+- key: Error sending SMS
+  val: Error sending SMS
+
+- key: Enter 4-digit code
+  val: Enter 4-digit code
+
+- key: Error confirming code
+  val: Error confirming code
+
+- key: Enter password error
+  val: Enter password
+
+- key: Authentication error
+  val: Authentication error
+
+- key: Email address
+  val: Email address
+
+- key: Check your email
+  val: Check your email
+
+- key: Code sent to address
+  val: Code sent to address
+
+- key: Change email
+  val: Change email
+
+- key: Enter valid email address
+  val: Enter valid email address
+
+- key: Error sending email
+  val: Error sending email
+
+- key: Enter 6-digit code
+  val: Enter 6-digit code
+
+- key: Authorization
+  val: Authorization

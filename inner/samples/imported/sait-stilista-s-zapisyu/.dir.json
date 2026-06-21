@@ -1,0 +1,10 @@
+{
+  "name": "[SAMPLE] Сайт стилиста с записью",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@master-s/stylistBooking",
+    "codeIsPublic": false,
+    "searchable": false,
+    "isolatedExample": false
+  }
+}

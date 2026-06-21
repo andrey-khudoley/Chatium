@@ -1,0 +1,559 @@
+{
+  "schemaVersion": 1,
+  "title": "Сопоставление публичного op gateway с HTTP GetCourse",
+  "description": "Имена op — канон реестра gc-unified-op-registry-v0.md (каталог gateway). HTTP-пути и методы проверяются по локальным OpenAPI: new_api_schema.json (новый контур), legacy_api_schema.json (Legacy). Входящий HTTP к gateway: один роут на операцию, путь /v1/{op}, метод httpMethod должен совпадать с записью (см. gateway-operation-manual.md §2). Опционально в каждой записи entries[]: поле availability — enabled | beta | disabled | unsupported (по умолчанию enabled); см. gateway-operation-manual.md §2.11.",
+  "artifacts": {
+    "newOpenApi": "new_api_schema.json",
+    "legacyOpenApi": "legacy_api_schema.json"
+  },
+  "entries": [
+    {
+      "op": "setUri",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/set-uri",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "set-uri",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getAllGroups",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/common/get-groups",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\common\\GetGroupsAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getAllPersonalManagers",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/common/get-personal-managers",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\common\\GetPersonalManagersListAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getTrainings",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/common/get-trainings",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\common\\GetTrainingsAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "addCommentToDeal",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/deal/add-comment",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": null,
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "addDealPositions",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/deal/add-positions",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": null,
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getDealCalls",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/deal/get-calls",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": null,
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getDealCancelReasons",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/deal/get-cancel-reasons",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": null,
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getDealComments",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/deal/get-comments",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": null,
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getDealCustomFields",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/deal/get-custom-fields",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": null,
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getDealsTags",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/deal/get-deals-tags",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": null,
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getDealFields",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/deal/get-fields",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": null,
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "removeDealPositions",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/deal/remove-positions",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": null,
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "updateDealFields",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/deal/update-fields",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": null,
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "addCommentToDialog",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/dialog/add-comment",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\dialog\\AddCommentToDialogAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "changeDepartment",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/dialog/change-department",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": null,
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "closeDialog",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/dialog/close",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": null,
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getDialogHistory",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/dialog/get-history",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": null,
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "addCommentToLessonAnswer",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/lesson/add-comment-to-lesson-answer",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\lesson\\AddCommentToLessonAnswerAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "changeStatusAnswers",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/lesson/change-status-answers",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\lesson\\ChangeStatusAnswerAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getLessonAnswers",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/lesson/get-answers",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\lesson\\GetLessonAnswersAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "addNote",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/note/add",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\note\\AddNoteAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getOfferById",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/offer/get-offer-by-id",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": null,
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getOffers",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/offer/get-offers",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": null,
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getOffersTags",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/offer/get-offers-tags",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\offer\\GetOfferTagsAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "addUserBalance",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/user/add-balance",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": null,
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "addUserGroups",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/user/add-groups",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\AddUserGroupsAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "createDiploma",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/user/create-diploma",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\CreateUserDiplomaAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getUserAnswers",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/user/get-answers",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserAnswersAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getUserBalance",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/user/get-balance",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetBalanceAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getUserCustomFields",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/user/get-custom-fields",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserCustomFieldsAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getUserDeals",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/user/get-deals",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserDealsAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getUserDiplomas",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/user/get-diplomas",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": null,
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getUserFields",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/user/get-fields",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserFieldsAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getUserGoalRecords",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/user/get-goal-records",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserGoalRecordsAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getUserGroups",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/user/get-groups",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserGroupsAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getUserLessonAnswers",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/user/get-lesson-answers",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetLessonAnswersAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getUserPurchases",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/user/get-purchases",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserPurchasesAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getUserSchedule",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/user/get-schedule",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserScheduleAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getUserTrainings",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/user/get-trainings",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserTrainingsAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getUserByTelegramChatId",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/user/get-user-by-telegram-chat-id",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\GetUserByTelegramChatIdAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "removeUserGroups",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/user/remove-groups",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\RemoveUserGroupsAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "setUserGroups",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/user/set-groups",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\SetUserGroupsAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "setPersonalManager",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/user/set-personal-manager",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\SetPersonalManagerAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "updateUserCustomFields",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/user/update-custom-fields",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\UpdateUserCustomFieldsAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "updateUserFields",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/user/update-fields",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\user\\UpdateUserFieldsAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "addCommentToWebinar",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/webinar/add-comment",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\webinar\\AddCommentWebinarAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getAllWebinars",
+      "contour": "new",
+      "httpMethod": "GET",
+      "pathTemplate": "/webinar/get-all-webinars",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\webinar\\GetAllWebinarsAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "getWebinarsByIds",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/webinar/get-webinars-by-ids",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\webinar\\GetWebinarsByIdsAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "moderateWebinarComment",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/webinar/moderation-comment",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\webinar\\ModerationWebinarCommentAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "moderateWebinarUser",
+      "contour": "new",
+      "httpMethod": "POST",
+      "pathTemplate": "/webinar/moderation-user",
+      "openApiArtifact": "new_api_schema.json",
+      "openApiOperationId": "app\\modules\\postback\\controllers\\api\\v1\\actions\\webinar\\ModerationWebinarUserAction::run",
+      "notes": "Authorization: Bearer {developerKey}_{schoolApiKey}; база URL см. servers в new_api_schema.json"
+    },
+    {
+      "op": "addUser",
+      "contour": "legacy",
+      "availability": "enabled",
+      "httpMethod": "POST",
+      "pathTemplate": "/users",
+      "pathParameters": null,
+      "legacyImportAction": "add",
+      "openApiArtifact": "legacy_api_schema.json",
+      "openApiOperationId": "legacy-import-users",
+      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC."
+    },
+    {
+      "op": "createDeal",
+      "contour": "legacy",
+      "httpMethod": "POST",
+      "pathTemplate": "/deals",
+      "pathParameters": null,
+      "legacyImportAction": "add",
+      "openApiArtifact": "legacy_api_schema.json",
+      "openApiOperationId": "legacy-import-deals",
+      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC."
+    },
+    {
+      "op": "exportUsers",
+      "contour": "legacy",
+      "httpMethod": "GET",
+      "pathTemplate": "/account/users",
+      "pathParameters": null,
+      "legacyImportAction": null,
+      "openApiArtifact": "legacy_api_schema.json",
+      "openApiOperationId": "legacy-export-account-users",
+      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC."
+    },
+    {
+      "op": "exportGroupUsers",
+      "contour": "legacy",
+      "httpMethod": "GET",
+      "pathTemplate": "/account/groups/{groupId}/users",
+      "pathParameters": ["groupId"],
+      "legacyImportAction": null,
+      "openApiArtifact": "legacy_api_schema.json",
+      "openApiOperationId": "legacy-export-group-users",
+      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC."
+    },
+    {
+      "op": "exportDeals",
+      "contour": "legacy",
+      "httpMethod": "GET",
+      "pathTemplate": "/account/deals",
+      "pathParameters": null,
+      "legacyImportAction": null,
+      "openApiArtifact": "legacy_api_schema.json",
+      "openApiOperationId": "legacy-export-deals",
+      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC."
+    },
+    {
+      "op": "exportPayments",
+      "contour": "legacy",
+      "httpMethod": "GET",
+      "pathTemplate": "/account/payments",
+      "pathParameters": null,
+      "legacyImportAction": null,
+      "openApiArtifact": "legacy_api_schema.json",
+      "openApiOperationId": "legacy-export-payments",
+      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC."
+    },
+    {
+      "op": "getCustomFields",
+      "contour": "legacy",
+      "httpMethod": "GET",
+      "pathTemplate": "/account/fields",
+      "pathParameters": null,
+      "legacyImportAction": null,
+      "openApiArtifact": "legacy_api_schema.json",
+      "openApiOperationId": "legacy-account-custom-fields",
+      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC."
+    },
+    {
+      "op": "getExportResult",
+      "contour": "legacy",
+      "httpMethod": "GET",
+      "pathTemplate": "/account/exports/{exportId}",
+      "pathParameters": ["exportId"],
+      "legacyImportAction": null,
+      "openApiArtifact": "legacy_api_schema.json",
+      "openApiOperationId": "legacy-export-result",
+      "notes": "Секрет школы: POST импорт — поле key в форме; GET экспорт — query key. См. legacy_api_schema.json и help GC."
+    }
+  ]
+}

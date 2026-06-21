@@ -1,0 +1,102 @@
+# Русские переводы
+- key: Welcome
+  val: Добро пожаловать
+
+- key: Sign in to your account to continue
+  val: Войдите в свой аккаунт для продолжения
+
+- key: Phone
+  val: Телефон
+
+- key: Email
+  val: Email
+
+- key: Authentication methods are not configured
+  val: Методы авторизации не настроены
+
+- key: or
+  val: или
+
+- key: Sign in with Telegram
+  val: Войти через Telegram
+
+- key: Phone number
+  val: Номер телефона
+
+- key: Sign in with password
+  val: Войти по паролю
+
+- key: Password
+  val: Пароль
+
+- key: Enter password
+  val: Введите пароль
+
+- key: Processing...
+  val: Обработка...
+
+- key: Sign in
+  val: Войти
+
+- key: Send code
+  val: Отправить код
+
+- key: Enter code
+  val: Введите код
+
+- key: Code sent to number
+  val: Код отправлен на номер
+
+- key: Confirm
+  val: Подтвердить
+
+- key: Verifying...
+  val: Проверка...
+
+- key: Change number
+  val: Изменить номер
+
+- key: Resend code
+  val: Отправить код повторно
+
+- key: Enter valid phone number
+  val: Введите корректный номер телефона
+
+- key: Error sending SMS
+  val: Ошибка при отправке SMS
+
+- key: Enter 4-digit code
+  val: Введите код из 4 цифр
+
+- key: Error confirming code
+  val: Ошибка при подтверждении кода
+
+- key: Enter password error
+  val: Введите пароль
+
+- key: Authentication error
+  val: Ошибка при авторизации
+
+- key: Email address
+  val: Email адрес
+
+- key: Check your email
+  val: Проверьте почту
+
+- key: Code sent to address
+  val: Код отправлен на адрес
+
+- key: Change email
+  val: Изменить email
+
+- key: Enter valid email address
+  val: Введите корректный email адрес
+
+- key: Error sending email
+  val: Ошибка при отправке email
+
+- key: Enter 6-digit code
+  val: Введите код из 6 цифр
+
+- key: Authorization
+  val: Авторизация

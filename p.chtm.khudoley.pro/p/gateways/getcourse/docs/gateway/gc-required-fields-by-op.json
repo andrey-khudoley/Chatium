@@ -1,0 +1,783 @@
+{
+  "schemaVersion": 1,
+  "title": "Обязательные поля исходящего запроса GetCourse по op gateway",
+  "generatedFrom": {
+    "mapping": "gc-op-http-mapping.json",
+    "newOpenApi": "new_api_schema.json",
+    "legacyOpenApi": "legacy_api_schema.json",
+    "legacyHelpSupplement": "https://getcourse.ru/help/api"
+  },
+  "heapBeforeIntegrationTesting": {
+    "alwaysRequiredKeys": ["gc_developer_api_key", "gc_test_school_api_key", "gc_test_school_host"],
+    "description": "Три ключа обязательны до любого интеграционного вызова gateway→GC через /v1/{op}. Идентификаторы для args по возможности из цепочек в памяти прогона (gateway-testing-strategy.md §2); gc_itest_* — исключения (gateway-operation-manual §5.8 уровень B)."
+  },
+  "entries": [
+    {
+      "op": "addUser",
+      "contour": "legacy",
+      "openApiPath": "/users",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "postFormFieldsIfPost": ["action", "key", "params"],
+        "queryParametersIfGet": [],
+        "pathParameters": []
+      },
+      "schoolApiKeyOnWire": "form_or_query_key_not_in_heap_fixture",
+      "innerParamsJsonNotes": "Внутри Base64(JSON) params структура по официальному help (https://getcourse.ru/help/api), раздел «Импорт пользователей»: для action=add минимально объект user с полем email (сопоставление/создание пользователя); объекты system/session по необходимости сценария."
+    },
+    {
+      "op": "createDeal",
+      "contour": "legacy",
+      "openApiPath": "/deals",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "postFormFieldsIfPost": ["action", "key", "params"],
+        "queryParametersIfGet": [],
+        "pathParameters": []
+      },
+      "schoolApiKeyOnWire": "form_or_query_key_not_in_heap_fixture",
+      "innerParamsJsonNotes": "Внутри Base64(JSON) params структура по help (https://getcourse.ru/help/api), раздел «Импорт заказов»: блоки user (как в импорте пользователя), deal (типично offer_code и/или offer_id, quantity и др.), при необходимости system/session."
+    },
+    {
+      "op": "exportDeals",
+      "contour": "legacy",
+      "openApiPath": "/account/deals",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "postFormFieldsIfPost": [],
+        "queryParametersIfGet": ["key"],
+        "pathParameters": []
+      },
+      "schoolApiKeyOnWire": "form_or_query_key_not_in_heap_fixture",
+      "innerParamsJsonNotes": null
+    },
+    {
+      "op": "exportGroupUsers",
+      "contour": "legacy",
+      "openApiPath": "/account/groups/{groupId}/users",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "postFormFieldsIfPost": [],
+        "queryParametersIfGet": ["key"],
+        "pathParameters": ["groupId"]
+      },
+      "schoolApiKeyOnWire": "form_or_query_key_not_in_heap_fixture",
+      "innerParamsJsonNotes": null
+    },
+    {
+      "op": "exportPayments",
+      "contour": "legacy",
+      "openApiPath": "/account/payments",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "postFormFieldsIfPost": [],
+        "queryParametersIfGet": ["key"],
+        "pathParameters": []
+      },
+      "schoolApiKeyOnWire": "form_or_query_key_not_in_heap_fixture",
+      "innerParamsJsonNotes": null
+    },
+    {
+      "op": "exportUsers",
+      "contour": "legacy",
+      "openApiPath": "/account/users",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "postFormFieldsIfPost": [],
+        "queryParametersIfGet": ["key"],
+        "pathParameters": []
+      },
+      "schoolApiKeyOnWire": "form_or_query_key_not_in_heap_fixture",
+      "innerParamsJsonNotes": null
+    },
+    {
+      "op": "getCustomFields",
+      "contour": "legacy",
+      "openApiPath": "/account/fields",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "postFormFieldsIfPost": [],
+        "queryParametersIfGet": ["key"],
+        "pathParameters": []
+      },
+      "schoolApiKeyOnWire": "form_or_query_key_not_in_heap_fixture",
+      "innerParamsJsonNotes": null
+    },
+    {
+      "op": "getExportResult",
+      "contour": "legacy",
+      "openApiPath": "/account/exports/{exportId}",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "postFormFieldsIfPost": [],
+        "queryParametersIfGet": ["key"],
+        "pathParameters": ["exportId"]
+      },
+      "schoolApiKeyOnWire": "form_or_query_key_not_in_heap_fixture",
+      "innerParamsJsonNotes": null
+    },
+    {
+      "op": "addCommentToDeal",
+      "contour": "new",
+      "openApiPath": "/deal/add-comment",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["dealId", "text", "userId"]
+    },
+    {
+      "op": "addCommentToDialog",
+      "contour": "new",
+      "openApiPath": "/dialog/add-comment",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["commentText", "dialogId", "transport", "userId"]
+    },
+    {
+      "op": "addCommentToLessonAnswer",
+      "contour": "new",
+      "openApiPath": "/lesson/add-comment-to-lesson-answer",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["lessonAnswerId", "text", "userId"]
+    },
+    {
+      "op": "addCommentToWebinar",
+      "contour": "new",
+      "openApiPath": "/webinar/add-comment",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["moderatorId", "text", "webinarId"]
+    },
+    {
+      "op": "addDealPositions",
+      "contour": "new",
+      "openApiPath": "/deal/add-positions",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["dealId", "positions"]
+    },
+    {
+      "op": "addNote",
+      "contour": "new",
+      "openApiPath": "/note/add",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["dialogId", "text"]
+    },
+    {
+      "op": "addUserBalance",
+      "contour": "new",
+      "openApiPath": "/user/add-balance",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["comment", "type", "value"]
+    },
+    {
+      "op": "addUserGroups",
+      "contour": "new",
+      "openApiPath": "/user/add-groups",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["groups"]
+    },
+    {
+      "op": "changeDepartment",
+      "contour": "new",
+      "openApiPath": "/dialog/change-department",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["dialogId", "newDepartmentId"]
+    },
+    {
+      "op": "changeStatusAnswers",
+      "contour": "new",
+      "openApiPath": "/lesson/change-status-answers",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["lessonAnswerId", "status"]
+    },
+    {
+      "op": "closeDialog",
+      "contour": "new",
+      "openApiPath": "/dialog/close",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["dialogId"]
+    },
+    {
+      "op": "createDiploma",
+      "contour": "new",
+      "openApiPath": "/user/create-diploma",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["templateId"]
+    },
+    {
+      "op": "getAllGroups",
+      "contour": "new",
+      "openApiPath": "/common/get-groups",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getAllPersonalManagers",
+      "contour": "new",
+      "openApiPath": "/common/get-personal-managers",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getAllWebinars",
+      "contour": "new",
+      "openApiPath": "/webinar/get-all-webinars",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getDealCalls",
+      "contour": "new",
+      "openApiPath": "/deal/get-calls",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": ["dealId"],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getDealCancelReasons",
+      "contour": "new",
+      "openApiPath": "/deal/get-cancel-reasons",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getDealComments",
+      "contour": "new",
+      "openApiPath": "/deal/get-comments",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": ["dealId"],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getDealCustomFields",
+      "contour": "new",
+      "openApiPath": "/deal/get-custom-fields",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": ["dealId"],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getDealFields",
+      "contour": "new",
+      "openApiPath": "/deal/get-fields",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": ["dealId"],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getDealsTags",
+      "contour": "new",
+      "openApiPath": "/deal/get-deals-tags",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getDialogHistory",
+      "contour": "new",
+      "openApiPath": "/dialog/get-history",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": ["dialogId"],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getLessonAnswers",
+      "contour": "new",
+      "openApiPath": "/lesson/get-answers",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": ["lessonId"],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getOfferById",
+      "contour": "new",
+      "openApiPath": "/offer/get-offer-by-id",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": ["offerId"],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getOffers",
+      "contour": "new",
+      "openApiPath": "/offer/get-offers",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getOffersTags",
+      "contour": "new",
+      "openApiPath": "/offer/get-offers-tags",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getTrainings",
+      "contour": "new",
+      "openApiPath": "/common/get-trainings",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getUserAnswers",
+      "contour": "new",
+      "openApiPath": "/user/get-answers",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getUserBalance",
+      "contour": "new",
+      "openApiPath": "/user/get-balance",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getUserByTelegramChatId",
+      "contour": "new",
+      "openApiPath": "/user/get-user-by-telegram-chat-id",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": ["chatId"],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getUserCustomFields",
+      "contour": "new",
+      "openApiPath": "/user/get-custom-fields",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getUserDeals",
+      "contour": "new",
+      "openApiPath": "/user/get-deals",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getUserDiplomas",
+      "contour": "new",
+      "openApiPath": "/user/get-diplomas",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getUserFields",
+      "contour": "new",
+      "openApiPath": "/user/get-fields",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getUserGoalRecords",
+      "contour": "new",
+      "openApiPath": "/user/get-goal-records",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getUserGroups",
+      "contour": "new",
+      "openApiPath": "/user/get-groups",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getUserLessonAnswers",
+      "contour": "new",
+      "openApiPath": "/user/get-lesson-answers",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getUserPurchases",
+      "contour": "new",
+      "openApiPath": "/user/get-purchases",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getUserSchedule",
+      "contour": "new",
+      "openApiPath": "/user/get-schedule",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getUserTrainings",
+      "contour": "new",
+      "openApiPath": "/user/get-trainings",
+      "httpMethod": "GET",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": null
+    },
+    {
+      "op": "getWebinarsByIds",
+      "contour": "new",
+      "openApiPath": "/webinar/get-webinars-by-ids",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["ids"]
+    },
+    {
+      "op": "moderateWebinarComment",
+      "contour": "new",
+      "openApiPath": "/webinar/moderation-comment",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["action", "commentId", "webinarId"]
+    },
+    {
+      "op": "moderateWebinarUser",
+      "contour": "new",
+      "openApiPath": "/webinar/moderation-user",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["action", "userId", "userType", "webinarId"]
+    },
+    {
+      "op": "removeDealPositions",
+      "contour": "new",
+      "openApiPath": "/deal/remove-positions",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["dealId", "positionIds"]
+    },
+    {
+      "op": "removeUserGroups",
+      "contour": "new",
+      "openApiPath": "/user/remove-groups",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["groups"]
+    },
+    {
+      "op": "setPersonalManager",
+      "contour": "new",
+      "openApiPath": "/user/set-personal-manager",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["managerId"]
+    },
+    {
+      "op": "setUri",
+      "contour": "new",
+      "openApiPath": "/set-uri",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["event_id", "event_object_id", "uri"]
+    },
+    {
+      "op": "setUserGroups",
+      "contour": "new",
+      "openApiPath": "/user/set-groups",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["groups"]
+    },
+    {
+      "op": "updateDealFields",
+      "contour": "new",
+      "openApiPath": "/deal/update-fields",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["dealId"]
+    },
+    {
+      "op": "updateUserCustomFields",
+      "contour": "new",
+      "openApiPath": "/user/update-custom-fields",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": ["customFields"]
+    },
+    {
+      "op": "updateUserFields",
+      "contour": "new",
+      "openApiPath": "/user/update-fields",
+      "httpMethod": "POST",
+      "transportRequired": {
+        "authorizationBearer": true
+      },
+      "requiredPathParameters": [],
+      "requiredQueryParameters": [],
+      "requiredHeaderParameters": [],
+      "requiredJsonBodyTopLevel": []
+    }
+  ]
+}

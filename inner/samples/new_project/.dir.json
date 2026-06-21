@@ -1,0 +1,9 @@
+{
+  "name": "[SAMPLE] new_project",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "codeIsPublic": false,
+    "searchable": false,
+    "isolatedExample": false
+  }
+}

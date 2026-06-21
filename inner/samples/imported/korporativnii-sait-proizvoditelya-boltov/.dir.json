@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Корпоративный сайт производителя болтов",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@master-s/boltManufacturer"
+  }
+}

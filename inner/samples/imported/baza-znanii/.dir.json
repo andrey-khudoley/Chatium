@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] База знаний",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@ru/doc"
+  }
+}

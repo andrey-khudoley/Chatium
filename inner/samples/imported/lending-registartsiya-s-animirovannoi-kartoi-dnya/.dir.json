@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Лендинг регистарция с анимированной картой дня",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@pro/templates/lands/lending-registartsiya-na-marafon"
+  }
+}

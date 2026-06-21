@@ -1,0 +1,10 @@
+{
+  "name": "[SAMPLE] Красивый сайт мастера маникюра",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@master-s/nailMaster",
+    "codeIsPublic": false,
+    "searchable": false,
+    "isolatedExample": false
+  }
+}

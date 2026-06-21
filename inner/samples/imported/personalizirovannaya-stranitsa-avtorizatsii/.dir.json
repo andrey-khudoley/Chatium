@@ -1,0 +1,8 @@
+{
+  "name": "[SAMPLE] Персонализированная страница авторизации",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@templates/start/botan/templates/system-pages/custom-authorization",
+    "canBeAuthPage": true
+  }
+}

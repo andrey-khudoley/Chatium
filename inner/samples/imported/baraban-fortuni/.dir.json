@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Барабан фортуны",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@malocode/wheel-of-fortune-spinner"
+  }
+}

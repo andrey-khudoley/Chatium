@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Chatium Workspace'
+  short_description: 'Workflows for the shared Chatium stage/prod root'
+  default_prompt: 'Use this skill for Chatium stage development, review, verification, documentation, and explicit s-to-p delivery workflows.'

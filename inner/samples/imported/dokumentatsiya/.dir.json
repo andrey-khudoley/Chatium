@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Документация",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@template/doc"
+  }
+}

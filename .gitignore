@@ -1,0 +1,32 @@
+# ── Общий .gitignore корня chatium.chatium-sync ──
+# Охватывает оба воркспейса (s.chtm.khudoley.pro, p.chtm.khudoley.pro) и корневой тулинг.
+
+# Зависимости
+**/node_modules/
+
+# IDE
+**/.cursor/
+**/.vscode/
+
+# CodeGraph — локальный индекс и состояние демона
+/.codegraph/
+
+# Состояние sync-агента (регенерируется: tree.json, статусы, rate-limit)
+/configs/
+
+# Артефакты браузерных сессий (Playwright MCP) и скриншоты страниц оплаты
+/.playwright-mcp/
+**/payment-*.png
+**/pw-payment-styles-*.json
+
+# Внутренние LLM-логи
+**/docs/LLM/
+
+# Временные конфиги строгой проверки типов (scripts/check-types.mjs)
+**/.tsconfig.strict-check.*.tmp.json
+
+# Лог трекинга лимитов за прогон (scripts/usage-limits.mjs)
+**/scripts/.usage-log/
+
+# Runtime/debug логи
+*.log

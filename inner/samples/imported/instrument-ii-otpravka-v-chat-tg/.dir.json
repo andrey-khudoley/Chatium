@@ -1,0 +1,7 @@
+{
+  "name": "[SAMPLE] Инструмент для ии агента Отправка сообщения в чат ТГ",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "templatePath": "@templates/start/instrument-dlya-ii-agenta-otpravka-soobscheniya-v-chat-tg"
+  }
+}

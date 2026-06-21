@@ -1,0 +1,29 @@
+import { Settings } from '../tables/settings.table'
+import type { SettingsRow } from '../tables/settings.table'
+import { collectAllPaged } from '../lib/heapPaging'
+
+/**
+ * Репозиторий настроек — слой работы с БД.
+ * Только CRUD-операции, без бизнес-логики.
+ * Не логируем через logger.lib: getSetting/getLogLevel/getLogWebhook вызываются из writeServerLog,
+ * а они используют findByKey — иначе получается рекурсия (Maximum call stack size exceeded).
+ */
+export async function findByKey(ctx: app.Ctx, key: string): Promise<SettingsRow | null> {
+  return Settings.findOneBy(ctx, { key })
+}
+
+export async function findAll(ctx: app.Ctx): Promise<SettingsRow[]> {
+  // Пагинация: при >1000 настроек одиночный findAll тихо усёк бы список (008-heap.md).
+  return collectAllPaged((limit, offset) => Settings.findAll(ctx, { limit, offset }))
+}
+
+export async function upsert(ctx: app.Ctx, key: string, value: unknown): Promise<void> {
+  await Settings.createOrUpdateBy(ctx, 'key', { key, value })
+}
+
+export async function deleteByKey(ctx: app.Ctx, key: string): Promise<void> {
+  const row = await Settings.findOneBy(ctx, { key })
+  if (row) {
+    await Settings.delete(ctx, row.id)
+  }
+}
