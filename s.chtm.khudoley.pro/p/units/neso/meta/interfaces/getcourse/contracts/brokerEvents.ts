@@ -1,6 +1,8 @@
-export const GETCOURSE_MODULE_KEY = 'p/units/neso/meta/interfaces/getcourse'
+import { PROJECT_ROOT as MODULE_KEY } from '../config/routes'
 
-const RAW_EVENT_PAYLOAD_SCHEMA = {
+export const GETCOURSE_RAW_EVENT_ACCEPTED_EVENT_TYPE = 'getcourse.raw_event.accepted'
+
+const GETCOURSE_RAW_EVENT_PAYLOAD_SCHEMA = {
   type: 'object',
   required: ['rawEventId', 'eventType', 'receivedAt', 'payloadJson'],
   properties: {
@@ -18,14 +20,14 @@ const RAW_EVENT_PAYLOAD_SCHEMA = {
 
 export const BROKER_EVENT_CONTRACTS = [
   {
-    eventType: 'getcourse.raw_event.accepted',
+    eventType: GETCOURSE_RAW_EVENT_ACCEPTED_EVENT_TYPE,
     eventVersion: 1,
     status: 'active',
     description: 'GetCourse raw event accepted by the GetCourse interface module',
     payloadSchemaFormat: 'json-schema-subset-v1',
-    payloadSchema: RAW_EVENT_PAYLOAD_SCHEMA,
+    payloadSchema: GETCOURSE_RAW_EVENT_PAYLOAD_SCHEMA,
     sourceRef: {
-      moduleKey: GETCOURSE_MODULE_KEY,
+      moduleKey: MODULE_KEY,
       path: 'contracts/brokerEvents.ts',
       exportName: 'BROKER_EVENT_CONTRACTS',
       docsPath: 'README.md'
