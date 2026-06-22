@@ -171,32 +171,52 @@ export async function writeServerLog(ctx: app.Ctx, entry: ServerLogEntry): Promi
         ? effectivePayload
         : JSON.stringify(effectivePayload)
 
-  await logsRepo.create(ctx, {
-    message: entry.message,
-    payload: payloadForHeap,
-    severity: entry.severity,
-    level,
-    timestamp
-  })
+  let heapLogWritten = false
+  try {
+    await logsRepo.create(ctx, {
+      message: entry.message,
+      payload: payloadForHeap,
+      severity: entry.severity,
+      level,
+      timestamp
+    })
+    heapLogWritten = true
+  } catch (error) {
+    ;(ctx.log as (msg: string) => void)(
+      `[WARN] [lib/logger.lib] Heap log write failed: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    )
+  }
 
-  if (isDebug) {
+  if (isDebug && heapLogWritten) {
     ;(ctx.log as (msg: string) => void)('[DEBUG] [lib/logger.lib] writeServerLog Heap create done')
   }
 
   const socketId = getAdminLogsSocketId(ctx)
   // sendDataToSocket из @app/socket типизирует data как узкую структуру — наш payload
   // (произвольный JSON лога) в неё не укладывается; any здесь для системного вызова.
-  await sendDataToSocket(ctx, socketId, {
-    type: 'new-log',
-    data: {
-      severity: entry.severity,
-      level,
-      args: effectivePayload !== undefined ? [entry.message, effectivePayload] : [entry.message],
-      timestamp
-    }
-  } as any)
+  let socketLogSent = false
+  try {
+    await sendDataToSocket(ctx, socketId, {
+      type: 'new-log',
+      data: {
+        severity: entry.severity,
+        level,
+        args: effectivePayload !== undefined ? [entry.message, effectivePayload] : [entry.message],
+        timestamp
+      }
+    } as any)
+    socketLogSent = true
+  } catch (error) {
+    ;(ctx.log as (msg: string) => void)(
+      `[WARN] [lib/logger.lib] WebSocket log send failed: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    )
+  }
 
-  if (isDebug) {
+  if (isDebug && socketLogSent) {
     ;(ctx.log as (msg: string) => void)('[DEBUG] [lib/logger.lib] writeServerLog WebSocket sent')
   }
 

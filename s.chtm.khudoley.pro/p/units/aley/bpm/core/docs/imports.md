@@ -16,7 +16,7 @@
 - `./pages/HomePage.vue`
 - `./shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
 - `./styles` → `customScrollbarStyles`
-- `./shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
+- `./lib/logLevel.lib` → `getLogLevelForPage`, `getLogLevelScript`
 - `./config/routes` → `getFullUrl`, `ROUTES`
 - `./config/project` → `INDEX_PAGE_NAME`, `BODY_TEXT`, `BODY_SUBTEXT`, `getPageTitle`, `getHeaderText`
 - `./lib/logger.lib` → `*`
@@ -28,10 +28,12 @@
 - `@app/auth` → `requireAccountRole`
 - `@app/socket` → `genSocketId`
 - `../../pages/AdminPage.vue`
-- `../login` → `loginPageRoute`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
-- `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
+- `../../lib/logLevel.lib` → `getLogLevelForPage`, `getLogLevelScript`
 - `../../styles` → `customScrollbarStyles`
+- `../../pagecss/adminPageCss1`, `../../pagecss/adminPageCss2`, `../../pagecss/adminPageCss3`
+- `../../pagecss/adminBrokerOpsCss` → `adminBrokerOpsCss`
+- `../../pagecss/headerCss1`, `../../pagecss/headerCss2`
 - `../../lib/logger.lib` → `getAdminLogsSocketId`, `writeServerLog` (и др.)
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `ADMIN_PAGE_NAME`, `getPageTitle`, `getHeaderText`
@@ -43,7 +45,7 @@
 - `@app/auth` → `requireRealUser`
 - `../../pages/ProfilePage.vue`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
-- `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
+- `../../lib/logLevel.lib` → `getLogLevelForPage`, `getLogLevelScript`
 - `../../styles` → `customScrollbarStyles`
 - `../../lib/logger.lib` → `*`
 - `../../config/routes` → `getFullUrl`, `ROUTES`
@@ -58,7 +60,7 @@
 - `../../lib/logger.lib` → `getAdminLogsSocketId`
 - `../../pages/TestsPage.vue`
 - `../../shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
-- `../../shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
+- `../../lib/logLevel.lib` → `getLogLevelForPage`, `getLogLevelScript`
 - `../../styles` → `customScrollbarStyles`
 - `../../config/routes` → `getFullUrl`, `ROUTES`
 - `../../config/project` → `TESTS_PAGE_NAME`, `getPageTitle`, `getHeaderText`
@@ -84,18 +86,19 @@
 
 ### `./pages/AdminPage.vue`
 
-- `vue` → `onMounted`, `onBeforeUnmount`, `onUnmounted`, `ref`, `computed`, `watch`
-- `@app/socket` → `getOrCreateBrowserSocketClient`
+- `vue` → `onMounted`, `onUnmounted`, `ref`, `computed`
 - `../components/Header.vue`
 - `../components/GlobalGlitch.vue`
 - `../components/AppFooter.vue`
-- `../api/settings/get` → `getSettingRoute`
-- `../api/settings/save` → `saveSettingRoute`
-- `../api/admin/logs/recent` → `getRecentLogsRoute`
-- `../api/admin/logs/before` → `getLogsBeforeRoute`
+- `../components/admin/AdminCounters.vue`
+- `../components/admin/AdminSettings.vue`
+- `../components/admin/AdminLogMonitor.vue`
+- `../components/admin/broker/BrokerOpsPanel.vue`
 - `../api/admin/dashboard/counts` → `getDashboardCountsRoute`
 - `../api/admin/dashboard/reset` → `resetDashboardRoute`
-- `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry`
+- `../shared/logger` → `createComponentLogger`, `LogEntry` (type)
+- `../shared/useLogStream` → `useLogStream`
+- `../shared/useRemoteLogging` → `useRemoteLogging`
 
 ### `./pages/ProfilePage.vue`
 
@@ -145,6 +148,72 @@
 - `vue` → `onMounted`
 - `../shared/logger` → `createComponentLogger`
 
+### `./components/admin/AdminCounters.vue`
+
+- нет импортов (props/emits only)
+
+### `./components/admin/AdminSettings.vue`
+
+- `vue` → `onMounted`, `onBeforeUnmount`, `ref`, `watch`
+- `../../api/settings/get` → `getSettingRoute`
+- `../../api/settings/save` → `saveSettingRoute`
+- `../../shared/logger` → `createComponentLogger`
+
+### `./components/admin/AdminLogMonitor.vue`
+
+- `vue` → `ref`
+- `../../shared/useLogStream` → `LogDisplayItem`, `LogStreamKey` (type)
+
+### `./components/admin/broker/BrokerOpsPanel.vue`
+
+- `vue` → `computed`, `onMounted`, `reactive`, `ref`
+- `../../../api/admin/broker/diagnostics` → `adminBrokerDiagnosticsRoute`
+- `../../../api/admin/broker/events/raw` → `adminBrokerEventRawRoute`
+- `../../../api/admin/broker/modules/toggle` → `adminBrokerModuleToggleRoute`
+- `../../../api/admin/broker/subscriptions/toggle` → `adminBrokerSubscriptionToggleRoute`
+- `../../../api/admin/broker/deliveries/requeue` → `adminBrokerDeliveryRequeueRoute`
+- `../../../api/admin/broker/deliveries/skip` → `adminBrokerDeliverySkipRoute`
+- `../../../api/admin/broker/notifications/retry` → `adminBrokerNotificationsRetryRoute`
+- `../../../shared/logger` → `createComponentLogger`
+- `./BrokerModulesTable.vue`, `./BrokerSubscriptionsTable.vue`, `./BrokerEventsTable.vue`, `./BrokerDeliveriesTable.vue`, `./BrokerNotificationsTable.vue` → табличные компоненты и row types
+- `./BrokerOpsConfirmModal.vue`
+- `./BrokerRawPayloadViewer.vue`
+- `./brokerOpsPanelModel` → `BROKER_TABS`, статусы фильтров, `BrokerDiagnosticsResult`, `BrokerTab`, `ConfirmAction`
+- Важно: Vue broker components используют только `// @shared-route` API и `shared/*`; они не импортируют `lib/`, `repos/`, `tables/`.
+
+### `./components/admin/broker/brokerOpsPanelModel.ts`
+
+- `./BrokerModulesTable.vue`, `./BrokerSubscriptionsTable.vue`, `./BrokerEventsTable.vue`, `./BrokerDeliveriesTable.vue`, `./BrokerNotificationsTable.vue` → row types
+- нет серверных импортов; локальные типы/константы панели broker ops
+
+### `./components/admin/broker/BrokerModulesTable.vue`
+
+- нет импортов (props/emits only, экспортирует `BrokerModuleRow`)
+
+### `./components/admin/broker/BrokerSubscriptionsTable.vue`
+
+- нет импортов (props/emits only, экспортирует `BrokerSubscriptionRow`)
+
+### `./components/admin/broker/BrokerEventsTable.vue`
+
+- нет импортов (props/emits only, экспортирует `BrokerEventRow`)
+
+### `./components/admin/broker/BrokerDeliveriesTable.vue`
+
+- нет импортов (props/emits only, экспортирует `BrokerDeliveryRow`)
+
+### `./components/admin/broker/BrokerNotificationsTable.vue`
+
+- нет импортов (props/emits only, экспортирует `BrokerNotificationRow`)
+
+### `./components/admin/broker/BrokerOpsConfirmModal.vue`
+
+- `vue` → `ref`, `watch`
+
+### `./components/admin/broker/BrokerRawPayloadViewer.vue`
+
+- `vue` → `computed`
+
 ## 4) Shared (общий код)
 
 ### `./styles.tsx`
@@ -157,8 +226,8 @@
 
 ### `./shared/logLevel.ts`
 
-- `../lib/settings.lib` → `getLogLevel`, `LogLevel`
-- `../lib/logger.lib` → `*`
+- первая строка: `// @shared`
+- нет импортов (экспортирует `getLogLevelScript`, `LogLevel`)
 
 ### `./shared/testCatalog.ts`
 
@@ -198,6 +267,12 @@
 
 - `../repos/settings.repo` → `*` (findByKey, findAll, upsert, deleteByKey)
 - `./logger.lib` → `*` (только для функций, не вызываемых из logger.lib: getSettingString, getLogsLimit, getDashboardResetAt, getAllSettings, setSetting)
+
+### `./lib/logLevel.lib.ts`
+
+- `./settings.lib` → `getLogLevel`, `LogLevel` (type)
+- `./logger.lib` → `*`
+- `../shared/logLevel` → `getLogLevelScript`
 
 ### `./lib/admin/dashboard.lib.ts`
 
@@ -262,6 +337,49 @@
 - `@app/auth` → `requireAccountRole`
 - `../../../lib/admin/dashboard.lib` → `*`
 - `../../../lib/logger.lib` → `*`
+
+### `./api/admin/broker/diagnostics.ts`
+
+- первая строка обработчика: `requireAccountRole(ctx, 'Admin')`
+- `@app/auth` → `requireAccountRole`
+- `../../../lib/broker/internalApi.lib` → `getBrokerDiagnostics`
+
+### `./api/admin/broker/modules/toggle.ts`
+
+- первая строка обработчика: `requireAccountRole(ctx, 'Admin')`
+- `@app/auth` → `requireAccountRole`
+- `../../../../lib/broker/internalApi.lib` → `toggleBrokerModule`
+
+### `./api/admin/broker/subscriptions/toggle.ts`
+
+- первая строка обработчика: `requireAccountRole(ctx, 'Admin')`
+- `@app/auth` → `requireAccountRole`
+- `../../../../lib/broker/internalApi.lib` → `toggleBrokerSubscription`
+
+### `./api/admin/broker/events/raw.ts`
+
+- первая строка обработчика: `requireAccountRole(ctx, 'Admin')`
+- `@app/auth` → `requireAccountRole`
+- `../../../../lib/broker/internalApi.lib` → `getBrokerEventRaw`
+
+### `./api/admin/broker/deliveries/requeue.ts`
+
+- первая строка обработчика: `requireAccountRole(ctx, 'Admin')`
+- `@app/auth` → `requireAccountRole`
+- `../../../../lib/broker/internalApi.lib` → `requeueBrokerDelivery`
+
+### `./api/admin/broker/deliveries/skip.ts`
+
+- первая строка обработчика: `requireAccountRole(ctx, 'Admin')`
+- `@app/auth` → `requireAccountRole`
+- `../../../../lib/broker/internalApi.lib` → `skipBrokerDelivery`
+
+### `./api/admin/broker/notifications/retry.ts`
+
+- первая строка обработчика: `requireAccountRole(ctx, 'Admin')`
+- `@app/auth` → `requireAccountRole`
+- `../../../../lib/broker/internalApi.lib` → `retryBrokerNotifications`
+- `../../../../lib/broker/types.lib` → `RetryBrokerNotificationsRequest` (type)
 
 ### `./api/tests/list.ts`
 

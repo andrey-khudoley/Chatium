@@ -296,4 +296,5 @@ export const adminPageCss3 = `
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
 `

@@ -104,6 +104,20 @@ function normalizeAuthToken(authToken: unknown): string {
   return typeof authToken === 'string' ? authToken.trim() : ''
 }
 
+function normalizeAdminReason(reason: unknown): string {
+  const value = typeof reason === 'string' ? reason.trim() : ''
+  if (!value) {
+    throw new BrokerSemanticError('admin_reason_required', 'Admin reason is required')
+  }
+  if (value.length > 1000) {
+    throw new BrokerSemanticError('admin_reason_required', 'Admin reason is too long', {
+      field: 'reason',
+      max: 1000
+    })
+  }
+  return value
+}
+
 function moduleAuthHash(moduleKey: string, authToken: string): string {
   return stableHash(`broker-module-auth:${moduleKey}:${authToken}`)
 }
@@ -149,31 +163,33 @@ export async function registerBrokerModule(
   authToken?: string
 ) {
   try {
-    if (!request?.module || request.module.moduleKey !== moduleKey) {
-      throw new BrokerSemanticError('invalid_request', 'module.moduleKey mismatch')
-    }
-    await assertModuleAuth(ctx, moduleKey, authToken)
-    const allowedPublishTypes = Array.isArray(request.module.allowedPublishTypes)
-      ? request.module.allowedPublishTypes.map(String)
-      : []
-    const allowedSubscribeTypes = Array.isArray(request.module.allowedSubscribeTypes)
-      ? request.module.allowedSubscribeTypes.map(String)
-      : []
-    const row = await modulesRepo.upsert(ctx, {
-      moduleKey,
-      displayName: normalizeString(request.module.displayName, 'displayName', 200),
-      kind: normalizeString(request.module.kind, 'kind', 32),
-      enabled: request.module.enabled === true,
-      allowedPublishTypes,
-      allowedSubscribeTypes,
-      metadata: buildModuleMetadata(moduleKey, authToken, request.module.metadata ?? {})
+    return await runWithExclusiveLock(ctx, `broker:module:${moduleKey}`, async () => {
+      if (!request?.module || request.module.moduleKey !== moduleKey) {
+        throw new BrokerSemanticError('invalid_request', 'module.moduleKey mismatch')
+      }
+      await assertModuleAuth(ctx, moduleKey, authToken)
+      const allowedPublishTypes = Array.isArray(request.module.allowedPublishTypes)
+        ? request.module.allowedPublishTypes.map(String)
+        : []
+      const allowedSubscribeTypes = Array.isArray(request.module.allowedSubscribeTypes)
+        ? request.module.allowedSubscribeTypes.map(String)
+        : []
+      const row = await modulesRepo.upsert(ctx, {
+        moduleKey,
+        displayName: normalizeString(request.module.displayName, 'displayName', 200),
+        kind: normalizeString(request.module.kind, 'kind', 32),
+        enabled: request.module.enabled === true,
+        allowedPublishTypes,
+        allowedSubscribeTypes,
+        metadata: buildModuleMetadata(moduleKey, authToken, request.module.metadata ?? {})
+      })
+      const contractsRegistered = await registerManyForOwner(
+        ctx,
+        moduleKey,
+        request.eventContracts ?? []
+      )
+      return { success: true as const, module: toModuleSafe(row), contractsRegistered }
     })
-    const contractsRegistered = await registerManyForOwner(
-      ctx,
-      moduleKey,
-      request.eventContracts ?? []
-    )
-    return { success: true as const, module: toModuleSafe(row), contractsRegistered }
   } catch (error) {
     return semanticResult(error)
   }
@@ -580,6 +596,7 @@ export async function getBrokerEventRaw(
 ) {
   try {
     const eventId = normalizeString(request.eventId, 'eventId', 200)
+    const reason = normalizeAdminReason(request.reason)
     const row = await eventsRepo.findByEventId(ctx, eventId)
     if (!row) throw new BrokerSemanticError('not_found', 'Event not found')
     await auditRepo.create(ctx, {
@@ -588,7 +605,7 @@ export async function getBrokerEventRaw(
       targetType: 'event',
       targetId: eventId,
       adminUserId: getAdminUserId(ctx),
-      reason: normalizeOptionalString(request.reason, 500),
+      reason,
       metadata: { eventType: row.eventType, eventVersion: row.eventVersion }
     })
     return { success: true as const, eventId, payload: row.payload, metadata: row.metadata }
@@ -603,26 +620,33 @@ export async function toggleBrokerModule(
 ) {
   try {
     const moduleKey = normalizeString(request.moduleKey, 'moduleKey', 300)
-    const reason = normalizeString(request.reason, 'reason', 1000)
+    const reason = normalizeAdminReason(request.reason)
     if (typeof request.enabled !== 'boolean') {
       throw new BrokerSemanticError('invalid_request', 'enabled must be boolean')
     }
-    const row = await modulesRepo.findByModuleKey(ctx, moduleKey)
-    if (!row) throw new BrokerSemanticError('module_not_registered', 'Module is not registered')
-    const before = toModuleSafe(row)
-    const updated = await modulesRepo.setAdminDisabled(ctx, row, request.enabled === false, reason)
-    const after = toModuleSafe(updated)
-    await auditRepo.create(ctx, {
-      auditId: stableId('boa'),
-      action: 'module_toggle',
-      targetType: 'module',
-      targetId: moduleKey,
-      adminUserId: getAdminUserId(ctx),
-      reason,
-      before,
-      after
+    return await runWithExclusiveLock(ctx, `broker:admin:module:${moduleKey}`, async () => {
+      const row = await modulesRepo.findByModuleKey(ctx, moduleKey)
+      if (!row) throw new BrokerSemanticError('module_not_registered', 'Module is not registered')
+      const before = toModuleSafe(row)
+      const updated = await modulesRepo.setAdminDisabled(
+        ctx,
+        row,
+        request.enabled === false,
+        reason
+      )
+      const after = toModuleSafe(updated)
+      await auditRepo.create(ctx, {
+        auditId: stableId('boa'),
+        action: 'module_toggle',
+        targetType: 'module',
+        targetId: moduleKey,
+        adminUserId: getAdminUserId(ctx),
+        reason,
+        before,
+        after
+      })
+      return { success: true as const, module: after }
     })
-    return { success: true as const, module: after }
   } catch (error) {
     return semanticResult(error)
   }
@@ -634,32 +658,41 @@ export async function toggleBrokerSubscription(
 ) {
   try {
     const subscriptionKey = normalizeString(request.subscriptionKey, 'subscriptionKey', 300)
-    const reason = normalizeString(request.reason, 'reason', 1000)
+    const reason = normalizeAdminReason(request.reason)
     if (typeof request.enabled !== 'boolean') {
       throw new BrokerSemanticError('invalid_request', 'enabled must be boolean')
     }
-    const row = await subscriptionsRepo.findBySubscriptionKey(ctx, subscriptionKey)
-    if (!row)
-      throw new BrokerSemanticError('subscription_not_registered', 'Subscription is not registered')
-    const before = toSubscriptionSafe(row)
-    const updated = await subscriptionsRepo.setAdminDisabled(
+    return await runWithExclusiveLock(
       ctx,
-      row,
-      request.enabled === false,
-      reason
+      `broker:admin:subscription:${subscriptionKey}`,
+      async () => {
+        const row = await subscriptionsRepo.findBySubscriptionKey(ctx, subscriptionKey)
+        if (!row)
+          throw new BrokerSemanticError(
+            'subscription_not_registered',
+            'Subscription is not registered'
+          )
+        const before = toSubscriptionSafe(row)
+        const updated = await subscriptionsRepo.setAdminDisabled(
+          ctx,
+          row,
+          request.enabled === false,
+          reason
+        )
+        const after = toSubscriptionSafe(updated)
+        await auditRepo.create(ctx, {
+          auditId: stableId('boa'),
+          action: 'subscription_toggle',
+          targetType: 'subscription',
+          targetId: subscriptionKey,
+          adminUserId: getAdminUserId(ctx),
+          reason,
+          before,
+          after
+        })
+        return { success: true as const, subscription: after }
+      }
     )
-    const after = toSubscriptionSafe(updated)
-    await auditRepo.create(ctx, {
-      auditId: stableId('boa'),
-      action: 'subscription_toggle',
-      targetType: 'subscription',
-      targetId: subscriptionKey,
-      adminUserId: getAdminUserId(ctx),
-      reason,
-      before,
-      after
-    })
-    return { success: true as const, subscription: after }
   } catch (error) {
     return semanticResult(error)
   }
@@ -671,7 +704,7 @@ export async function requeueBrokerDelivery(
 ) {
   try {
     const deliveryId = normalizeString(request.deliveryId, 'deliveryId', 200)
-    const reason = normalizeString(request.reason, 'reason', 1000)
+    const reason = normalizeAdminReason(request.reason)
     return await runWithExclusiveLock(ctx, `broker:delivery:${deliveryId}`, async () => {
       const row = await deliveriesRepo.findByDeliveryId(ctx, deliveryId)
       if (!row) throw new BrokerSemanticError('not_found', 'Delivery not found')
@@ -714,7 +747,7 @@ export async function skipBrokerDelivery(
 ) {
   try {
     const deliveryId = normalizeString(request.deliveryId, 'deliveryId', 200)
-    const reason = normalizeString(request.reason, 'reason', 1000)
+    const reason = normalizeAdminReason(request.reason)
     return await runWithExclusiveLock(ctx, `broker:delivery:${deliveryId}`, async () => {
       const row = await deliveriesRepo.findByDeliveryId(ctx, deliveryId)
       if (!row) throw new BrokerSemanticError('not_found', 'Delivery not found')
@@ -747,7 +780,7 @@ export async function retryBrokerNotifications(
   request: RetryBrokerNotificationsRequest & { reason?: unknown }
 ) {
   try {
-    const reason = normalizeString(request.reason, 'reason', 1000)
+    const reason = normalizeAdminReason(request.reason)
     const enabled = await settingsLib.getSetting(
       ctx,
       settingsLib.SETTING_KEYS.BROKER_NOTIFICATION_ENABLED

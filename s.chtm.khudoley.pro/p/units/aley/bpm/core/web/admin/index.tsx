@@ -1,9 +1,7 @@
-// @shared
 import { jsx } from '@app/html-jsx'
 import { requireAccountRole } from '@app/auth'
 import { genSocketId } from '@app/socket'
 import AdminPage from '../../pages/AdminPage.vue'
-import { loginPageRoute } from '../login'
 import { getPreloaderStyles, getPreloaderScript } from '../../shared/preloader'
 import { getLogLevelForPage, getLogLevelScript } from '../../lib/logLevel.lib'
 import { getAdminLogsSocketId } from '../../lib/logger.lib'
@@ -15,10 +13,23 @@ import { customScrollbarStyles } from '../../styles'
 import { adminPageCss1 } from '../../pagecss/adminPageCss1'
 import { adminPageCss2 } from '../../pagecss/adminPageCss2'
 import { adminPageCss3 } from '../../pagecss/adminPageCss3'
+import { adminBrokerOpsCss } from '../../pagecss/adminBrokerOpsCss'
 import { headerCss1 } from '../../pagecss/headerCss1'
 import { headerCss2 } from '../../pagecss/headerCss2'
 
 const LOG_PATH = 'web/admin/index'
+
+async function safeAdminLog(ctx: app.Ctx, entry: loggerLib.ServerLogEntry): Promise<void> {
+  try {
+    await loggerLib.writeServerLog(ctx, entry)
+  } catch (error) {
+    ;(ctx.log as (msg: string) => void)(
+      `[WARN] [${LOG_PATH}] writeServerLog failed: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    )
+  }
+}
 
 const adminPageStyles = `
   html { margin: 0; padding: 0; background: #0a0a0a; }
@@ -102,31 +113,17 @@ const adminPageStyles = `
 `
 
 export const adminPageRoute = app.html('/', async (ctx, req) => {
-  await loggerLib.writeServerLog(ctx, {
-    severity: 6,
-    message: `[${LOG_PATH}] Запрос страницы админки`,
-    payload: { hasUser: !!ctx.user }
-  })
-
   try {
-    await loggerLib.writeServerLog(ctx, {
-      severity: 6,
-      message: `[${LOG_PATH}] Проверка requireAccountRole Admin`,
-      payload: { hasUser: !!ctx.user }
-    })
     requireAccountRole(ctx, 'Admin')
-    await loggerLib.writeServerLog(ctx, {
-      severity: 6,
-      message: `[${LOG_PATH}] requireAccountRole пройдена`,
-      payload: {}
-    })
   } catch (error) {
-    await loggerLib.writeServerLog(ctx, {
+    await safeAdminLog(ctx, {
       severity: 4,
       message: `[${LOG_PATH}] Редирект на логин: требуется роль Admin`,
       payload: { error: String(error), backUrl: req.url }
     })
-    const loginUrl = loginPageRoute.url() + `?back=${encodeURIComponent(req.url)}`
+    const loginUrl = `${getFullUrl(ROUTES.login)}?${new URLSearchParams({
+      back: req.url
+    }).toString()}`
     return (
       <html>
         <head>
@@ -135,7 +132,7 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
           <meta charset="UTF-8" />
           <script src="/s/metric/clarity.js"></script>
           <meta http-equiv="refresh" content={`0; url=${loginUrl}`} />
-          <script>{`window.location.href = '${loginUrl}'`}</script>
+          <script>{`window.location.href = ${JSON.stringify(loginUrl)}`}</script>
           <style>{adminPageStyles}</style>
         </head>
         <body>
@@ -145,30 +142,50 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
     )
   }
 
+  await safeAdminLog(ctx, {
+    severity: 6,
+    message: `[${LOG_PATH}] Запрос страницы админки`,
+    payload: { hasUser: !!ctx.user }
+  })
+  await safeAdminLog(ctx, {
+    severity: 6,
+    message: `[${LOG_PATH}] requireAccountRole пройдена`,
+    payload: {}
+  })
+
   const indexUrl = getFullUrl(ROUTES.index)
   const profileUrl = getFullUrl(ROUTES.profile)
   const adminUrl = getFullUrl(ROUTES.admin)
   const loginUrl = getFullUrl(ROUTES.login)
-  await loggerLib.writeServerLog(ctx, {
+  await safeAdminLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] URL-ы`,
     payload: { indexUrl, profileUrl, adminUrl, loginUrl }
   })
   const logLevel = await getLogLevelForPage(ctx)
   const logsSocketId = getAdminLogsSocketId(ctx)
-  const encodedLogsSocketId = await genSocketId(ctx, logsSocketId)
-  await loggerLib.writeServerLog(ctx, {
+  let encodedLogsSocketId = ''
+  try {
+    encodedLogsSocketId = await genSocketId(ctx, logsSocketId)
+  } catch (error) {
+    await safeAdminLog(ctx, {
+      severity: 4,
+      message: `[${LOG_PATH}] genSocketId недоступен, админка будет без live-log stream`,
+      payload: { error: String(error) }
+    })
+  }
+  await safeAdminLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] Переменные сокета и уровня`,
     payload: { logLevel, logsSocketId, hasEncodedLogsSocketId: !!encodedLogsSocketId }
   })
   const projectName = await settingsLib.getSettingString(ctx, settingsLib.SETTING_KEYS.PROJECT_NAME)
-  await loggerLib.writeServerLog(ctx, {
+  await safeAdminLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] Переменные для рендера`,
     payload: { projectName }
   })
-  await loggerLib.writeServerLog(ctx, {
+  await safeAdminLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] Рендер страницы админки`,
     payload: { logLevel, logsSocketId }
@@ -187,6 +204,7 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
         <style>{adminPageCss1}</style>
         <style>{adminPageCss2}</style>
         <style>{adminPageCss3}</style>
+        <style>{adminBrokerOpsCss}</style>
         <style>{headerCss1}</style>
         <style>{headerCss2}</style>
         <style>{getPreloaderStyles()}</style>

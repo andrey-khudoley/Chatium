@@ -2,10 +2,14 @@
 import { requireAccountRole } from '@app/auth'
 import { toggleBrokerSubscription } from '../../../../lib/broker/internalApi.lib'
 
-export const adminBrokerSubscriptionToggleRoute = app.post('/', async (ctx, req) => {
-  requireAccountRole(ctx, 'Admin')
-  return toggleBrokerSubscription(
-    ctx,
-    req.body as { subscriptionKey?: unknown; enabled?: unknown; reason?: unknown }
-  )
-})
+export const adminBrokerSubscriptionToggleRoute = app
+  .post('/')
+  .body((s) => ({
+    subscriptionKey: s.string().optional(),
+    enabled: s.boolean().optional(),
+    reason: s.string().optional()
+  }))
+  .handle(async (ctx, req) => {
+    requireAccountRole(ctx, 'Admin')
+    return toggleBrokerSubscription(ctx, req.body)
+  })

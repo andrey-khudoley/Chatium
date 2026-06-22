@@ -15,11 +15,12 @@
 - Открыть главную страницу.
 - Авторизоваться и попасть в профиль.
 - Открыть админку (только роль Admin).
+- В админке просмотреть broker diagnostics и выполнить audited ops: enable/stop modules/subscriptions, inspect raw payload, requeue/skip deliveries, retry notifications.
 
 ## Роутинг
 
 - `index.tsx` — главная (SSR + Vue), единственный роут в корне.
-- `web/admin/index.tsx` — админка, `requireAccountRole('Admin')`.
+- `web/admin/index.tsx` — админка, `requireAccountRole('Admin')` первой операцией обработчика.
 - `web/profile/index.tsx` — профиль, `requireRealUser()`.
 - `web/tests/index.tsx` — страница тестов, `requireRealUser()`.
 - `web/login/index.tsx` — вход (редирект на системный `/s/auth/signin`).
@@ -27,6 +28,7 @@
 ## Вёрстка админки и страницы тестов
 
 - Корень Vue (`.app-layout` в `AdminPage.vue` / `TestsPage.vue`) ограничен высотой окна (`100vh` / `100dvh`) с `overflow: hidden`; после `boot-complete` у `body` нет вертикального скролла. Ширина: `.app-layout`, `<main class="ap-wrap|tp-wrap">` и блок `.ap` / `.tp` — на всю доступную ширину (`width: 100%`, у обёрток при необходимости `min-width: 0` для flex); контент по-прежнему ограничен `max-width: 1440px` у `.ap`/`.tp`. `<main>` — flex-колонка с `overflow: hidden` (сам не скроллится). Ниже — `.ap` / `.tp` (flex, `min-height: 0`), статус/тулбар `flex-shrink: 0`, сетка `.ap-grid` / `.tp-grid` с `grid-template-rows: minmax(0, 1fr)` и `flex: 1`; в двухколоночном режиме первая колонка — `minmax(240px, 1fr)` (не `minmax(0, 1fr)`), чтобы левая область не сжималась чрезмерно. Вертикальный скролл только у левой колонки `.ap-main` / `.tp-main` (`overflow-y: auto`, класс `content-wrapper` для стилей скроллбара). Правая колонка логов тянется по высоте ячейки сетки; список строк — `.ap-log-out` / `.tp-log-out` с внутренним `overflow-y`. На узкой вёрстке снова скроллится весь `<main>`.
+- `AdminPage.vue` собирает админские карточки из `components/admin/*`. `components/admin/broker/BrokerOpsPanel.vue` показывает read-only diagnostics по broker tables через `api/admin/broker/diagnostics` и запускает админские операции через `// @shared-route` API. Raw payload не попадает в diagnostics/list UI; списочный `primarySummary` строится только из явно разрешённых `display.summaryFields` контракта события. Raw payload открывается только через отдельный confirm + обязательный server-side reason.
 
 ## Разделение слоёв
 
@@ -46,8 +48,8 @@
 - `config/` — маршруты и `PROJECT_ROOT`.
 - `web/` — браузерные роуты модулей (admin, profile, tests, login).
 - `pages/` — Vue‑страницы (минимальные).
-- `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal).
-- `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/tests/list.ts`, `api/tests/unit/index.ts`, `api/tests/integration/index.ts`.
+- `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal) и админские блоки `components/admin/*`, включая broker ops UI.
+- `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/admin/broker/diagnostics.ts`, `api/tests/list.ts`, `api/tests/unit/index.ts`, `api/tests/integration/index.ts`.
 - `tables/` — Heap‑таблицы (схемы: settings, logs).
 - `repos/` — репозитории (работа с БД: settings, logs; logs.repo включает findBeforeTimestamp для пагинации).
 - `lib/` — бизнес‑логика (settings.lib, logger.lib: проверка уровня, запись в ctx/Heap/WebSocket/вебхук).

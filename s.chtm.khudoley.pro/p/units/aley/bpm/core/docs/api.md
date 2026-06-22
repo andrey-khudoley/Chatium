@@ -35,6 +35,20 @@
 
 Каждый файл — один эндпоинт с путём `/`.
 
+## Broker ops админки (api/admin/broker/)
+
+Админские операции над broker-модулем core. Все endpoints требуют роль Admin первой операцией обработчика. Списковые diagnostics не возвращают raw payload; `primarySummary` строится только из явно разрешённых `display.summaryFields` контракта события. Просмотр raw payload вынесен в отдельный audited endpoint с обязательным server-side `reason`.
+
+| Method | Path                                   | File                                     | Auth  | Назначение                                                                                             |
+| ------ | -------------------------------------- | ---------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------ |
+| GET    | /api/admin/broker/diagnostics          | api/admin/broker/diagnostics.ts          | Admin | Диагностика modules, subscriptions, events, deliveries, notifications с фильтрами query и limit.       |
+| POST   | /api/admin/broker/modules/toggle       | api/admin/broker/modules/toggle.ts       | Admin | Включить/остановить broker module (body: `{ moduleKey, enabled, reason }`).                            |
+| POST   | /api/admin/broker/subscriptions/toggle | api/admin/broker/subscriptions/toggle.ts | Admin | Включить/остановить subscription (body: `{ subscriptionKey, enabled, reason }`).                       |
+| POST   | /api/admin/broker/events/raw           | api/admin/broker/events/raw.ts           | Admin | Получить raw payload одного broker event (body: `{ eventId, reason }`), отдельный audit-path.          |
+| POST   | /api/admin/broker/deliveries/requeue   | api/admin/broker/deliveries/requeue.ts   | Admin | Вернуть failed/dead_letter delivery в очередь (body: `{ deliveryId, reason }`).                        |
+| POST   | /api/admin/broker/deliveries/skip      | api/admin/broker/deliveries/skip.ts      | Admin | Пропустить delivery (body: `{ deliveryId, reason }`).                                                  |
+| POST   | /api/admin/broker/notifications/retry  | api/admin/broker/notifications/retry.ts  | Admin | Повторить отправку notification (body: `{ notificationId, reason }`; bulk параметры поддерживает lib). |
+
 ## Тесты (api/tests/)
 
 Набор: юнит без Heap (`lib/tests/templateUnitSuite.ts`), интеграция с Heap и `route.run` по API (`lib/tests/integrationSuite.ts`), HTTP GET страниц на клиенте (`TestsPage.vue`, проверка статуса и фрагментов SSR). Каталог — `shared/testCatalog.ts`; страница `/web/tests` — три вкладки (Юнит / Интеграция / HTTP), метрики по активной вкладке, прогон всей вкладки и точечный запуск (play). Блоки категорий на вкладке сворачиваются по клику на заголовок (по умолчанию развёрнута первая категория, остальные свёрнуты; иконка `fa-folder` / `fa-folder-open`). Для `GET /web/tests` фрагменты SSR — `window.__BOOT__` и подстрока `units-aley-bpm-core-page` из `<meta name="units-aley-bpm-core-page" content="web-tests">` в `web/tests/index.tsx` (текст вкладок в первичном HTML может отсутствовать до гидрации).

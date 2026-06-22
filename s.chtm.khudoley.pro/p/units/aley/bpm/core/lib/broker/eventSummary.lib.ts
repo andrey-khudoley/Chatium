@@ -71,18 +71,5 @@ export function buildPrimarySummary(
       items.push({ label: field.label, path: field.path, value: formatted })
     }
   }
-  if (items.length) return items
-  if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) return []
-  for (const [key, value] of Object.entries(payload as Record<string, unknown>)) {
-    if (items.length >= 6) break
-    if (isSecretLikeKey(key)) continue
-    const formatted = formatValue(value, 160)
-    if (!formatted) continue
-    if (typeof formatted === 'object' && 'value' in formatted) {
-      items.push({ label: key, path: key, value: formatted.value, truncated: formatted.truncated })
-    } else {
-      items.push({ label: key, path: key, value: formatted })
-    }
-  }
   return items
 }
