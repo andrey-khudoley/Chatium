@@ -120,3 +120,10 @@ When editing such files:
 When current date/time is needed for reports, changelog entries, or `docs/LLM/` files, run `date` through shell. Do not rely on model time.
 
 After code changes in an app project root (`index.tsx` / `index.ts` with `docs/`), check whether README, `.CHATIUM-LLM.md`, `docs/architecture.md`, `docs/api.md`, `docs/data.md`, or `docs/LLM/` need updates. Use `docs-keeper` for substantial changes.
+
+## Spec-as-Source Projects
+
+- In projects where `docs/spec/` or `docs/spec/spec.md` is the source of truth, do not edit code, project docs, or tests without an explicit user command to make changes.
+- If the needed change was not already reflected in the spec, report the mismatch first and wait for explicit permission to update the spec and/or implement it.
+- Treat requests such as "check", "compare", "verify", reviews, and discussions as analysis/reporting only unless the user explicitly asks to edit.
+- After implementation, compare the result against the spec; if they differ, report that the spec needs to be updated or reconciled instead of silently adapting the code.

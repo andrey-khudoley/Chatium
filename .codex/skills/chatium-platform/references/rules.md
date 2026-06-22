@@ -48,6 +48,13 @@ When changing an app project root (a directory with `index.tsx` / `index.ts` and
 
 Do not create project docs for unrelated infrastructure, `.cursor`, `.codex`, generic shared code, or gateway internals unless the specific project documentation owns that behavior.
 
+## Spec-as-Source
+
+- In projects where `docs/spec/` or `docs/spec/spec.md` is the source of truth, do not edit code, project docs, or tests without an explicit user command to make changes.
+- If the needed change was not already reflected in the spec, report the mismatch first and wait for explicit permission to update the spec and/or implement it.
+- Treat "check", "compare", "verify", reviews, and discussions as analysis/reporting only unless the user explicitly asks to edit.
+- After implementation, compare the result against the spec; if they differ, report that the spec needs to be updated or reconciled instead of silently adapting the code.
+
 ## LLM Conversation Logs
 
 - If a project has `docs/LLM/`, update it only when you have enough conversation context to preserve the full relevant exchange.
