@@ -9,10 +9,16 @@ export const SETTING_KEYS = {
   LOG_LEVEL: 'log_level',
   LOGS_LIMIT: 'logs_limit',
   LOG_WEBHOOK: 'log_webhook',
-  DASHBOARD_RESET_AT: 'dashboard_reset_at'
+  DASHBOARD_RESET_AT: 'dashboard_reset_at',
+  GATEWAY_BASE_URL: 'gateway_base_url',
+  GC_SCHOOL_HOST: 'gc_school_host',
+  GC_SCHOOL_API_KEY: 'gc_school_api_key',
+  WEBHOOK_PATH_TOKEN: 'webhook_path_token',
+  GC_DEFAULT_OFFER_ID: 'gc_default_offer_id',
+  GC_PAID_STATUS: 'gc_paid_status'
 } as const
 
-export const SECRET_SETTING_KEYS = [] as const
+export const SECRET_SETTING_KEYS = ['gc_school_api_key', 'webhook_path_token'] as const
 
 export type LogWebhookSetting = { enable: boolean; url: string }
 
@@ -22,7 +28,8 @@ export const DEFAULTS = {
   [SETTING_KEYS.LOG_LEVEL]: 'Info',
   [SETTING_KEYS.LOGS_LIMIT]: '100',
   [SETTING_KEYS.LOG_WEBHOOK]: { enable: false, url: '' } as LogWebhookSetting,
-  [SETTING_KEYS.DASHBOARD_RESET_AT]: null as number | null
+  [SETTING_KEYS.DASHBOARD_RESET_AT]: null as number | null,
+  [SETTING_KEYS.GC_PAID_STATUS]: 'payed'
 } as const
 
 export const LOG_LEVELS = ['Debug', 'Info', 'Warn', 'Error', 'Disable'] as const
@@ -160,6 +167,38 @@ export async function getAllSettings(ctx: app.Ctx): Promise<Record<string, unkno
   return result
 }
 
+// ---------------------------------------------------------------------------
+// GetCourse-специфичные геттеры
+// ---------------------------------------------------------------------------
+
+export async function getGatewayBaseUrl(ctx: app.Ctx): Promise<string> {
+  const value = await getSetting(ctx, SETTING_KEYS.GATEWAY_BASE_URL)
+  return typeof value === 'string' ? value : ''
+}
+
+export async function getGcSchoolHost(ctx: app.Ctx): Promise<string> {
+  const value = await getSetting(ctx, SETTING_KEYS.GC_SCHOOL_HOST)
+  return typeof value === 'string' ? value : ''
+}
+
+export async function getGcDefaultOfferId(ctx: app.Ctx): Promise<string> {
+  const value = await getSetting(ctx, SETTING_KEYS.GC_DEFAULT_OFFER_ID)
+  return typeof value === 'string' ? value : ''
+}
+
+export async function getGcPaidStatus(ctx: app.Ctx): Promise<string> {
+  const value = await getSetting(ctx, SETTING_KEYS.GC_PAID_STATUS)
+  return typeof value === 'string' && value ? value : DEFAULTS[SETTING_KEYS.GC_PAID_STATUS]
+}
+
+export async function getGcSchoolApiKey(ctx: app.Ctx): Promise<string> {
+  return getRawSecretSettingString(ctx, SETTING_KEYS.GC_SCHOOL_API_KEY)
+}
+
+export async function getWebhookPathToken(ctx: app.Ctx): Promise<string> {
+  return getRawSecretSettingString(ctx, SETTING_KEYS.WEBHOOK_PATH_TOKEN)
+}
+
 export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Promise<void> {
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
@@ -199,6 +238,56 @@ export async function setSetting(ctx: app.Ctx, key: string, value: unknown): Pro
       throw new Error('dashboard_reset_at должен быть неотрицательным числом (Unix ms)')
     }
     normalized = Math.floor(n)
+  } else if (key === SETTING_KEYS.GATEWAY_BASE_URL) {
+    const str = typeof value === 'string' ? value.trim() : String(value).trim()
+    if (str && !/^https?:\/\//i.test(str)) {
+      try {
+        await loggerLib.writeServerLog(ctx, {
+          severity: 3,
+          message: `[${LOG_MODULE}] setSetting: некорректный gateway_base_url`,
+          payload: { key }
+        })
+      } catch (_) {}
+      throw new Error('gateway_base_url должен начинаться с http:// или https://')
+    }
+    normalized = str.replace(/\/+$/, '')
+  } else if (key === SETTING_KEYS.GC_SCHOOL_HOST) {
+    const str = typeof value === 'string' ? value.trim() : String(value).trim()
+    // Отрезаем схему и путь
+    const host = str.replace(/^https?:\/\//i, '').split('/')[0] ?? ''
+    normalized = host.trim()
+  } else if (key === SETTING_KEYS.GC_SCHOOL_API_KEY) {
+    normalized = typeof value === 'string' ? value.trim() : String(value).trim()
+  } else if (key === SETTING_KEYS.WEBHOOK_PATH_TOKEN) {
+    const str = typeof value === 'string' ? value.trim() : String(value).trim()
+    if (str && str.length < 8) {
+      try {
+        await loggerLib.writeServerLog(ctx, {
+          severity: 3,
+          message: `[${LOG_MODULE}] setSetting: webhook_path_token слишком короткий`,
+          payload: { key, length: str.length }
+        })
+      } catch (_) {}
+      throw new Error('webhook_path_token должен быть не короче 8 символов')
+    }
+    normalized = str
+  } else if (key === SETTING_KEYS.GC_DEFAULT_OFFER_ID) {
+    const str = typeof value === 'string' ? value.trim() : String(value).trim()
+    if (str && !/^\d+$/.test(str)) {
+      try {
+        await loggerLib.writeServerLog(ctx, {
+          severity: 3,
+          message: `[${LOG_MODULE}] setSetting: некорректный gc_default_offer_id`,
+          payload: { key }
+        })
+      } catch (_) {}
+      throw new Error('gc_default_offer_id должен быть числом')
+    }
+    normalized = str
+  } else if (key === SETTING_KEYS.GC_PAID_STATUS) {
+    const str =
+      typeof value === 'string' ? value.trim().toLowerCase() : String(value).trim().toLowerCase()
+    normalized = str || DEFAULTS[SETTING_KEYS.GC_PAID_STATUS]
   }
 
   await repo.upsert(ctx, key, normalized)

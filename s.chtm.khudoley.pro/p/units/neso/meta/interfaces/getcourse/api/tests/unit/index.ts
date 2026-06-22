@@ -5,6 +5,7 @@ import {
   runTemplateUnitChecks,
   type TemplateUnitTestResult
 } from '../../../lib/tests/templateUnitSuite'
+import { runGetCourseUnitChecks } from '../../../lib/tests/getcourseUnitSuite'
 import { logTestRunFailures } from '../../../lib/tests/logTestRunFailures'
 
 const LOG_PATH = 'api/tests/unit'
@@ -23,7 +24,8 @@ export const templateUnitTestsRoute = app.get('/', async (ctx) => {
     payload: {}
   })
 
-  const results = runTemplateUnitChecks()
+  const gcResults = runGetCourseUnitChecks()
+  const results = [...runTemplateUnitChecks(gcResults.map((r) => r.id)), ...gcResults]
   const passed = results.filter((r) => r.passed).length
   const failed = results.length - passed
 

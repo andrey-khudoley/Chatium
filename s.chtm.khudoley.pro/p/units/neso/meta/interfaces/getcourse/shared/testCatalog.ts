@@ -15,6 +15,82 @@ export type TestCatalogBlock = {
 
 export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
   {
+    id: 'unit-getcourse',
+    title: 'GetCourse unit',
+    description: 'Чистые функции: parse, offers, orderStatus, webhook, money',
+    tests: [
+      { id: 'gc_parse_ok_success', title: 'parseGcDealsResponse: успешный ответ' },
+      { id: 'gc_parse_ok_fields', title: 'parseGcDealsResponse: deal_id/number/user_id' },
+      { id: 'gc_parse_result_error', title: 'parseGcDealsResponse: result.error' },
+      { id: 'gc_parse_top_fail', title: 'parseGcDealsResponse: success=false' },
+      { id: 'gc_parse_inner_fail', title: 'parseGcDealsResponse: result.success=false' },
+      { id: 'gc_parse_top_only', title: 'parseGcDealsResponse: top_only' },
+      { id: 'gc_parse_invalid_body', title: 'parseGcDealsResponse: невалидное тело' },
+      { id: 'gc_parse_string_true', title: 'parseGcDealsResponse: success="true" строкой' },
+      { id: 'offer_normalize_full', title: 'normalizeOffer: полные поля' },
+      { id: 'offer_normalize_alt', title: 'normalizeOffer: offer_id/name' },
+      { id: 'offer_normalize_empty', title: 'normalizeOffer: пустой объект' },
+      { id: 'offers_extract_double_wrap', title: 'extractOffers: двойная обёртка data.data' },
+      { id: 'offers_extract_empty', title: 'extractOffers: пустой список' },
+      { id: 'offers_extract_null', title: 'extractOffers: null' },
+      { id: 'status_isPayed_true', title: 'isPayedTruthy: true' },
+      { id: 'status_isPayed_1', title: 'isPayedTruthy: 1' },
+      { id: 'status_isPayed_str1', title: 'isPayedTruthy: "1"' },
+      { id: 'status_isPayed_strTrue', title: 'isPayedTruthy: "true"' },
+      { id: 'status_isPayed_false', title: 'isPayedTruthy: false → false' },
+      { id: 'status_isPayed_zero', title: 'isPayedTruthy: 0 → false' },
+      { id: 'status_isPayed_str0', title: 'isPayedTruthy: "0" → false' },
+      { id: 'status_map_new', title: 'mapGcStatus: new' },
+      { id: 'status_map_in_work', title: 'mapGcStatus: in_work' },
+      { id: 'status_map_not_confirmed', title: 'mapGcStatus: not_confirmed' },
+      { id: 'status_map_payment_waiting', title: 'mapGcStatus: payment_waiting' },
+      { id: 'status_map_part_payed', title: 'mapGcStatus: part_payed' },
+      { id: 'status_map_payed', title: 'mapGcStatus: payed' },
+      { id: 'status_map_isPayed_true', title: 'mapGcStatus: isPayed=true → paid' },
+      { id: 'status_map_cancelled', title: 'mapGcStatus: cancelled' },
+      { id: 'status_map_waiting_for_return', title: 'mapGcStatus: waiting_for_return' },
+      { id: 'status_map_false_str', title: 'mapGcStatus: "false"' },
+      { id: 'status_map_paid_override', title: 'mapGcStatus: gc_paid_status override' },
+      { id: 'webhook_extract_root', title: 'extractDealFields: корень' },
+      { id: 'webhook_extract_nested', title: 'extractDealFields: object' },
+      { id: 'webhook_extract_null', title: 'extractDealFields: null' },
+      { id: 'webhook_computeId', title: 'computeWebhookId: формат' },
+      { id: 'webhook_computeId_undef', title: 'computeWebhookId: undefined' },
+      { id: 'webhook_parseDatetime_valid', title: 'parseDatetimeToUnixMs: валидная дата' },
+      { id: 'webhook_parseDatetime_nan', title: 'parseDatetimeToUnixMs: невалидная → 0' },
+      { id: 'webhook_parseDatetime_undef', title: 'parseDatetimeToUnixMs: undefined → 0' },
+      { id: 'money_toMoney_rub', title: 'toMoney: RUB' },
+      { id: 'money_toMoney_usd', title: 'toMoney: USD (lowercase)' },
+      { id: 'money_toMoney_empty_currency', title: 'toMoney: пустая валюта → RUB' },
+      { id: 'money_toMoney_invalid_currency', title: 'toMoney: невалидная → ошибка' },
+      { id: 'money_fromMoney_fields', title: 'fromMoney: amount и currency' },
+      { id: 'checkout_extract_flat', title: 'extractCheckoutPayload: плоский payload' },
+      { id: 'checkout_extract_nested_payload', title: 'extractCheckoutPayload: nested payload' },
+      { id: 'checkout_extract_nested_data', title: 'extractCheckoutPayload: nested data' },
+      {
+        id: 'checkout_extract_missing',
+        title: 'extractCheckoutPayload: отсутствие полей → undefined'
+      },
+      {
+        id: 'checkout_extract_amount_string',
+        title: "extractCheckoutPayload: amount '9900' → 9900"
+      },
+      {
+        id: 'checkout_extract_amount_zero',
+        title: "extractCheckoutPayload: amount '0' → undefined"
+      },
+      {
+        id: 'checkout_extract_amount_nan',
+        title: "extractCheckoutPayload: amount 'abc' → undefined"
+      },
+      { id: 'checkout_extract_trim', title: 'extractCheckoutPayload: trim строк' },
+      {
+        id: 'checkout_extract_empty_string',
+        title: 'extractCheckoutPayload: пустая строка → undefined'
+      }
+    ]
+  },
+  {
     id: 'unit-routes',
     title: 'config/routes',
     description: 'getFullUrl, withProjectRoot, ROUTES/ROUTE_PATHS',
@@ -113,6 +189,30 @@ export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
 ]
 
 export const INTEGRATION_SERVER_TEST_BLOCKS: TestCatalogBlock[] = [
+  {
+    id: 'int-getcourse',
+    title: 'GetCourse integration',
+    description: 'createOrder, webhook: мок гейтвея, Heap',
+    tests: [
+      { id: 'gc_create_order_happy', title: 'createOrder: happy path' },
+      { id: 'gc_create_order_idempotent', title: 'createOrder: идемпотентность' },
+      { id: 'gc_create_order_gateway_error', title: 'createOrder: ok:false от гейтвея' },
+      { id: 'gc_create_order_gc_error', title: 'createOrder: result.error из GC' },
+      { id: 'gc_webhook_correlate_dealid', title: 'webhook: корреляция по deal_id' },
+      { id: 'gc_webhook_paid_transition', title: 'webhook: переход в paid' },
+      { id: 'gc_webhook_duplicate_noop', title: 'webhook: дубль → no-op' },
+      { id: 'gc_webhook_not_found', title: 'webhook: order_not_found' },
+      { id: 'gc_webhook_no_deal_ref', title: 'webhook: нет deal ref' },
+      { id: 'gc_webhook_correlate_number', title: 'webhook: корреляция по deal_number' },
+      { id: 'gc_webhook_no_token_200', title: 'webhook: без токена → 200' },
+      { id: 'gc_checkout_handle_happy', title: 'checkout: handle happy path + correlationId' },
+      { id: 'gc_checkout_handle_invalid', title: 'checkout: невалидный payload → permanent' },
+      { id: 'gc_checkout_handle_idempotent', title: 'checkout: идемпотентность' },
+      { id: 'gc_checkout_process_drains', title: 'checkout: process drains queue' },
+      { id: 'gc_checkout_process_empty', title: 'checkout: process с пустой очередью' },
+      { id: 'gc_checkout_process_fail', title: 'checkout: транзиентный сбой → fail' }
+    ]
+  },
   {
     id: 'int-settings-lib',
     title: 'settings.lib',

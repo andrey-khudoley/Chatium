@@ -7,6 +7,7 @@ import * as logsRepo from '../../repos/logs.repo'
 import * as dashboardLib from '../admin/dashboard.lib'
 import * as loggerLib from '../logger.lib'
 import { runIntegrationApiChecks } from './integrationApiSuite'
+import { runGetCourseIntegrationChecks } from './getcourseIntegrationSuite'
 import { type TemplateIntegrationTestResult, tryAsync, isAdmin } from './integrationSuiteHelpers'
 
 export type { TemplateIntegrationTestResult } from './integrationSuiteHelpers'
@@ -279,6 +280,9 @@ export async function runTemplateIntegrationChecks(
   })
 
   await runIntegrationApiChecks(ctx, results, admin)
+
+  const gcResults = await runGetCourseIntegrationChecks(ctx)
+  results.push(...gcResults)
 
   return results
 }
