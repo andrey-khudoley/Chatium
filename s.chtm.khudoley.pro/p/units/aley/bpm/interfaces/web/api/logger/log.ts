@@ -10,7 +10,7 @@ const LOG_PATH = 'api/logger/log'
  * timestamp и уровень (level) вычисляются в lib; имя модуля при необходимости указывается в тексте message.
  * Только для авторизованных пользователей.
  *
- * Пример: { "message": "[/p/units/aley/bpm/web/lib] Не удалось загрузить настройки", "severity": 3, "payload": { "key": "log_level" } }
+ * Пример: { "message": "[/p/units/aley/bpm/interfaces/web/lib] Не удалось загрузить настройки", "severity": 3, "payload": { "key": "log_level" } }
  */
 export const logRoute = app.post('/', async (ctx, req) => {
   requireAnyUser(ctx)

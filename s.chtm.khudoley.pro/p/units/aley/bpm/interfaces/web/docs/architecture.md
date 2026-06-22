@@ -2,7 +2,7 @@
 
 ## Назначение
 
-Базовый шаблон проекта Chatium с минимальным набором страниц и документации.
+Личная BPM-система «FLOW» — управление задачами, проектами, финансами, привычками и библиотекой в едином терминале. Реализует дизайн «FLOW / BPM Терминал» (Claude Design). Текущее состояние — UI на моках; реальный бэкенд подключается позже через SSR-пропсы.
 
 ## Ограничения платформы
 
@@ -12,17 +12,48 @@
 
 ## Основные сценарии
 
-- Открыть главную страницу.
+- Открыть главную страницу FLOW (дашборд-хаб со всеми разделами).
 - Авторизоваться и попасть в профиль.
 - Открыть админку (только роль Admin).
 
 ## Роутинг
 
-- `index.tsx` — главная (SSR + Vue), единственный роут в корне.
+- `index.tsx` — главная (SSR + Vue). Монтирует `pages/FlowPage.vue` — дашборд FLOW. Подключает шрифты Manrope + JetBrains Mono (Google Fonts), инжектирует `pagecss/flowCss.ts`, пишет серверный лог severity 6, передаёт скрипт уровня логирования. Экспорт `indexPageRoute` (named + default) сохранён.
+  - `HomePage.vue` оставлен на диске, но из роутинга исключён (с 2026-06-22).
 - `web/admin/index.tsx` — админка, `requireAccountRole('Admin')`.
 - `web/profile/index.tsx` — профиль, `requireRealUser()`.
 - `web/tests/index.tsx` — страница тестов, `requireRealUser()`.
 - `web/login/index.tsx` — вход (редирект на системный `/s/auth/signin`).
+
+## Главная страница — FlowPage
+
+`pages/FlowPage.vue` реализует одностраничное приложение «FLOW» (перенос дизайна из Claude Design, исходный формат `<x-dc>` ≈ React → Vue `<script setup lang="ts">`).
+
+**Внутренняя навигация.** Состояние `screen` (ref) переключает разделы без перехода на новый роут:
+
+| screen       | Содержимое                                                 |
+| ------------ | ---------------------------------------------------------- |
+| `home`       | Дашборд-хаб                                                |
+| `journal`    | Дневник                                                    |
+| `tasks`      | Задачи (подвид `taskView`: board / table / timeline / gtd) |
+| `dialogs`    | Диалоги / коммуникация                                     |
+| `components` | Компоненты дизайна                                         |
+| `tools`      | Инструменты                                                |
+| `para`       | Система PARA                                               |
+| `finances`   | Финансы                                                    |
+| `services`   | Сервисы и подписки                                         |
+| `library`    | Библиотека                                                 |
+| `stub`       | Заглушка                                                   |
+
+**Темизация.** CSS-переменные (`--bg`, `--surface`, `--accent`, …) применяются на корневом элементе через `:style="rootStyle"` — SSR-безопасно, без вспышки при гидрации.
+
+**Интерактивность (клиентская):** переключение экранов, табы задач, сортировка/группировка/фильтр таблицы, помодоро-таймер (`setInterval`, очистка в `onUnmounted`), тумблеры привычек/сервисов, фильтр библиотеки, чекбоксы задач, отправка сообщения в моковый тред.
+
+**Логирование:** `createComponentLogger('FlowPage')` + `browserRemoteLogger` (install/flush/teardown в lifecycle — идентично остальным страницам).
+
+**Текущие ограничения.** Все данные (задачи, треды, метрики, финансы, PARA, привычки, сервисы, библиотека) — статические моки внутри компонента. Реального бэкенда/API/Heap для этих данных нет; подключение — через SSR-пропсы позже.
+
+Логотип из исходного дизайна (`assets/logo.png`, 256 КБ) не встроен — заменён лёгким акцентным монограм-знаком «F».
 
 ## Вёрстка админки и страницы тестов
 
@@ -45,8 +76,9 @@
 
 - `config/` — маршруты и `PROJECT_ROOT`.
 - `web/` — браузерные роуты модулей (admin, profile, tests, login).
-- `pages/` — Vue‑страницы (минимальные).
-- `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal).
+- `pages/` — Vue-страницы. `FlowPage.vue` — главная FLOW (активна). `HomePage.vue` — старая главная (сохранена на диске, из роутинга исключена).
+- `pagecss/` — серверные CSS-модули страниц. `flowCss.ts` (новый) — глобальный CSS дизайна FLOW: сбросы, скроллбар, плейсхолдеры, выделение, `@keyframes fadeUp/softpulse`, hover/focus-утилиты `.fl-hov-*`/`.fl-focus*`, адаптив `@media (max-width:880px)` по атрибутам `data-role`.
+- `components/` — переиспользуемые Vue-компоненты (Header, AppFooter, GlobalGlitch, LogoutModal).
 - `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/tests/list.ts`, `api/tests/unit/index.ts`, `api/tests/integration/index.ts`.
 - `tables/` — Heap‑таблицы (схемы: settings, logs).
 - `repos/` — репозитории (работа с БД: settings, logs; logs.repo включает findBeforeTimestamp для пагинации).

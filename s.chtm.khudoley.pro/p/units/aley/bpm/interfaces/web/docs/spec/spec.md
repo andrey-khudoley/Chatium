@@ -1,8 +1,8 @@
-# Spec-as-source: `p/units/aley/bpm/web`
+# Spec-as-source: `p/units/aley/bpm/interfaces/web`
 
 Статус: источник истины для проекта.  
-Последнее обновление: 2026-06-17.  
-Область действия: весь каталог `p/units/aley/bpm/web`.
+Последнее обновление: 2026-06-22.  
+Область действия: весь каталог `p/units/aley/bpm/interfaces/web`.
 
 Этот файл описывает требуемое состояние проекта целиком: продуктовую роль шаблона, маршруты, страницы, API, данные, логи, тесты, UI-поведение, права доступа и правила эволюции. Если код, README, ADR или старые документы расходятся с этой спецификацией, приоритет у этого файла. Контракты и ошибки встроены сюда, потому что текущий объем не требует отдельных файлов.
 
@@ -18,11 +18,11 @@
 
 ## 1. Назначение
 
-`p/units/aley/bpm/web` - самостоятельный Chatium-проект на базе исходного шаблона, который можно развивать без добавления платформенных зависимостей.
+`p/units/aley/bpm/interfaces/web` - самостоятельный Chatium-проект на базе исходного шаблона, который можно развивать без добавления платформенных зависимостей.
 
 Проект обязан предоставлять:
 
-- публичную главную страницу;
+- публичную главную страницу (BPM Терминал — экран FLOW с клиентской навигацией);
 - публичную страницу входа;
 - страницу профиля для авторизованного пользователя;
 - админку для роли `Admin`;
@@ -79,101 +79,103 @@
 
 ### 3.1 Полный инвентарь файлов
 
-Этот инвентарь является нормативным. Любой новый, удаленный или переименованный файл в `p/units/aley/bpm/web` требует синхронного изменения таблицы.
+Этот инвентарь является нормативным. Любой новый, удаленный или переименованный файл в `p/units/aley/bpm/interfaces/web` требует синхронного изменения таблицы.
 
-| Файл                                             | Нормативная роль                                                                            |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `.CHATIUM-LLM.md`                                | Краткий LLM-контекст проекта и ссылки на документы; не источник истины.                     |
-| `.dir.json`                                      | Метаданные каталога Chatium workspace.                                                      |
-| `.workspace.json`                                | Workspace feature flags, сейчас `heap`.                                                     |
-| `README.md`                                      | Человеческое описание проекта и быстрые ссылки; не источник истины при расхождении со spec. |
-| `index.tsx`                                      | SSR route `/`, экспорт `indexPageRoute`.                                                    |
-| `web/admin/index.tsx`                            | SSR route `/web/admin`, экспорт `adminPageRoute`.                                           |
-| `web/login/index.tsx`                            | SSR route `/web/login`, экспорт `loginPageRoute`.                                           |
-| `web/profile/index.tsx`                          | SSR route `/web/profile`, экспорт `profilePageRoute`.                                       |
-| `web/tests/index.tsx`                            | SSR route `/web/tests`, экспорт `testsPageRoute`.                                           |
-| `pages/HomePage.vue`                             | Vue page главной.                                                                           |
-| `pages/LoginPage.vue`                            | Vue page входа.                                                                             |
-| `pages/ProfilePage.vue`                          | Vue page профиля.                                                                           |
-| `pages/AdminPage.vue`                            | Vue page админки.                                                                           |
-| `pages/TestsPage.vue`                            | Vue page тестов.                                                                            |
-| `components/Header.vue`                          | Общий header и logout orchestration.                                                        |
-| `components/LogoutModal.vue`                     | Презентационный modal выхода.                                                               |
-| `components/GlobalGlitch.vue`                    | Глобальные CSS-правила glitch effect.                                                       |
-| `components/AppFooter.vue`                       | Общий footer и событие `chatium-click`.                                                     |
-| `components/admin/AdminCounters.vue`             | Презентационная карточка error/warn counters.                                               |
-| `components/admin/AdminSettings.vue`             | UI настроек `project_name` и `log_level`.                                                   |
-| `components/admin/AdminLogMonitor.vue`           | Презентационный монитор логов админки.                                                      |
-| `components/tests/TestSuiteTab.vue`              | Презентационная вкладка test suite.                                                         |
-| `components/tests/TestsLogMonitor.vue`           | Презентационный монитор логов страницы тестов.                                              |
-| `config/routes.tsx`                              | `PROJECT_ROOT`, route constants and URL helpers.                                            |
-| `config/project.tsx`                             | Project/page constants and title/header helpers.                                            |
-| `api/settings/list.ts`                           | `GET /api/settings/list`, экспорт `listSettingsRoute`.                                      |
-| `api/settings/get.ts`                            | `GET /api/settings/get`, экспорт `getSettingRoute`.                                         |
-| `api/settings/save.ts`                           | `POST /api/settings/save`, экспорт `saveSettingRoute`.                                      |
-| `api/logger/log.ts`                              | `POST /api/logger/log`, экспорт `logRoute`.                                                 |
-| `api/logger/browser.ts`                          | `POST /api/logger/browser`, экспорт `postBrowserLogsRoute`.                                 |
-| `api/admin/logs/recent.ts`                       | `GET /api/admin/logs/recent`, экспорт `getRecentLogsRoute`.                                 |
-| `api/admin/logs/before.ts`                       | `GET /api/admin/logs/before`, экспорт `getLogsBeforeRoute`.                                 |
-| `api/admin/dashboard/counts.ts`                  | `GET /api/admin/dashboard/counts`, экспорт `getDashboardCountsRoute`.                       |
-| `api/admin/dashboard/reset.ts`                   | `POST /api/admin/dashboard/reset`, экспорт `resetDashboardRoute`.                           |
-| `api/tests/list.ts`                              | `GET /api/tests/list`, экспорт `listTestsRoute`.                                            |
-| `api/tests/unit/index.ts`                        | `GET /api/tests/unit`, экспорт `templateUnitTestsRoute`.                                    |
-| `api/tests/integration/index.ts`                 | `GET /api/tests/integration`, экспорт `templateIntegrationTestsRoute`.                      |
-| `tables/settings.table.ts`                       | Heap schema `Settings`.                                                                     |
-| `tables/logs.table.ts`                           | Heap schema `Logs`.                                                                         |
-| `tables/.gitkeep`                                | Placeholder каталога tables; не содержит поведения.                                         |
-| `repos/settings.repo.ts`                         | CRUD repository для settings без logger recursion.                                          |
-| `repos/logs.repo.ts`                             | CRUD/query repository для logs.                                                             |
-| `lib/settings.lib.ts`                            | Settings business logic and validation.                                                     |
-| `lib/logger.lib.ts`                              | Server logging pipeline.                                                                    |
-| `lib/htmlRedirect.ts`                            | Typed wrapper around `ctx.resp.redirect` for html routes.                                   |
-| `lib/admin/dashboard.lib.ts`                     | Dashboard counters and reset logic.                                                         |
-| `lib/tests/templateUnitSuite.ts`                 | Unit runner orchestrator.                                                                   |
-| `lib/tests/templateUnitRoutesChecks.ts`          | Unit checks for route helpers.                                                              |
-| `lib/tests/templateUnitSuiteHelpers.ts`          | Sync unit result helpers.                                                                   |
-| `lib/tests/integrationSuite.ts`                  | Integration runner orchestrator.                                                            |
-| `lib/tests/integrationApiSuite.ts`               | API/e2e integration checks.                                                                 |
-| `lib/tests/integrationSuiteHelpers.ts`           | Async integration result helpers and `isAdmin`.                                             |
-| `lib/tests/logTestRunFailures.ts`                | Failure-to-log bridge for test API wrappers.                                                |
-| `lib/.gitkeep`                                   | Placeholder каталога lib; не содержит поведения.                                            |
-| `shared/logger.ts`                               | Browser logger, severity matrix and log sink.                                               |
-| `shared/browserRemoteLogger.ts`                  | Browser remote batching and console/global handlers.                                        |
-| `shared/useRemoteLogging.ts`                     | Vue lifecycle composable for remote browser logging.                                        |
-| `shared/useLogStream.ts`                         | Vue lifecycle/state composable for log history and WebSocket.                               |
-| `shared/logStreamUtils.ts`                       | Pure log stream formatting/filter helpers.                                                  |
-| `shared/logStreamSocket.ts`                      | Optional socket lifecycle listener adapter.                                                 |
-| `shared/useTestSuites.ts`                        | Vue state/actions for test tabs and runners.                                                |
-| `shared/testSuiteHelpers.ts`                     | Pure test UI and HTTP check helpers.                                                        |
-| `shared/testCatalog.ts`                          | Runtime test catalog shared by UI/API/runners.                                              |
-| `shared/logLevel.ts`                             | SSR helper for reading/injecting `window.__BOOT__.logLevel`.                                |
-| `shared/preloader.ts`                            | SSR CSS/script/html snippets for boot loader.                                               |
-| `shared/.gitkeep`                                | Placeholder каталога shared; не содержит поведения.                                         |
-| `styles.tsx`                                     | Shared CSS strings `baseHtmlStyles`, `customScrollbarStyles`.                               |
-| `pagecss/adminPageCss1.ts`                       | Admin page CSS part 1.                                                                      |
-| `pagecss/adminPageCss2.ts`                       | Admin page CSS part 2.                                                                      |
-| `pagecss/adminPageCss3.ts`                       | Admin page CSS part 3.                                                                      |
-| `pagecss/headerCss1.ts`                          | Header CSS part 1.                                                                          |
-| `pagecss/headerCss2.ts`                          | Header CSS part 2.                                                                          |
-| `pagecss/homeBootCss.ts`                         | Home boot/CRT CSS.                                                                          |
-| `pagecss/homePageCss1.ts`                        | Home page CSS part 1.                                                                       |
-| `pagecss/homePageCss2.ts`                        | Home page CSS part 2.                                                                       |
-| `pagecss/profilePageCss1.ts`                     | Profile page CSS part 1.                                                                    |
-| `pagecss/profilePageCss2.ts`                     | Profile page CSS part 2.                                                                    |
-| `pagecss/testsPageCss1.ts`                       | Tests page CSS part 1.                                                                      |
-| `pagecss/testsPageCss2.ts`                       | Tests page CSS part 2.                                                                      |
-| `pagecss/testsPageCss3.ts`                       | Tests page CSS part 3.                                                                      |
-| `pagecss/testsPageCss4.ts`                       | Tests page CSS part 4.                                                                      |
-| `docs/spec/spec.md`                              | Spec-as-source, этот документ.                                                              |
-| `docs/architecture.md`                           | Legacy architecture reference.                                                              |
-| `docs/api.md`                                    | Legacy API reference.                                                                       |
-| `docs/data.md`                                   | Legacy data reference.                                                                      |
-| `docs/imports.md`                                | Legacy imports reference.                                                                   |
-| `docs/ADR/0001-initial-structure.md`             | Legacy ADR initial structure.                                                               |
-| `docs/ADR/0002-settings-heap-and-layered-api.md` | Legacy ADR settings/layering.                                                               |
-| `tsconfig.json`                                  | Local TS/Vue compiler config.                                                               |
-| `jsx.d.ts`                                       | Local JSX/Chatium type shim.                                                                |
-| `vue-shim.d.ts`                                  | Local Vue/Chatium type shim.                                                                |
+| Файл                                             | Нормативная роль                                                                                              |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `.CHATIUM-LLM.md`                                | Краткий LLM-контекст проекта и ссылки на документы; не источник истины.                                       |
+| `.dir.json`                                      | Метаданные каталога Chatium workspace.                                                                        |
+| `.workspace.json`                                | Workspace feature flags, сейчас `heap`.                                                                       |
+| `README.md`                                      | Человеческое описание проекта и быстрые ссылки; не источник истины при расхождении со spec.                   |
+| `index.tsx`                                      | SSR route `/`, экспорт `indexPageRoute`; монтирует `FlowPage.vue`.                                            |
+| `web/admin/index.tsx`                            | SSR route `/web/admin`, экспорт `adminPageRoute`.                                                             |
+| `web/login/index.tsx`                            | SSR route `/web/login`, экспорт `loginPageRoute`.                                                             |
+| `web/profile/index.tsx`                          | SSR route `/web/profile`, экспорт `profilePageRoute`.                                                         |
+| `web/tests/index.tsx`                            | SSR route `/web/tests`, экспорт `testsPageRoute`.                                                             |
+| `pages/HomePage.vue`                             | Прежний Vue page главной; оставлен на диске, из роутинга исключён (заменён FlowPage.vue).                     |
+| `pages/FlowPage.vue`                             | Vue page главной (BPM Терминал); монтируется `index.tsx`; клиентская навигация по экранам.                    |
+| `pages/LoginPage.vue`                            | Vue page входа.                                                                                               |
+| `pages/ProfilePage.vue`                          | Vue page профиля.                                                                                             |
+| `pages/AdminPage.vue`                            | Vue page админки.                                                                                             |
+| `pages/TestsPage.vue`                            | Vue page тестов.                                                                                              |
+| `components/Header.vue`                          | Общий header и logout orchestration.                                                                          |
+| `components/LogoutModal.vue`                     | Презентационный modal выхода.                                                                                 |
+| `components/GlobalGlitch.vue`                    | Глобальные CSS-правила glitch effect.                                                                         |
+| `components/AppFooter.vue`                       | Общий footer и событие `chatium-click`.                                                                       |
+| `components/admin/AdminCounters.vue`             | Презентационная карточка error/warn counters.                                                                 |
+| `components/admin/AdminSettings.vue`             | UI настроек `project_name` и `log_level`.                                                                     |
+| `components/admin/AdminLogMonitor.vue`           | Презентационный монитор логов админки.                                                                        |
+| `components/tests/TestSuiteTab.vue`              | Презентационная вкладка test suite.                                                                           |
+| `components/tests/TestsLogMonitor.vue`           | Презентационный монитор логов страницы тестов.                                                                |
+| `config/routes.tsx`                              | `PROJECT_ROOT`, route constants and URL helpers.                                                              |
+| `config/project.tsx`                             | Project/page constants and title/header helpers.                                                              |
+| `api/settings/list.ts`                           | `GET /api/settings/list`, экспорт `listSettingsRoute`.                                                        |
+| `api/settings/get.ts`                            | `GET /api/settings/get`, экспорт `getSettingRoute`.                                                           |
+| `api/settings/save.ts`                           | `POST /api/settings/save`, экспорт `saveSettingRoute`.                                                        |
+| `api/logger/log.ts`                              | `POST /api/logger/log`, экспорт `logRoute`.                                                                   |
+| `api/logger/browser.ts`                          | `POST /api/logger/browser`, экспорт `postBrowserLogsRoute`.                                                   |
+| `api/admin/logs/recent.ts`                       | `GET /api/admin/logs/recent`, экспорт `getRecentLogsRoute`.                                                   |
+| `api/admin/logs/before.ts`                       | `GET /api/admin/logs/before`, экспорт `getLogsBeforeRoute`.                                                   |
+| `api/admin/dashboard/counts.ts`                  | `GET /api/admin/dashboard/counts`, экспорт `getDashboardCountsRoute`.                                         |
+| `api/admin/dashboard/reset.ts`                   | `POST /api/admin/dashboard/reset`, экспорт `resetDashboardRoute`.                                             |
+| `api/tests/list.ts`                              | `GET /api/tests/list`, экспорт `listTestsRoute`.                                                              |
+| `api/tests/unit/index.ts`                        | `GET /api/tests/unit`, экспорт `templateUnitTestsRoute`.                                                      |
+| `api/tests/integration/index.ts`                 | `GET /api/tests/integration`, экспорт `templateIntegrationTestsRoute`.                                        |
+| `tables/settings.table.ts`                       | Heap schema `Settings`.                                                                                       |
+| `tables/logs.table.ts`                           | Heap schema `Logs`.                                                                                           |
+| `tables/.gitkeep`                                | Placeholder каталога tables; не содержит поведения.                                                           |
+| `repos/settings.repo.ts`                         | CRUD repository для settings без logger recursion.                                                            |
+| `repos/logs.repo.ts`                             | CRUD/query repository для logs.                                                                               |
+| `lib/settings.lib.ts`                            | Settings business logic and validation.                                                                       |
+| `lib/logger.lib.ts`                              | Server logging pipeline.                                                                                      |
+| `lib/htmlRedirect.ts`                            | Typed wrapper around `ctx.resp.redirect` for html routes.                                                     |
+| `lib/admin/dashboard.lib.ts`                     | Dashboard counters and reset logic.                                                                           |
+| `lib/tests/templateUnitSuite.ts`                 | Unit runner orchestrator.                                                                                     |
+| `lib/tests/templateUnitRoutesChecks.ts`          | Unit checks for route helpers.                                                                                |
+| `lib/tests/templateUnitSuiteHelpers.ts`          | Sync unit result helpers.                                                                                     |
+| `lib/tests/integrationSuite.ts`                  | Integration runner orchestrator.                                                                              |
+| `lib/tests/integrationApiSuite.ts`               | API/e2e integration checks.                                                                                   |
+| `lib/tests/integrationSuiteHelpers.ts`           | Async integration result helpers and `isAdmin`.                                                               |
+| `lib/tests/logTestRunFailures.ts`                | Failure-to-log bridge for test API wrappers.                                                                  |
+| `lib/.gitkeep`                                   | Placeholder каталога lib; не содержит поведения.                                                              |
+| `shared/logger.ts`                               | Browser logger, severity matrix and log sink.                                                                 |
+| `shared/browserRemoteLogger.ts`                  | Browser remote batching and console/global handlers.                                                          |
+| `shared/useRemoteLogging.ts`                     | Vue lifecycle composable for remote browser logging.                                                          |
+| `shared/useLogStream.ts`                         | Vue lifecycle/state composable for log history and WebSocket.                                                 |
+| `shared/logStreamUtils.ts`                       | Pure log stream formatting/filter helpers.                                                                    |
+| `shared/logStreamSocket.ts`                      | Optional socket lifecycle listener adapter.                                                                   |
+| `shared/useTestSuites.ts`                        | Vue state/actions for test tabs and runners.                                                                  |
+| `shared/testSuiteHelpers.ts`                     | Pure test UI and HTTP check helpers.                                                                          |
+| `shared/testCatalog.ts`                          | Runtime test catalog shared by UI/API/runners.                                                                |
+| `shared/logLevel.ts`                             | SSR helper for reading/injecting `window.__BOOT__.logLevel`.                                                  |
+| `shared/preloader.ts`                            | SSR CSS/script/html snippets for boot loader.                                                                 |
+| `shared/.gitkeep`                                | Placeholder каталога shared; не содержит поведения.                                                           |
+| `styles.tsx`                                     | Shared CSS strings `baseHtmlStyles`, `customScrollbarStyles`.                                                 |
+| `pagecss/adminPageCss1.ts`                       | Admin page CSS part 1.                                                                                        |
+| `pagecss/adminPageCss2.ts`                       | Admin page CSS part 2.                                                                                        |
+| `pagecss/adminPageCss3.ts`                       | Admin page CSS part 3.                                                                                        |
+| `pagecss/headerCss1.ts`                          | Header CSS part 1.                                                                                            |
+| `pagecss/headerCss2.ts`                          | Header CSS part 2.                                                                                            |
+| `pagecss/homeBootCss.ts`                         | Home boot/CRT CSS (прежняя главная; не используется активным роутом).                                         |
+| `pagecss/homePageCss1.ts`                        | Home page CSS part 1 (прежняя главная; не используется активным роутом).                                      |
+| `pagecss/homePageCss2.ts`                        | Home page CSS part 2 (прежняя главная; не используется активным роутом).                                      |
+| `pagecss/flowCss.ts`                             | CSS для FlowPage: шрифты Manrope + JetBrains Mono, скроллбар, keyframes, hover/focus-утилиты, адаптив ≤880px. |
+| `pagecss/profilePageCss1.ts`                     | Profile page CSS part 1.                                                                                      |
+| `pagecss/profilePageCss2.ts`                     | Profile page CSS part 2.                                                                                      |
+| `pagecss/testsPageCss1.ts`                       | Tests page CSS part 1.                                                                                        |
+| `pagecss/testsPageCss2.ts`                       | Tests page CSS part 2.                                                                                        |
+| `pagecss/testsPageCss3.ts`                       | Tests page CSS part 3.                                                                                        |
+| `pagecss/testsPageCss4.ts`                       | Tests page CSS part 4.                                                                                        |
+| `docs/spec/spec.md`                              | Spec-as-source, этот документ.                                                                                |
+| `docs/architecture.md`                           | Legacy architecture reference.                                                                                |
+| `docs/api.md`                                    | Legacy API reference.                                                                                         |
+| `docs/data.md`                                   | Legacy data reference.                                                                                        |
+| `docs/imports.md`                                | Legacy imports reference.                                                                                     |
+| `docs/ADR/0001-initial-structure.md`             | Legacy ADR initial structure.                                                                                 |
+| `docs/ADR/0002-settings-heap-and-layered-api.md` | Legacy ADR settings/layering.                                                                                 |
+| `tsconfig.json`                                  | Local TS/Vue compiler config.                                                                                 |
+| `jsx.d.ts`                                       | Local JSX/Chatium type shim.                                                                                  |
+| `vue-shim.d.ts`                                  | Local Vue/Chatium type shim.                                                                                  |
 
 ## 4. Роли и доступ
 
@@ -207,7 +209,7 @@ Auth helper должен быть первой исполняемой строк
 `config/routes.tsx` задает:
 
 ```ts
-PROJECT_ROOT = 'p/units/aley/bpm/web'
+PROJECT_ROOT = 'p/units/aley/bpm/interfaces/web'
 ROUTES = {
   index: './',
   admin: './web/admin',
@@ -226,13 +228,13 @@ ROUTE_PATHS = {
 
 Нормативное поведение helper-ов:
 
-- `getFullUrl('./')`, `getFullUrl('/')`, `getFullUrl('')` возвращают `/p/units/aley/bpm/web/`.
-- `getFullUrl('./web/admin')`, `getFullUrl('/web/admin')`, `getFullUrl('web/admin')` возвращают `/p/units/aley/bpm/web/web/admin`.
-- `withProjectRoot('./web/admin')` и `withProjectRoot('web/admin')` возвращают `./p/units/aley/bpm/web/web/admin`.
-- `withProjectRoot('./')` и `withProjectRoot('')` возвращают `./p/units/aley/bpm/web/`.
-- `withProjectRootAndSubroute('./web/admin', 'edit')` возвращает `./p/units/aley/bpm/web/web/admin~edit`.
-- `withProjectRootAndSubroute('./web/admin', '/edit')` возвращает `./p/units/aley/bpm/web/web/admin~edit`.
-- `withProjectRootAndSubroute('./web/admin', 'users/123')` возвращает `./p/units/aley/bpm/web/web/admin~users/123`.
+- `getFullUrl('./')`, `getFullUrl('/')`, `getFullUrl('')` возвращают `/p/units/aley/bpm/interfaces/web/`.
+- `getFullUrl('./web/admin')`, `getFullUrl('/web/admin')`, `getFullUrl('web/admin')` возвращают `/p/units/aley/bpm/interfaces/web/web/admin`.
+- `withProjectRoot('./web/admin')` и `withProjectRoot('web/admin')` возвращают `./p/units/aley/bpm/interfaces/web/web/admin`.
+- `withProjectRoot('./')` и `withProjectRoot('')` возвращают `./p/units/aley/bpm/interfaces/web/`.
+- `withProjectRootAndSubroute('./web/admin', 'edit')` возвращает `./p/units/aley/bpm/interfaces/web/web/admin~edit`.
+- `withProjectRootAndSubroute('./web/admin', '/edit')` возвращает `./p/units/aley/bpm/interfaces/web/web/admin~edit`.
+- `withProjectRootAndSubroute('./web/admin', 'users/123')` возвращает `./p/units/aley/bpm/interfaces/web/web/admin~users/123`.
 
 Все значения `ROUTES` должны начинаться с `./`. Все публичные ссылки во Vue props должны быть без домена.
 
@@ -272,36 +274,46 @@ Preloader подключается на `/`, `/web/profile`, `/web/admin`, `/web
 ### 6.1 Главная `/`
 
 Файл: `index.tsx`.  
-Компонент: `pages/HomePage.vue`.  
+Компонент: `pages/FlowPage.vue` (BPM Терминал).  
 Доступ: все.
 
-Сервер обязан вычислить:
+`pages/HomePage.vue` оставлен на диске, но из роутинга исключён. Машинерия старой главной (boot-loader, TV-glitch, CRT-анимация) в `index.tsx` не используется.
 
-- `isAuthenticated = !!ctx.user`;
-- `isAdmin = ctx.user?.is('Admin') ?? false`;
-- `loginUrl = getFullUrl(ROUTES.login)`;
-- `adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''`;
-- `testsUrl = isAuthenticated ? getFullUrl(ROUTES.tests) : ''`;
-- `projectName = getSettingString(ctx, PROJECT_NAME)`;
-- `projectTitle = getHeaderText('Главная', projectName)`.
+**SSR entrypoint (`index.tsx`):**
 
-`HomePage` получает:
+- экспорт `indexPageRoute` сохранён;
+- серверное логирование severity `6` (`getLogLevelScript`) — как на остальных защищённых страницах;
+- инжектируется `pagecss/flowCss.ts` (шрифты Manrope + JetBrains Mono, глобальный CSS);
+- подключается `getLogLevelScript(await getLogLevelForPage(ctx))`.
 
-- `projectName = BODY_TEXT`, сейчас `BPM Web`;
-- `projectDescription = BODY_SUBTEXT`, сейчас `В разработке`;
-- `projectTitle`, `indexUrl`, `profileUrl`, `loginUrl`, `isAuthenticated`, `isAdmin`, `adminUrl`, `testsUrl`.
+Серверные props для `FlowPage` — в текущей реализации **моки** (статические данные внутри компонента). Реальные данные (`accent`, `density`, `userName`, `greeting`, `dateLine`) планируется передавать через SSR-пропсы в будущем. Это текущее состояние: UI готов, данные — моки.
 
-На главной `projectName` в props - это hero-текст `BODY_TEXT`, а не настройка `project_name`. Настройка `project_name` используется сервером только для `<title>` и `projectTitle` Header через `getHeaderText('Главная', projectNameFromSettings)`.
+**Клиентская навигация (`FlowPage.vue`):**
 
-Клиентское поведение:
+`FlowPage` реализует одностраничное приложение с внутренней навигацией через реактивное состояние `screen` без смены URL. Экраны:
 
-- после `bootloader-complete` запускается печать заголовка и описания;
-- на mount подключается `browserRemoteLogger`;
-- `setLogSink` передает локальные логи в remote logger;
-- при unmount выполняется `flush`, снимается sink, очищаются интервалы и обработчик `bootloader-complete`;
-- ссылка Chatium открывается в новой вкладке после локального glitch-эффекта.
+| Screen (идентификатор) | Название       | Примечание                             |
+| ---------------------- | -------------- | -------------------------------------- |
+| `home`                 | Главная        | Стартовый экран                        |
+| `journal`              | Журнал         |                                        |
+| `tasks`                | Задачи         | Подвиды: Доска, Таблица, Таймлайн, GTD |
+| `dialogs`              | Диалоги        |                                        |
+| `design`               | Дизайн-система |                                        |
+| `finance`              | Финансы        |                                        |
+| `para`                 | PARA           |                                        |
+| `tools`                | Инструменты    | Помодоро-таймер                        |
+| `services`             | Сервисы        | Тумблеры интеграций                    |
+| `library`              | Библиотека     | Фильтр по типам                        |
+| `modules`              | Модули         | Заглушка                               |
 
-`HomePage` хранит интервалы печати отдельно для title/description, начинает анимацию сразу, если `window.bootLoaderComplete === true`, и слушает `bootloader-complete` иначе. На `onBeforeUnmount` выполняется `flush`, на `onUnmounted` - `setLogSink(null)`, `teardown()`, удаление listener-а и очистка интервалов.
+**Темизация:**
+
+CSS-переменные применяются на корневом элементе через `:style`. Глобальный CSS подключается из `pagecss/flowCss.ts` (шрифты, скроллбар, keyframes, hover/focus-утилиты, адаптив ≤880px).
+
+**Клиентское логирование:**
+
+- `createComponentLogger` + `browserRemoteLogger` сохранены по общим правилам проекта;
+- на mount подключается `browserRemoteLogger` (при наличии auth), на unmount — `teardown()`.
 
 ### 6.2 Login `/web/login`
 
@@ -395,7 +407,7 @@ Fallback-тексты профиля: display name - `Не указано`, emai
 - при ошибке вернуть HTML-redirect на `../login?back=<current-url>`;
 - передать `isAdmin = user.is('Admin')`;
 - передать `encodedLogsSocketId` только Admin;
-- добавить `<meta name="units-aley-bpm-web-page" content="web-tests" />`.
+- добавить `<meta name="units-aley-bpm-interfaces-web-page" content="web-tests" />`.
 
 Клиент обязан:
 
@@ -506,6 +518,8 @@ Footer отображает брендовый низ страницы и лог
 - состояние результатов, раскрытия секций и single-run хранится только в `useTestSuites`.
 
 ## 8. Модель данных
+
+Heap table identifiers сохраняют исторический slug `units-aley-bpm-web`, чтобы перенос проекта в `interfaces/web` не создавал новые пустые таблицы.
 
 ### 8.1 Settings
 
@@ -991,13 +1005,13 @@ Unit checks покрывают:
 
 Block `int-http-pages`:
 
-| Test ID       | Path           | Required fragments                                                                              |
-| ------------- | -------------- | ----------------------------------------------------------------------------------------------- |
-| `index`       | `/`            | `window.__BOOT__`, `BPM Web`                                                                    |
-| `web-admin`   | `/web/admin`   | If final URL is admin: `window.__BOOT__`, `Админка`; otherwise login/redirect text is accepted. |
-| `web-profile` | `/web/profile` | If final URL is profile: `window.__BOOT__`, `Профиль`; otherwise login text is accepted.        |
-| `web-login`   | `/web/login`   | `Вход`                                                                                          |
-| `web-tests`   | `/web/tests`   | `window.__BOOT__`, `units-aley-bpm-web-page`                                                    |
+| Test ID       | Path           | Required fragments                                                                                       |
+| ------------- | -------------- | -------------------------------------------------------------------------------------------------------- |
+| `index`       | `/`            | `window.__BOOT__`, `BPM Web` (фрагмент из мок-данных FlowPage; уточнить при подключении реальных данных) |
+| `web-admin`   | `/web/admin`   | If final URL is admin: `window.__BOOT__`, `Админка`; otherwise login/redirect text is accepted.          |
+| `web-profile` | `/web/profile` | If final URL is profile: `window.__BOOT__`, `Профиль`; otherwise login text is accepted.                 |
+| `web-login`   | `/web/login`   | `Вход`                                                                                                   |
+| `web-tests`   | `/web/tests`   | `window.__BOOT__`, `units-aley-bpm-interfaces-web-page`                                                  |
 
 HTTP helper behavior:
 
@@ -1041,7 +1055,7 @@ HTTP helper behavior:
 | `tsconfig.json`   | TypeScript/Vue конфигурация проекта: `target/module ESNext`, `moduleResolution bundler`, `rootDir/baseUrl .`, path alias `/* -> ./*`, `jsx preserve`, `strict false`, include `**/*.ts`, `**/*.tsx`, `**/*.vue`, `vue-shim.d.ts`. |
 | `jsx.d.ts`        | Локальные определения Chatium JSX, `*.vue`, глобального `window.__BOOT__` и минимального `app.html/get/post/job`.                                                                                                                 |
 | `vue-shim.d.ts`   | Локальные Vue type shims и минимальные `app.Req`, `app.Ctx`, `RichUgcCtx` для проекта.                                                                                                                                            |
-| `.dir.json`       | Метаданные каталога в workspace; текущее `name` равно `[INWORK] p/units/aley/bpm/web`.                                                                                                                                            |
+| `.dir.json`       | Метаданные каталога в workspace; текущее `name` равно `[INWORK] p/units/aley/bpm/interfaces/web`.                                                                                                                                 |
 | `.workspace.json` | Включает workspace feature `heap`; не удалять, пока проект использует Heap tables.                                                                                                                                                |
 | `.CHATIUM-LLM.md` | Краткий LLM-контекст; должен ссылаться на этот spec-as-source как источник истины.                                                                                                                                                |
 
@@ -1056,7 +1070,7 @@ Type shims не должны подменять реальные runtime imports
 
 ## 14. Стили, boot и assets
 
-Визуальный язык: темный CRT-интерфейс с нейтральными темными фонами, мягким красным акцентом, FontAwesome icons и моноширинным шрифтом `Share Tech Mono`.
+Визуальный язык: темный интерфейс. Прежняя главная использовала CRT-тему с `Share Tech Mono`; активная главная (`FlowPage`) использует шрифты Manrope (UI) + JetBrains Mono (код/моно) с CSS-переменными темизации. Страницы admin, profile, tests сохраняют CRT-тему с FontAwesome и `Share Tech Mono`.
 
 Общие требования:
 
@@ -1079,11 +1093,12 @@ Type shims не должны подменять реальные runtime imports
 
 CSS-фрагменты `pagecss/*`:
 
-- `headerCss1.ts`, `headerCss2.ts` - Header, logout modal visibility classes and responsive header layout;
-- `homeBootCss.ts`, `homePageCss1.ts`, `homePageCss2.ts` - главная, hero typing, geometric/crt фон;
-- `profilePageCss1.ts`, `profilePageCss2.ts` - profile page layout/card;
-- `adminPageCss1.ts`, `adminPageCss2.ts`, `adminPageCss3.ts` - admin layout, cards, counters, settings, log monitor;
-- `testsPageCss1.ts`..`testsPageCss4.ts` - tests toolbar, metrics, tab panels, log monitor.
+- `headerCss1.ts`, `headerCss2.ts` — Header, logout modal visibility classes and responsive header layout;
+- `flowCss.ts` — глобальный CSS активной главной (FlowPage): шрифты Manrope + JetBrains Mono, скроллбар, keyframes, hover/focus-утилиты, адаптив ≤880px;
+- `homeBootCss.ts`, `homePageCss1.ts`, `homePageCss2.ts` — прежняя главная (CRT/hero); не используются активным роутом, оставлены на диске;
+- `profilePageCss1.ts`, `profilePageCss2.ts` — profile page layout/card;
+- `adminPageCss1.ts`, `adminPageCss2.ts`, `adminPageCss3.ts` — admin layout, cards, counters, settings, log monitor;
+- `testsPageCss1.ts`..`testsPageCss4.ts` — tests toolbar, metrics, tab panels, log monitor.
 
 CSS-фрагменты не импортируют runtime code. Если UI-класс удаляется из Vue template, соответствующий CSS-фрагмент должен быть проверен на мертвые правила.
 

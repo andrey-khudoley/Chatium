@@ -39,7 +39,7 @@ export const HTTP_HTML_SNIPPETS: Record<string, string[]> = {
   'web-admin': ['window.__BOOT__', 'Админка'],
   'web-profile': ['window.__BOOT__', 'Профиль'],
   'web-login': ['Вход'],
-  'web-tests': ['window.__BOOT__', 'units-aley-bpm-web-page']
+  'web-tests': ['window.__BOOT__', 'units-aley-bpm-interfaces-web-page']
 }
 
 export function httpPagePassed(

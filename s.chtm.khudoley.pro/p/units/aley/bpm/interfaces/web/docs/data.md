@@ -2,6 +2,8 @@
 
 Настройки проекта хранятся в Heap (key-value). См. [ADR-0002](ADR/0002-settings-heap-and-layered-api.md).
 
+Имена Heap-таблиц сохраняют исторический slug `units-aley-bpm-web`, чтобы перенос проекта в `interfaces/web` не создавал новые пустые таблицы.
+
 ## Heap таблицы
 
 | Table                                    | File                     | Назначение                             | Основные поля                                               |

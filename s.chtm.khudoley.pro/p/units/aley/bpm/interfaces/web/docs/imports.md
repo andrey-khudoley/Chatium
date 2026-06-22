@@ -13,14 +13,14 @@
 ### `./index.tsx`
 
 - `@app/html-jsx` → `jsx`
-- `./pages/HomePage.vue`
-- `./shared/preloader` → `getPreloaderStyles`, `getPreloaderScript`
-- `./styles` → `customScrollbarStyles`
+- `./pages/FlowPage.vue` (главная — экран FLOW / BPM Терминал)
+- `./pagecss/flowCss` → `flowCss`
 - `./shared/logLevel` → `getLogLevelForPage`, `getLogLevelScript`
-- `./config/routes` → `getFullUrl`, `ROUTES`
-- `./config/project` → `INDEX_PAGE_NAME`, `BODY_TEXT`, `BODY_SUBTEXT`, `getPageTitle`, `getHeaderText`
+- `./config/project` → `INDEX_PAGE_NAME`, `getPageTitle`
 - `./lib/logger.lib` → `*`
 - `./lib/settings.lib` → `*`
+
+> Прежняя главная импортировала `./pages/HomePage.vue`, `./shared/preloader`, `./styles`, `./config/routes`, `homePageCss*`/`headerCss*`. С переходом на FLOW они из роута убраны; `HomePage.vue` остаётся на диске, но из роутинга исключён.
 
 ### `./web/admin/index.tsx`
 
@@ -74,7 +74,14 @@
 
 ## 2) Страницы‑компоненты (Vue)
 
-### `./pages/HomePage.vue`
+### `./pages/FlowPage.vue` (главная — экран FLOW, на моках)
+
+- `vue` → `ref`, `computed`, `onMounted`, `onBeforeUnmount`, `onUnmounted`
+- `../shared/logger` → `createComponentLogger`, `setLogSink`, `LogEntry` (тип)
+- `../shared/browserRemoteLogger` → `createBrowserRemoteLogger`
+- `../api/logger/browser` → `postBrowserLogsRoute`
+
+### `./pages/HomePage.vue` (на диске; из роутинга исключён — заменён FlowPage)
 
 - `vue` → `onMounted`, `onUnmounted`, `ref`
 - `../components/Header.vue`

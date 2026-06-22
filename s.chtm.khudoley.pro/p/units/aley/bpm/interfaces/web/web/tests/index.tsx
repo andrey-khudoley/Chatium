@@ -82,7 +82,7 @@ export const testsPageRoute = app.html('/', async (ctx, req) => {
         <title>{getPageTitle(TESTS_PAGE_NAME, projectName)}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charset="UTF-8" />
-        <meta name="units-aley-bpm-web-page" content="web-tests" />
+        <meta name="units-aley-bpm-interfaces-web-page" content="web-tests" />
         <script>{getLogLevelScript(logLevel)}</script>
         <script src="/s/metric/clarity.js"></script>
         <style>{getPreloaderStyles()}</style>

@@ -104,7 +104,7 @@ export function runRoutesChecks(results: TemplateUnitTestResult[]): void {
     results,
     'routes_PROJECT_ROOT',
     'PROJECT_ROOT',
-    () => PROJECT_ROOT === 'p/units/aley/bpm/web'
+    () => PROJECT_ROOT === 'p/units/aley/bpm/interfaces/web'
   )
 
   tryPush(results, 'routes_ROUTES_KEYS_match_PATHS', 'ROUTES vs ROUTE_PATHS keys', () => {

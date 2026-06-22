@@ -1,4 +1,4 @@
-# units/aley/bpm/web
+# units/aley/bpm/interfaces/web
 
 ## Назначение
 
@@ -12,7 +12,8 @@ BPM Web для Chatium. Минимальный старт: главная стр
 
 ## Текущее состояние
 
-- Главная, админка, профиль и логин существуют как минимальные страницы.
+- **Главная (`/`) — экран FLOW (BPM Терминал)**: дизайн из Claude Design (проект «BPM-система личного пользования»), перенесён в `pages/FlowPage.vue` — одностраничное приложение с внутренней навигацией (Главная, Журнал, Задачи [Доска/Таблица/Таймлайн/GTD], Диалоги, Дизайн-система, Финансы, PARA, Инструменты, Сервисы, Библиотека) на in-memory моках; глобальный CSS — `pagecss/flowCss.ts`. Корневой `index.tsx` монтирует FlowPage. Старый `HomePage.vue` оставлен на диске, но из роутинга исключён.
+- Админка, профиль и логин существуют как минимальные служебные страницы шаблона.
 - Реализованы: API настроек (list, get, save), Heap-таблица settings, репозиторий, lib (бизнес-логика).
 - Серверные логи: Heap-таблица logs (message, payload, severity, level, timestamp), repos/logs.repo (create, findAll, findById, findBeforeTimestamp, countBySeverityAfter, countErrorsAfter, countWarningsAfter), lib/logger.lib (проверка уровня по настройке log_level, запись в ctx.log — только сообщение, в ctx.account.log — сообщение и payload, Heap, WebSocket с хэшем для уникальности канала, вебхук log_webhook { enable, url } по умолчанию url: ""). API POST /api/logger/log (AnyUser), body: { severity, level, message, payload?, timestamp? }; GET /api/admin/logs/recent (Admin) — последние N логов; GET /api/admin/logs/before (Admin) — N логов старше указанного timestamp для пагинации. Админка получает encodedLogsSocketId, подписывается на new-log для отображения в дашборде, загружает историю логов через recent при монтировании, может догружать старые логи через before (кнопка «Загрузить ещё 50»); кнопка «Очистить логи» очищает вывод и сдвигает таймштамп на текущий — повторное нажатие «Загрузить ещё 50» восстанавливает последние логи.
 - Дашборд админки: счётчики ошибок и предупреждений. Настройка `dashboard_reset_at` (таймштамп сброса в ms); lib/admin/dashboard.lib (getDashboardCounts, resetDashboard), GET /api/admin/dashboard/counts и POST /api/admin/dashboard/reset (Admin). При монтировании загружаются счётчики; кнопка «Сбросить» записывает текущее время в настройки; при новых логах (sink/WebSocket) инкремент только если timestamp >= dashboardResetAt.
@@ -39,6 +40,7 @@ BPM Web для Chatium. Минимальный старт: главная стр
 
 ## Changelog
 
+- 2026-06-22: главная (`/`) заменена на дизайн «FLOW / BPM Терминал» из Claude Design — `pages/FlowPage.vue` (SPA: Главная / Журнал / Задачи [Доска·Таблица·Таймлайн·GTD] / Диалоги / Дизайн-система / Финансы / PARA / Инструменты / Сервисы / Библиотека) на моках; новый `pagecss/flowCss.ts`; переписан `index.tsx` (шрифты Manrope + JetBrains Mono, без boot-loader/CRT). `HomePage.vue` сохранён на диске, но из роутинга исключён. Темизация — CSS-переменные на корне; клиентская интерактивность и логирование (`createComponentLogger` + `browserRemoteLogger`) сохранены. Проверки: типы (ok), стиль (ok), runtime-architecture-checker (0 находок), file-based-routing-checker (чисто).
 - 2026-06-17: добавлена spec-as-source спецификация `docs/spec/spec.md` как источник истины по маршрутам, API, данным, логированию, UI, тестам и правилам развития проекта.
 - 2026-04-05: разделение логирования по уровням Info/Debug — trace-логи (карта вызовов) severity 6, видны при Info; payload (сырые данные) автоматически отсекается при уровне != Debug; shouldIncludePayload в lib/logger.lib.ts, фильтрация non-string args в shared/logger.ts; добавлены недостающие trace-логи на сервере (api/logger/browser, api/tests/list) и в Vue-компонентах (onBeforeUnmount, saveProjectName, loadProjectName, setupLogsWebSocket, loadRecentLogs и др.).
 - 2026-04-05: browserRemoteLogger подключён на всех страницах (главная, админка, профиль, тесты); logLevel SSR добавлен на страницу логина; подробное логирование этапов загрузки с сырыми данными на каждой странице; AdminPage — sink комбинирует дашборд-счётчики и remote logger.
