@@ -1,4 +1,31 @@
-# template_project
+> # ⚠️ МОДУЛЬ ВЫВЕДЕН ИЗ РАБОТЫ (DEPRECATED)
+>
+> **Дата выноса:** 22-06-2026.
+> **Откуда → куда:** `s.chtm.khudoley.pro/p/units/neso/order` → `deprecated/neso/order`.
+> **Причина:** модуль `neso/order` (прямая интеграция с GetCourse через PL API `pl/api/deals`)
+> **навсегда выведен из работы**. Заменяется новым interface-модулем
+> `p/units/neso/meta/interfaces/getcourse` (коннектор к GetCourse через гейтвей `p/gateways/getcourse`).
+> См. решение 7 спеки нового модуля (`p/units/neso/meta/interfaces/getcourse/docs/spec/spec.md`, §1, §3).
+>
+> **Статус:** только архивный референс. Не подключать, не синхронизировать в прод, не править.
+> Новый модуль самостоятелен и зависит только от гейтвея.
+>
+> **Объём выноса — весь модуль целиком** (по решению о полном отказе от `neso/order`), в т.ч.:
+> - GC-backend: `lib/getcourse.lib.ts` (`createDeal`, `verifyGcAccess`, `parsePlDealsResponse`),
+>   `api/getcourse/{save,verify}.ts`, `api/order/create.ts`;
+> - GC-UI: форма заказа `pages/OrderTFormPage.vue` (→ `/web/t1`, `/web/t2`), `components/orderT/*`,
+>   `shared/orderTOfferMap.ts`; GC-секция админки `pages/AdminPage.vue`;
+> - GC-настройки: `shared/gcSettingKeys.ts`, GC-геттеры в `lib/settings.lib.ts`;
+> - не-GC части (логин, логи, дашборд, тесты, демо-форма `/web/new`) — выведены вместе с модулем.
+>
+> **Замечание о переносе:** каталог `docs/LLM/` этого модуля был git-ignored (правило
+> `**/docs/LLM/` в корневом `.gitignore`) и не отслеживался в git — при выносе исторические
+> dev-логи сессий **не сохранились**. Все отслеживаемые в git файлы (код, `docs/*.md`, `docs/ADR/*`)
+> перенесены полностью (77 файлов, `git mv`, история сохранена).
+
+---
+
+# neso/order (DEPRECATED)
 
 ## Назначение
 
@@ -38,6 +65,7 @@
 
 ## Changelog
 
+- 2026-06-22: **модуль целиком выведен из работы** в `deprecated/neso/order` (`git mv`, 77 tracked-файлов). Прямая GC-интеграция (`lib/getcourse.lib.ts`, `api/getcourse/*`, `api/order/create.ts`) и вся завязанная на неё UI/настройки заменяются новым модулем `p/units/neso/meta/interfaces/getcourse`. Git-ignored `docs/LLM/` при выносе не сохранён (см. баннер вверху файла).
 - 2026-05-06: типы для `tsc -p` — `shared/browserRemoteLogger.ts` (патч `console` через промежуточный тип), `api/settings/save.ts` (нормализация log_level без `string | undefined` при индексации), `jsx.d.ts` (глобальный `JSX` в `declare global`, без дубля `*.vue` — объявление только в `vue-shim.d.ts`), `lib/getcourse.lib.ts` (байты UTF-8 при base64).
 - 2026-03-31: `pages/TestsPage.vue` — интерфейс тестов приближен к `p/units/aom/lava_gc_integration`: добавлен точечный запуск одного теста из строки (unit/integration/http), состояние одиночного прогона и блокировка групповой кнопки во время одиночного запуска.
 - 2026-03-29: тесты синхронизированы с `k/assistant`: `shared/testCatalog.ts`, `api/tests/unit`, `api/tests/integration`, обновлён `api/tests/list`; удалён `api/tests/endpoints-check/`; `pages/TestsPage.vue` и `web/tests/index.tsx` — новый UI и прогоны; документация обновлена.

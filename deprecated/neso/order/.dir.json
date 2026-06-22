@@ -1,5 +1,5 @@
 {
-  "name": "[INWORK] p/units/neso/order",
+  "name": "[DEPRECATED] neso/order",
   "params": {
     "startWorkspaceAppearance": "ai"
   }
