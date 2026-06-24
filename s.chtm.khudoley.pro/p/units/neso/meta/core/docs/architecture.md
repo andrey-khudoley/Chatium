@@ -51,8 +51,18 @@
 - `tables/` — Heap‑таблицы (схемы: settings, logs).
 - `repos/` — репозитории (работа с БД: settings, logs; logs.repo включает findBeforeTimestamp для пагинации).
 - `lib/` — бизнес‑логика (settings.lib, logger.lib: проверка уровня, запись в ctx/Heap/WebSocket/вебхук).
-- `shared/` — общий код (preloader, logLevel для передачи уровня логирования на клиент, logger — уровни syslog RFC 5424, createComponentLogger, setLogSink/LogEntry для дашборда, logEmergency…logDebug в браузере с проверкой порога, browserRemoteLogger — пакетная отправка браузерных логов на сервер через POST /api/logger/browser).
+- `shared/` — общий код (preloader, logLevel для передачи уровня логирования на клиент, logger — уровни syslog RFC 5424, createComponentLogger, setLogSink/LogEntry для дашборда, logEmergency…logDebug в браузере с проверкой порога, browserRemoteLogger — пакетная отправка браузерных логов на сервер через POST /api/logger/browser; brokerOps — browser-safe view-типы и чистые хелперы broker ops-панели).
+- `components/admin/broker/` — UI broker ops-панели админки (`BrokerOpsPanel` + 5 таблиц + confirm-модалка + raw payload viewer).
 - `docs/` — документация проекта.
+
+## Broker ops-панель админки
+
+На `/web/admin` под карточками настроек рендерится `BrokerOpsPanel` (внутри `.ap-main`). Это клиентский слой над уже существующим серверным контуром broker-а (`tables/broker*`, `repos/broker*`, `lib/broker/*`, `functions/broker/*`, `api/admin/broker/*`).
+
+- Чтение состояния — `GET /api/admin/broker/diagnostics` (modules/subscriptions/events/deliveries/notifications), фильтр по активной вкладке + общий `limit`.
+- Мутации — только через admin routes `POST /api/admin/broker/{modules,subscriptions}/toggle`, `…/deliveries/{requeue,skip}`, `…/notifications/retry`, каждая с обязательным reason (audit).
+- Raw payload события — `POST /api/admin/broker/events/raw` (lazy, audit-triggered), показывается отдельной карточкой; в общем списке не хранится.
+- Компоненты `components/admin/broker/*` презентационны; вся логика доступности действий — чистые хелперы `shared/brokerOps.ts`; финальная авторизация/валидация — на сервере (`requireAccountRole('Admin')` + semantic errors brokerа).
 
 ## Стратегия логирования
 

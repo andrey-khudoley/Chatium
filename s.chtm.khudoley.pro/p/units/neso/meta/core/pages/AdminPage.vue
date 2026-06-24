@@ -6,6 +6,7 @@ import AppFooter from '../components/AppFooter.vue'
 import AdminCounters from '../components/admin/AdminCounters.vue'
 import AdminSettings from '../components/admin/AdminSettings.vue'
 import AdminLogMonitor from '../components/admin/AdminLogMonitor.vue'
+import BrokerOpsPanel from '../components/admin/broker/BrokerOpsPanel.vue'
 import { createComponentLogger, type LogEntry } from '../shared/logger'
 import { useLogStream } from '../shared/useLogStream'
 import { useRemoteLogging } from '../shared/useRemoteLogging'
@@ -243,6 +244,7 @@ onUnmounted(() => {
               @update:project-name="statusProjectName = $event"
               @update:log-level="statusLogLevel = $event"
             />
+            <BrokerOpsPanel />
           </div>
 
           <aside class="ap-side">

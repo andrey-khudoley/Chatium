@@ -238,12 +238,15 @@ Core не является внешним message broker-ом вроде Kafka/R
 | `shared/testSuiteHelpers.ts`                                 | Pure test UI and HTTP check helpers.                                                                                   |
 | `shared/testCatalog.ts`                                      | Runtime test catalog shared by UI/API/runners.                                                                         |
 | `shared/logLevel.ts`                                         | SSR helper for reading/injecting `window.__BOOT__.logLevel`.                                                           |
+| `shared/brokerOps.ts`                                        | Browser-safe broker ops view types and pure helpers (formatting, status labels, tab catalog) для admin UI.             |
 | `shared/preloader.ts`                                        | SSR CSS/script/html snippets for boot loader.                                                                          |
 | `shared/.gitkeep`                                            | Placeholder каталога shared; не содержит поведения.                                                                    |
 | `styles.tsx`                                                 | Shared CSS strings `baseHtmlStyles`, `customScrollbarStyles`.                                                          |
 | `pagecss/adminPageCss1.ts`                                   | Admin page CSS part 1.                                                                                                 |
 | `pagecss/adminPageCss2.ts`                                   | Admin page CSS part 2.                                                                                                 |
 | `pagecss/adminPageCss3.ts`                                   | Admin page CSS part 3.                                                                                                 |
+| `pagecss/brokerOpsCss1.ts`                                   | Broker ops panel CSS part 1 (panel, tabs, toolbar, table).                                                             |
+| `pagecss/brokerOpsCss2.ts`                                   | Broker ops panel CSS part 2 (cells, status pills, tags, responsive).                                                   |
 | `pagecss/headerCss1.ts`                                      | Header CSS part 1.                                                                                                     |
 | `pagecss/headerCss2.ts`                                      | Header CSS part 2.                                                                                                     |
 | `pagecss/homeBootCss.ts`                                     | Home boot/CRT CSS.                                                                                                     |
@@ -490,6 +493,7 @@ Fallback-тексты профиля: display name - `Не указано`, emai
 - считает live-входящие логи через `countEntry(entry)`, увеличивая error для severity `0..3`, warn для severity `4`, только если `entry.timestamp >= dashboardResetAt`;
 - при сбросе вызывает `POST /api/admin/dashboard/reset`, выставляет counters из ответа и логирует notice;
 - вызывает `startLogStream()` на mount и удаляет только listener `bootloader-complete` на unmount; cleanup socket/listeners выполняется внутри `useLogStream.onBeforeUnmount`.
+- рендерит `<BrokerOpsPanel />` внутри `.ap-main` (левая скроллируемая колонка) после `AdminSettings`; панель самодостаточна (грузит diagnostics и выполняет ops actions сама).
 
 ### 6.5 Tests `/web/tests`
 
@@ -608,10 +612,11 @@ Footer отображает брендовый низ страницы и лог
 
 `BrokerOpsPanel`:
 
-- загружает `GET /api/admin/broker/diagnostics`;
-- отображает модули, подписки, события, deliveries and notification attempts во вкладках или плотных таблицах;
-- вызывает ops actions только через `/api/admin/broker/*` routes;
-- требует reason/comment для mutating actions через `BrokerOpsConfirmModal`;
+- загружает `GET /api/admin/broker/diagnostics` на mount и при refresh/смене вкладки/применении фильтра;
+- отображает модули, подписки, события, deliveries and notification attempts в пяти вкладках, каждая — отдельный презентационный table-компонент (`BrokerModulesTable`, `BrokerSubscriptionsTable`, `BrokerEventsTable`, `BrokerDeliveriesTable`, `BrokerNotificationsTable`); счётчик строк показывается в заголовке вкладки;
+- единое поле фильтра маппится на server-параметр активной вкладки (`subscriptionKey`/`eventType`/`deliveryStatus`/`notificationStatus`); на вкладке модулей фильтр скрыт; общий `limit` (1–200) применяется ко всем выборкам;
+- вызывает ops actions только через `/api/admin/broker/*` routes; доступность действий вычисляется на клиенте чистыми хелперами `shared/brokerOps.ts` (requeue — `failed`/`dead_letter`, skip — кроме `acked`/`skipped`, retry — `failed`/`skipped`), но финальная авторизация и валидация — на сервере;
+- требует reason/comment для mutating actions через `BrokerOpsConfirmModal` (кнопка подтверждения disabled при пустом reason); ошибки ops показываются баннером панели, при успехе панель перезагружает diagnostics;
 - не держит raw payload в общем состоянии списка дольше открытой карточки/диалога.
 
 `BrokerRawPayloadViewer`:

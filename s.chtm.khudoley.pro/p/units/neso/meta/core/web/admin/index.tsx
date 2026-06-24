@@ -15,6 +15,8 @@ import { customScrollbarStyles } from '../../styles'
 import { adminPageCss1 } from '../../pagecss/adminPageCss1'
 import { adminPageCss2 } from '../../pagecss/adminPageCss2'
 import { adminPageCss3 } from '../../pagecss/adminPageCss3'
+import { brokerOpsCss1 } from '../../pagecss/brokerOpsCss1'
+import { brokerOpsCss2 } from '../../pagecss/brokerOpsCss2'
 import { headerCss1 } from '../../pagecss/headerCss1'
 import { headerCss2 } from '../../pagecss/headerCss2'
 
@@ -187,6 +189,8 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
         <style>{adminPageCss1}</style>
         <style>{adminPageCss2}</style>
         <style>{adminPageCss3}</style>
+        <style>{brokerOpsCss1}</style>
+        <style>{brokerOpsCss2}</style>
         <style>{headerCss1}</style>
         <style>{headerCss2}</style>
         <style>{getPreloaderStyles()}</style>
