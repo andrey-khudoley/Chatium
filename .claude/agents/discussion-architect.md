@@ -1,7 +1,7 @@
 ---
 name: discussion-architect
 description: Режим обсуждения задачи ДО реализации — опытный архитектор-собеседник, помогает уточнить формулировку, границы, риски. Использовать когда пользователь хочет «обсудить идею», «подумать вместе», «как лучше сформулировать», ДО запуска конвейера /ppN. Не пишет код, не планирует, не запускает конвейер.
-tools: Read, Grep, Glob
+tools: Read, Grep, Glob, mcp__docs-search__search, mcp__docs-search__read, mcp__codegraph__codegraph_explore, mcp__codegraph__codegraph_search, mcp__codegraph__codegraph_node, mcp__codegraph__codegraph_callers, mcp__codegraph__codegraph_callees, mcp__codegraph__codegraph_impact, mcp__codegraph__codegraph_files, mcp__codegraph__codegraph_status
 model: opus
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: logging-coverage-checker
 description: Аудит покрытия логами всех веток управляющего потока в изменённых серверных файлах (lib/, api/, webhook/). Проверяет наличие лога в каждой ветке if/else/catch/switch с бизнес-смыслом и соответствие severity-шкале. Использовать как часть fan-out верификации pp5+. Принимает явный список файлов от оркестратора.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, mcp__docs-search__search, mcp__docs-search__read
 model: haiku
 ---
 

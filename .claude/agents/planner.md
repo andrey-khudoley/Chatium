@@ -1,7 +1,7 @@
 ---
 name: planner
 description: Строит детальный пошаговый план реализации задачи на платформе Chatium. Использовать ПОСЛЕ формализации (task-formalizer), ДО написания кода. Анализирует структуру проекта, определяет затронутые файлы, фиксирует риски. Не пишет код.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, mcp__docs-search__search, mcp__docs-search__read, mcp__codegraph__codegraph_explore, mcp__codegraph__codegraph_search, mcp__codegraph__codegraph_node, mcp__codegraph__codegraph_callers, mcp__codegraph__codegraph_callees, mcp__codegraph__codegraph_impact, mcp__codegraph__codegraph_files, mcp__codegraph__codegraph_status
 model: opus
 ---
 

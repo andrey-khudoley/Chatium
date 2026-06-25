@@ -1,7 +1,7 @@
 ---
 name: plan-reviewer
 description: Ревьюит план реализации Chatium-задачи по документации платформы и стандартам проекта. Использовать ПОСЛЕ planner и ДО реализации. Возвращает структурированный отчёт с приоритизированными замечаниями и явным вердиктом «можно реализовывать / нужны правки».
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, mcp__docs-search__search, mcp__docs-search__read, mcp__codegraph__codegraph_explore, mcp__codegraph__codegraph_search, mcp__codegraph__codegraph_node, mcp__codegraph__codegraph_callers, mcp__codegraph__codegraph_callees, mcp__codegraph__codegraph_impact, mcp__codegraph__codegraph_files, mcp__codegraph__codegraph_status
 model: opus
 ---
 

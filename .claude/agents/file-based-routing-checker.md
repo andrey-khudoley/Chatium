@@ -1,7 +1,7 @@
 ---
 name: file-based-routing-checker
 description: Проверяет соблюдение file-based роутинга Chatium — путь "/" в роут-файле, ссылки на не-"/" роуты через withProjectRoot/route.url() с тильдой. Использовать после изменений в файлах api/, pages/, config/routes.tsx или ссылках на роуты. По умолчанию проверяет файлы из git diff; принимает явный список от вызывающего агента.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, mcp__docs-search__search, mcp__docs-search__read
 model: haiku
 ---
 

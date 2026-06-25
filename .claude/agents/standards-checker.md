@@ -1,7 +1,7 @@
 ---
 name: standards-checker
 description: Проверяет соответствие изменённого кода Chatium-стандартам из inner/docs/001-standards.md (форматирование, структура файлов, JSX, TypeScript, Tailwind, FontAwesome, импорты, типичные ошибки Chatium). Использовать после написания/изменения кода. По умолчанию проверяет файлы из git diff; принимает явный список файлов от вызывающего агента.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, mcp__docs-search__search, mcp__docs-search__read
 model: haiku
 ---
 

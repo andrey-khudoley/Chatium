@@ -1,7 +1,7 @@
 ---
 name: chatium-platform-checker
 description: Выделенный гейт соответствия платформе Chatium по документации inner/docs. Сопоставляет задачу с релевантными темами (по навигатору 000-summ.md), читает их и проверяет глубокое соответствие платформенным API и паттернам — то, что узкие checker'ы (стандарты/роутинг/рантайм) не покрывают. Работает в двух режимах: mode=plan (проверяет план) и mode=code (проверяет реализацию).
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, mcp__docs-search__search, mcp__docs-search__read, mcp__codegraph__codegraph_explore, mcp__codegraph__codegraph_search, mcp__codegraph__codegraph_node, mcp__codegraph__codegraph_callers, mcp__codegraph__codegraph_callees, mcp__codegraph__codegraph_impact, mcp__codegraph__codegraph_files, mcp__codegraph__codegraph_status
 model: opus
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: implementer
 description: Пишет код Chatium-проекта строго по утверждённому плану-контракту. Использовать на шаге реализации конвейера ПОСЛЕ одобрения плана. Не расширяет scope, не переосмысляет архитектуру, не задаёт вопросов пользователю — реализует то, что в плане. Возвращает список изменённых файлов и отклонения от плана.
-tools: Read, Edit, Write, Glob, Grep, Bash
+tools: Read, Edit, Write, Glob, Grep, Bash, mcp__docs-search__search, mcp__docs-search__read, mcp__codegraph__codegraph_explore, mcp__codegraph__codegraph_search, mcp__codegraph__codegraph_node, mcp__codegraph__codegraph_callers, mcp__codegraph__codegraph_callees, mcp__codegraph__codegraph_impact, mcp__codegraph__codegraph_files, mcp__codegraph__codegraph_status
 model: sonnet
 ---
 

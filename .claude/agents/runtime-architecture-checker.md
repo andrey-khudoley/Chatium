@@ -1,7 +1,7 @@
 ---
 name: runtime-architecture-checker
 description: Ищет рантайм-баги и архитектурные проблемы в свежем коде Chatium — null/undefined, race conditions, необработанные ошибки async, утечки прав, несогласованность данных, нарушения слоёв. Использовать после написания нового кода. По умолчанию проверяет файлы из git diff; принимает явный список от вызывающего агента.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, mcp__docs-search__search, mcp__docs-search__read, mcp__codegraph__codegraph_explore, mcp__codegraph__codegraph_search, mcp__codegraph__codegraph_node, mcp__codegraph__codegraph_callers, mcp__codegraph__codegraph_callees, mcp__codegraph__codegraph_impact, mcp__codegraph__codegraph_files, mcp__codegraph__codegraph_status
 model: opus
 ---
 

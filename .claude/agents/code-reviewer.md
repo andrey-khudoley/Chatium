@@ -1,7 +1,7 @@
 ---
 name: code-reviewer
 description: Проводит детальное ревью написанного кода Chatium-проекта по 10+1 обязательным областям (требования, план, ошибки, типы, безопасность, edge cases, API, архитектура, Chatium-специфика, стандарты, покрытие логами). Область 11 (логирование) проверяется всегда на pp3–4; на pp5+ её покрывает отдельный logging-coverage-checker — при наличии его отчёта в контексте можно пропустить область 11. Использовать ПОСЛЕ реализации, ДО запуска проверок (verification-runner).
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, mcp__docs-search__search, mcp__docs-search__read, mcp__codegraph__codegraph_explore, mcp__codegraph__codegraph_search, mcp__codegraph__codegraph_node, mcp__codegraph__codegraph_callers, mcp__codegraph__codegraph_callees, mcp__codegraph__codegraph_impact, mcp__codegraph__codegraph_files, mcp__codegraph__codegraph_status
 model: opus
 ---
 
