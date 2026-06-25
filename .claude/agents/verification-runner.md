@@ -86,7 +86,81 @@ Checker'ы:
 
 Не пытайся вызвать `ctx`-зависимые тесты в изолированной среде — `ctx` приходит от платформы.
 
-### Шаг 6. Сборка отчёта
+### Шаг 6. Runtime Verification (деплой + браузер + серверные логи)
+
+Выполняется основным чатом через Playwright MCP. Условие: затронуты `pages/`, `api/` или роуты. При чисто статических правках — пропустить, отметив в отчёте «не применимо».
+
+**6.1 Деплой на dev-сервер:**
+
+```powershell
+$syncScript = 'D:\Users\andrey\.codex\skills\chatium-sync-agent\scripts\chatium-sync-agent.mjs'
+node $syncScript --workspace s.chtm.khudoley.pro --apply --no-new --allow-mixed-create-delete --run-id rt-apply
+```
+
+**6.2 Авторизация в Playwright (если браузер ещё не авторизован):**
+
+Используй навык **`chatium-server-logs`** — там пошаговая инструкция с готовым кодом авторизации через `browser_evaluate`.
+
+Кратко: `browser_navigate` → `/s/auth/password?it=Phone&ik=79034375443&back=/s/dev/logs&layout=empty`, затем `browser_evaluate` с прямым fetch (SHA256-хеш пароля).
+
+**6.3 Навигация к затронутым страницам:**
+
+`browser_navigate` к URL каждого изменённого роута. URL = `https://s.chtm.khudoley.pro/<путь роута>`.
+
+**6.4 Браузерные логи:**
+
+```
+mcp__playwright__browser_console_messages
+```
+
+Ошибки (Errors > 0) → блокируют. Предупреждения → оценивай по смыслу.
+
+**6.5 Серверные логи (DOM-парсинг через navigate):**
+
+> `/s/dev/logs` через fetch всегда возвращает HTML. Единственный рабочий способ — `browser_navigate` с параметрами, затем DOM-парсинг.
+
+```
+// 6.5.1: Перейти на страницу логов с фильтром
+mcp__playwright__browser_navigate:
+  url: https://s.chtm.khudoley.pro/s/dev/logs?from=now-5m&to=now&level=&search=appSlug%3D<SLUG_ПРОЕКТА>
+// Slug = владелец/имя из пути p/units/<owner>/<slug>, например: aley%2Fbpm
+```
+
+```js
+// 6.5.2: browser_evaluate — извлечь записи из DOM
+() => {
+  const datePattern = /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}/;
+  let container = null;
+  for (const el of document.querySelectorAll('span, div')) {
+    if (el.children.length === 0 && datePattern.test(el.textContent)) {
+      container = el.parentElement?.parentElement?.parentElement;
+      break;
+    }
+  }
+  if (!container) return { totalEntries: 0, errors: 0, warns: 0, entries: [] };
+  const entries = Array.from(container.children);
+  const parsed = entries.map(e => {
+    const color = e.children[0]?.style?.backgroundColor || '';
+    const timestamp = e.children[1]?.textContent?.trim().slice(0, 30) || '';
+    const msg = e.children[2]?.textContent?.trim() || '';
+    const isWarnColor = color === 'rgb(234, 184, 57)';
+    const isError = !isWarnColor && (msg.toLowerCase().includes('error') ||
+                    msg.toLowerCase().includes('exception') ||
+                    (msg.toLowerCase().includes('failed') && msg.includes('500')));
+    const isWarn = isWarnColor || msg.toLowerCase().includes('warn') ||
+                   (msg.toLowerCase().includes('failed') && !isError);
+    return { timestamp, color, isError, isWarn, msg: msg.slice(0, 400) };
+  });
+  return { totalEntries: parsed.length, errors: parsed.filter(e => e.isError).length,
+           warns: parsed.filter(e => e.isWarn).length, entries: parsed };
+}
+```
+
+Цвета: `rgb(125, 177, 108)` = info (норма), `rgb(234, 184, 57)` = warn (4). Признаки проблем: `isError: true`, слова `error`/`exception`/`failed 500`.
+
+Полная документация по API логов и авторизации — в навыке **`chatium-server-logs`**.
+
+### Шаг 8. Сборка отчёта
 
 Агрегируй результаты в единый отчёт по формату ниже.
 
@@ -166,6 +240,15 @@ Checker'ы:
 
 ---
 
+### Runtime Verification
+
+**Деплой:** <выполнен / пропущено — почему>
+**Браузер:** <0 ошибок / N ошибок — список>
+**Серверные логи (appSlug=<slug>, last 5m):** <N записей, ошибок нет / N error-записей — список>
+**Итог:** <ОК / есть проблемы / пропущено>
+
+---
+
 ## Общий вердикт
 
 🟢 **Все проверки пройдены** — можно завершать.
@@ -189,6 +272,9 @@ Checker'ы:
 
 ## Anti-patterns
 
+- ❌ Не объявляй Runtime Verification «не применимо» для задач с изменениями pages/api/routes — только для чисто статических правок.
+- ❌ Не используй `browser_fill_form`/`browser_type` для авторизации — Vue не захватывает значение; используй `browser_evaluate` с прямым fetch (см. навык `chatium-server-logs`).
+- ❌ Не читай логи через UI («Показать») и не делай `fetch('/s/dev/logs', ...)` — endpoint всегда возвращает HTML, не JSON. Правильно: `browser_navigate` к `/s/dev/logs?from=...&search=...`, затем DOM-парсинг в `browser_evaluate`.
 - ❌ Не запускай сам себя (`verification-runner`) через Agent tool — вложенные субагенты невозможны, checker'ы не запустятся. Проверки оркеструет основной чат.
 - ❌ Не выполняй проверку стандартов / роутинга / рантайма / соответствия платформе сам — это работа checker'ов.
 - ❌ Не запускай checker'ов последовательно — они независимы, порождай параллельно в одном сообщении.

@@ -2,16 +2,21 @@
   "mcpServers": {
     "docs-search": {
       "type": "stdio",
-      "command": "npx",
-      "args": [
-        "-y",
-        "-p",
-        "obsidian-hybrid-search@0.13.13",
-        "obsidian-hybrid-search-mcp"
-      ],
+      "command": "obsidian-hybrid-search-mcp",
+      "args": [],
       "env": {
         "OBSIDIAN_VAULT_PATH": "inner/docs"
       }
+    },
+    "codegraph": {
+      "type": "stdio",
+      "command": "codegraph",
+      "args": ["serve", "--mcp"]
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "playwright-mcp",
+      "args": []
     }
   }
 }
