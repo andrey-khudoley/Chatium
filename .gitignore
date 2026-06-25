@@ -11,6 +11,13 @@
 # CodeGraph — локальный индекс и состояние демона
 /.codegraph/
 
+# Семантический поиск по докам (obsidian-hybrid-search MCP) — локальный индекс,
+# регенерируется per-machine как .codegraph. Лежит внутри vault (inner/docs),
+# т.к. сервер кладёт БД рядом с индексируемыми файлами (путь БД не настраивается).
+inner/docs/.obsidian-hybrid-search.db
+inner/docs/.obsidian-hybrid-search.db-wal
+inner/docs/.obsidian-hybrid-search.db-shm
+
 # Состояние sync-агента (регенерируется: tree.json, статусы, rate-limit)
 /configs/
 

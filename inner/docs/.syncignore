@@ -1,0 +1,5 @@
+# Локальный индекс семантического поиска (obsidian-hybrid-search MCP).
+# Регенерируется per-machine, в Chatium не публикуется.
+.obsidian-hybrid-search.db
+.obsidian-hybrid-search.db-wal
+.obsidian-hybrid-search.db-shm

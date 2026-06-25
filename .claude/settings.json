@@ -1,5 +1,6 @@
 {
   "permissions": {
     "allow": ["Bash(cd s.chtm.khudoley.pro && ./node_modules/.bin/tsc --noEmit -p p/saas/gw/lifepay/tsconfig.json)"]
-  }
+  },
+  "enabledMcpjsonServers": ["docs-search"]
 }
