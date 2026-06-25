@@ -44,13 +44,14 @@ stage `s.chtm.khudoley.pro` и prod `p.chtm.khudoley.pro`.
 - Race conditions: `runWithExclusiveLock`.
 - Защищённые эндпоинты: `requireRealUser(ctx)` или `requireAccountRole(ctx, 'admin')` первой строкой обработчика.
 - `// @ts-ignore` допустим только для системных модулей Chatium без локальных типов.
-- Документация платформы: `inner/docs/`, навигатор `inner/docs/000-summ.md`.
+- Документация платформы: `inner/docs/`. Искать по ней — через MCP `docs-search` (см. Codex Tooling); навигатор `inner/docs/000-summ.md` — фоллбэк для точного номера темы.
 - Предметные Codex references по платформе: `.codex/skills/chatium-platform/references/topic-index.md`.
 
 ## Codex Tooling
 
 - CodeGraph проинициализирован в общем корне (`.codegraph/`). Для задач на понимание кода, архитектуры, поиска символов, связей вызовов (`callers`/`callees`) и impact analysis сначала используй MCP CodeGraph (`codegraph_explore`, `codegraph_search`, `codegraph_status`, `codegraph_impact`), а `rg` — для простого текстового поиска или проверки конкретных деталей.
 - Если CodeGraph сообщает, что проект не проинициализирован, индекс устарел или недоступен, обнови его из общего корня: `codegraph init -i`, затем проверь `codegraph status`.
+- **Документация платформы `inner/docs/` — правило для платформенных задач (жёсткое, где применимо):** если есть релевантная тема, сверка с ней обязательна. Доки проиндексированы MCP `docs-search` (obsidian-hybrid-search: BM25 + семантика); основной путь поиска — `docs-search` (инструменты `search`, `read`, `status`, `reindex`) с запросом естественным языком, а не grep по `inner/docs/`. **Graceful fallback:** если `docs-search` недоступен, вернул пусто/нерелевантно или индекс устарел — **не падай с ошибкой**, а ищи через `rg` по `inner/docs/` и навигатор `000-summ.md`. Жёсткость правила — про сверку с доками, не про конкретный транспорт. Ручной ребилд и детали — `README.md` корня. Индекс локальный (gitignored), `inner/docs/.obsidian-hybrid-search.db`. _Примечание:_ в Codex этот сервер зарегистрирован глобально как `chatium_docs` (префикс инструментов `docs_`: `docs_search`, `docs_read`, …) в `~/.codex/config.toml` — как CodeGraph; Codex-агенты получают MCP из глобального конфига, а не из `tools` во frontmatter (вендор-различие с Claude).
 - Для поиска используй `rg` и `rg --files`.
 - Для shell-команд используй `exec_command`.
 - Для ручных правок используй `apply_patch`.
