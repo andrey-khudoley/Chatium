@@ -91,7 +91,8 @@
 | `web/login/index.tsx` | SSR route `/web/login`, экспорт `loginPageRoute`. |
 | `web/profile/index.tsx` | SSR route `/web/profile`, экспорт `profilePageRoute`. |
 | `web/tests/index.tsx` | SSR route `/web/tests`, экспорт `testsPageRoute`. |
-| `pages/HomePage.vue` | Vue page главной. |
+| `pages/HomePage.vue` | Прежняя заглушка главной (шаблон). Не используется в роутинге. |
+| `pages/WheelPage.vue` | Vue page «Колесо удачи» — вся клиентская логика колеса. |
 | `pages/LoginPage.vue` | Vue page входа. |
 | `pages/ProfilePage.vue` | Vue page профиля. |
 | `pages/AdminPage.vue` | Vue page админки. |
@@ -157,6 +158,8 @@
 | `pagecss/homeBootCss.ts` | Home boot/CRT CSS. |
 | `pagecss/homePageCss1.ts` | Home page CSS part 1. |
 | `pagecss/homePageCss2.ts` | Home page CSS part 2. |
+| `pagecss/wheelPageCss1.ts` | CSS колеса: conic-gradient, pointer, hub, spin-btn. |
+| `pagecss/wheelPageCss2.ts` | CSS результата и @keyframes (spin-glow, hub-pulse, pointer-nudge, confetti-fall, rise-in, toast-in, sheen). |
 | `pagecss/profilePageCss1.ts` | Profile page CSS part 1. |
 | `pagecss/profilePageCss2.ts` | Profile page CSS part 2. |
 | `pagecss/testsPageCss1.ts` | Tests page CSS part 1. |
@@ -271,36 +274,55 @@ Preloader подключается на `/`, `/web/profile`, `/web/admin`, `/web
 ### 6.1 Главная `/`
 
 Файл: `index.tsx`.  
-Компонент: `pages/HomePage.vue`.  
-Доступ: все.
+Компонент: `pages/WheelPage.vue`.  
+Доступ: все (Guest, RealUser, Admin).
 
-Сервер обязан вычислить:
+Сервер обязан:
 
-- `isAuthenticated = !!ctx.user`;
-- `isAdmin = ctx.user?.is('Admin') ?? false`;
-- `loginUrl = getFullUrl(ROUTES.login)`;
-- `adminUrl = isAdmin ? getFullUrl(ROUTES.admin) : ''`;
-- `testsUrl = isAuthenticated ? getFullUrl(ROUTES.tests) : ''`;
-- `projectName = getSettingString(ctx, PROJECT_NAME)`;
-- `projectTitle = getHeaderText('Главная', projectName)`.
+- монтировать `WheelPage.vue` без SSR props;
+- установить `<html lang="ru">`;
+- инжектить `window.__BOOT__.logLevel` через `getLogLevelScript`;
+- подключить Google Fonts (Cormorant Garamond, Jost), `wheelPageCss1`, `wheelPageCss2`, `/s/metric/clarity.js`.
 
-`HomePage` получает:
+Клиентское поведение — всё реализовано в `WheelPage.vue` без обращений к backend:
 
-- `projectName = BODY_TEXT`, сейчас `Шаблон проекта`;
-- `projectDescription = BODY_SUBTEXT`, сейчас `В разработке`;
-- `projectTitle`, `indexUrl`, `profileUrl`, `loginUrl`, `isAuthenticated`, `isAdmin`, `adminUrl`, `testsUrl`.
+- 6 сегментов определены в статическом массиве `SEGMENTS` с полями `icon`, `line1`, `line2`, `textColor`, `isRetry`, `full`.
+- Кнопка «Крутить колесо» и центральная кнопка колеса вызывают `spinWheel()`.
+- `spinWheel()` заблокирован, пока `isSpinning || showResult`.
+- После завершения анимации: если `SEGMENTS[targetIdx].isRetry === true` — показывается toast «Ещё одна попытка — крутите снова!» на 3200 мс; иначе `showResult = true`, `selectedIndex = targetIdx`, запускается конфетти.
+- Кнопка «Забрать приз» устанавливает `showResult = false`.
+- `onBeforeUnmount`: очищаются `spinInterval`, `toastTimer`, `confettiTimers`, удаляются DOM-элементы конфетти.
 
-На главной `projectName` в props - это hero-текст `BODY_TEXT`, а не настройка `project_name`. Настройка `project_name` используется сервером только для `<title>` и `projectTitle` Header через `getHeaderText('Главная', projectNameFromSettings)`.
+**Алгоритм вращения (`spinWheel`):**
 
-Клиентское поведение:
+Колесо задано `conic-gradient(from -30deg, ...)` — золотые сектора центрированы в `0°, 60°, 120°...`. Сектор `i` центрирован в локальной системе в точке `i * 60°`. Указатель фиксирован вверху в `0°`. После CW-поворота на угол `R` сектор `i` оказывается в фиксированной точке `(i*60 + R) % 360`. Условие попадания под указатель: `targetIdx*60 + R ≡ 0 (mod 360)`, откуда `R%360 = (360 - targetIdx*60) % 360`.
 
-- после `bootloader-complete` запускается печать заголовка и описания;
-- на mount подключается `browserRemoteLogger`;
-- `setLogSink` передает локальные логи в remote logger;
-- при unmount выполняется `flush`, снимается sink, очищаются интервалы и обработчик `bootloader-complete`;
-- ссылка Chatium открывается в новой вкладке после локального glitch-эффекта.
+Вычисление целевого поворота:
 
-`HomePage` хранит интервалы печати отдельно для title/description, начинает анимацию сразу, если `window.bootLoaderComplete === true`, и слушает `bootloader-complete` иначе. На `onBeforeUnmount` выполняется `flush`, на `onUnmounted` - `setLogSink(null)`, `teardown()`, удаление listener-а и очистка интервалов.
+```
+desiredMod     = (360 - targetIdx * 60 + 360) % 360
+currentMod     = ((currentRotation % 360) + 360) % 360
+delta          = (desiredMod - currentMod + 360) % 360
+jitter         = (Math.random() - 0.5) * 38          // ±19° — не выходит за границы сектора (±30°)
+targetRotation = currentRotation + 5 * 360 + delta + jitter
+```
+
+`currentRotation` накапливается между вращениями (не-реактивный). `delta` учитывает текущее положение колеса, поэтому каждый последующий спин гарантирует корректное попадание вне зависимости от накопленного угла.
+
+Анимация: `setInterval` с шагом 16 мс, ease-out `eased = 1 - (1 - p)^3.6` за 5200 мс. `currentRotation = startRotation + (targetRotation - startRotation) * eased`.
+
+**Состояние:**
+
+| Переменная | Тип | Описание |
+| --- | --- | --- |
+| `isSpinning` | `ref<boolean>` | `true` во время анимации |
+| `showResult` | `ref<boolean>` | `true` на экране результата |
+| `showToast` | `ref<boolean>` | `true` во время toast retry |
+| `selectedIndex` | `ref<number>` | Индекс выигранного сегмента |
+| `currentRotation` | `number` | Накопленный угол (не-реактивный, только для вычислений) |
+| `spinInterval` | timer ref | ID интервала анимации |
+| `toastTimer` | timer ref | ID таймера toast |
+| `confettiTimers/Els` | arrays | Хранилище элементов конфетти для cleanup |
 
 ### 6.2 Login `/web/login`
 

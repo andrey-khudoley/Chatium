@@ -12,7 +12,8 @@ Chatium-проект, скопированный из `p/template_project`. Ми
 
 ## Текущее состояние
 
-- Главная, админка, профиль и логин существуют как минимальные страницы.
+- Главная страница (`/`) — реализована как `WheelPage.vue`: 6-сегментное колесо удачи (мок, Math.random без backend), анимация вращения (5200ms ease-out, setInterval 16ms), конфетти при выигрыше, экран результата, toast «Ещё попытка». Шрифты Cormorant Garamond + Jost (Google Fonts). CSS вынесен в `pagecss/wheelPageCss1.ts` (колесо) и `pagecss/wheelPageCss2.ts` (результат и @keyframes). `HomePage.vue` остался в проекте, но не задействован в роутинге.
+- Административная часть, профиль и логин существуют как минимальные страницы (унаследовано от шаблона).
 - Реализованы: API настроек (list, get, save), Heap-таблица settings, репозиторий, lib (бизнес-логика).
 - Серверные логи: Heap-таблица logs (message, payload, severity, level, timestamp), repos/logs.repo (create, findAll, findById, findBeforeTimestamp, countBySeverityAfter, countErrorsAfter, countWarningsAfter), lib/logger.lib (проверка уровня по настройке log_level, запись в ctx.log — только сообщение, в ctx.account.log — сообщение и payload, Heap, WebSocket с хэшем для уникальности канала, вебхук log_webhook { enable, url } по умолчанию url: ""). API POST /api/logger/log (AnyUser), body: { severity, level, message, payload?, timestamp? }; GET /api/admin/logs/recent (Admin) — последние N логов; GET /api/admin/logs/before (Admin) — N логов старше указанного timestamp для пагинации. Админка получает encodedLogsSocketId, подписывается на new-log для отображения в дашборде, загружает историю логов через recent при монтировании, может догружать старые логи через before (кнопка «Загрузить ещё 50»); кнопка «Очистить логи» очищает вывод и сдвигает таймштамп на текущий — повторное нажатие «Загрузить ещё 50» восстанавливает последние логи.
 - Дашборд админки: счётчики ошибок и предупреждений. Настройка `dashboard_reset_at` (таймштамп сброса в ms); lib/admin/dashboard.lib (getDashboardCounts, resetDashboard), GET /api/admin/dashboard/counts и POST /api/admin/dashboard/reset (Admin). При монтировании загружаются счётчики; кнопка «Сбросить» записывает текущее время в настройки; при новых логах (sink/WebSocket) инкремент только если timestamp >= dashboardResetAt.
@@ -33,12 +34,14 @@ Chatium-проект, скопированный из `p/template_project`. Ми
 
 ## TODO
 
-- Заполнить UI для главной/админки/профиля.
+- Заполнить UI для админки/профиля (UI главной реализован — WheelPage).
+- Заменить Math.random на серверный backend (призы, история, лимиты попыток).
 - Добавить реальные сценарии авторизации.
 - Описать бизнес‑логику и данные.
 
 ## Changelog
 
+- 2026-06-26: реализована главная страница — `WheelPage.vue` (6-сегментное колесо удачи, мок Math.random, анимация, конфетти, экран результата); CSS в `pagecss/wheelPageCss1.ts` и `pagecss/wheelPageCss2.ts`; `index.tsx` переключён с `HomePage.vue` на `WheelPage.vue`.
 - 2026-06-26: проект скопирован из `p/template_project`; заменены PROJECT_ROOT, Heap table IDs, socket hash, SSR meta marker; обновлена документация.
 - 2026-06-17: добавлена spec-as-source спецификация `docs/spec/spec.md` как источник истины по маршрутам, API, данным, логированию, UI, тестам и правилам развития проекта.
 - 2026-04-05: разделение логирования по уровням Info/Debug — trace-логи (карта вызовов) severity 6, видны при Info; payload (сырые данные) автоматически отсекается при уровне != Debug; shouldIncludePayload в lib/logger.lib.ts, фильтрация non-string args в shared/logger.ts; добавлены недостающие trace-логи на сервере (api/logger/browser, api/tests/list) и в Vue-компонентах (onBeforeUnmount, saveProjectName, loadProjectName, setupLogsWebSocket, loadRecentLogs и др.).

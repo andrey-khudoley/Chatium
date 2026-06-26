@@ -2,7 +2,7 @@
 
 ## Назначение
 
-Базовый шаблон проекта Chatium с минимальным набором страниц и документации.
+Проект «Колесо удачи»: интерактивная главная страница с анимированным колесом фортуны. Построен на базе шаблона `p/template_project`.
 
 ## Ограничения платформы
 
@@ -12,13 +12,13 @@
 
 ## Основные сценарии
 
-- Открыть главную страницу.
+- Открыть главную страницу — запустить колесо удачи, получить результат.
 - Авторизоваться и попасть в профиль.
 - Открыть админку (только роль Admin).
 
 ## Роутинг
 
-- `index.tsx` — главная (SSR + Vue), единственный роут в корне.
+- `index.tsx` — главная (SSR + Vue), маршрут `/`. Монтирует `WheelPage.vue`; подключает Google Fonts и CSS из `pagecss/`.
 - `web/admin/index.tsx` — админка, `requireAccountRole('Admin')`.
 - `web/profile/index.tsx` — профиль, `requireRealUser()`.
 - `web/tests/index.tsx` — страница тестов, `requireRealUser()`.
@@ -45,7 +45,8 @@
 
 - `config/` — маршруты и `PROJECT_ROOT`.
 - `web/` — браузерные роуты модулей (admin, profile, tests, login).
-- `pages/` — Vue‑страницы (минимальные).
+- `pages/` — Vue‑страницы. `WheelPage.vue` — основная страница (колесо удачи, мок Math.random, конфетти, таймеры очищаются в `onBeforeUnmount`). `HomePage.vue` — прежняя заглушка, не используется в роутинге.
+- `pagecss/` — CSS для страниц, хранимый как `// @shared` TypeScript-модули. `wheelPageCss1.ts` — стили колеса (conic-gradient, pointer, hub, кнопка). `wheelPageCss2.ts` — стили результата и @keyframes (spin-glow, hub-pulse, pointer-nudge, confetti-fall, rise-in, toast-in, sheen).
 - `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal).
 - `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/tests/list.ts`, `api/tests/unit/index.ts`, `api/tests/integration/index.ts`.
 - `tables/` — Heap‑таблицы (схемы: settings, logs).
@@ -72,6 +73,27 @@
 
 - **Сервер** (`lib/logger.lib.ts`): функция `shouldIncludePayload` — payload в ctx.account.log, Heap, WebSocket и webhook только при Debug.
 - **Браузер** (`shared/logger.ts`): `emitLog` фильтрует non-string args при уровне != Debug.
+
+## Архитектура колеса (текущая, мок)
+
+`WheelPage.vue` реализует всю логику на клиенте без обращений к backend:
+
+- Сегменты и их призы заданы статическим массивом `SEGMENTS` (6 сегментов, центры на `i*60°`).
+- Результат вращения определяется `Math.random()` на клиенте; алгоритм гарантирует точное попадание под указатель.
+- Конфетти: 110 DOM-элементов с `confetti-fall` @keyframes, cleanup в `onBeforeUnmount`.
+
+**Алгоритм вращения.** CSS: `conic-gradient(from -30deg, ...)` — золотые сектора центрированы в `0°, 60°, 120°...`. Указатель фиксирован вверху в `0°`. После поворота на угол `R` (CW) сектор `i` оказывается на фиксированном угле `(i*60 + R) % 360`. Чтобы `targetIdx` попал под указатель:
+
+```
+desiredMod  = (360 - targetIdx*60 + 360) % 360
+currentMod  = ((currentRotation % 360) + 360) % 360
+delta       = (desiredMod - currentMod + 360) % 360
+targetRotation = currentRotation + 5*360 + delta + jitter   // jitter = ±19°
+```
+
+`currentRotation` накапливается между вращениями, поэтому `delta` всегда корректен относительно текущего положения колеса. Анимация: `setInterval` 16 мс, ease-out `1-(1-p)^3.6` за 5200 мс.
+
+Следующий шаг — переход на серверный backend (призы из Heap, история, лимиты попыток).
 
 ## Интеграции
 

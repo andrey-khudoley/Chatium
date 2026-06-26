@@ -81,10 +81,19 @@ function spinWheel() {
   if (isSpinning.value || showResult.value) return
 
   const targetIdx = Math.floor(Math.random() * 6)
-  const sectorCenter = targetIdx * 60 + 30
-  const toTop = (360 - (sectorCenter % 360) + 360) % 360
+
+  // Segment i is centred at i*60° in the wheel's local frame.
+  // Pointer is fixed at 0° (top). After CW rotation R, segment i is at fixed angle (i*60 + R)%360.
+  // For segment targetIdx to sit at the pointer: (targetIdx*60 + R) ≡ 0 (mod 360)
+  //   → R ≡ -targetIdx*60 (mod 360) → R%360 must equal (360 - targetIdx*60)%360.
+  const desiredMod = (360 - targetIdx * 60 + 360) % 360
+  // Normalise currentRotation residual to [0, 360)
+  const currentMod = ((currentRotation % 360) + 360) % 360
+  // How much delta is needed on top of currentRotation to reach desiredMod
+  const delta = (desiredMod - currentMod + 360) % 360
+
   const jitter = (Math.random() - 0.5) * 38
-  const targetRotation = currentRotation + 5 * 360 + toTop + jitter
+  const targetRotation = currentRotation + 5 * 360 + delta + jitter
 
   const startRotation = currentRotation
   const startTime = Date.now()
