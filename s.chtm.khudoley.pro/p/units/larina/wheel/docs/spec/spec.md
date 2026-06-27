@@ -117,15 +117,24 @@
 | `api/admin/logs/before.ts` | `GET /api/admin/logs/before`, экспорт `getLogsBeforeRoute`. |
 | `api/admin/dashboard/counts.ts` | `GET /api/admin/dashboard/counts`, экспорт `getDashboardCountsRoute`. |
 | `api/admin/dashboard/reset.ts` | `POST /api/admin/dashboard/reset`, экспорт `resetDashboardRoute`. |
+| `api/wheel/spin.ts` | `POST /api/wheel/spin`, экспорт `wheelSpinRoute`. |
+| `api/wheel/segments.ts` | `GET /api/wheel/segments`, экспорт `wheelSegmentsRoute`. |
 | `api/tests/list.ts` | `GET /api/tests/list`, экспорт `listTestsRoute`. |
 | `api/tests/unit/index.ts` | `GET /api/tests/unit`, экспорт `templateUnitTestsRoute`. |
 | `api/tests/integration/index.ts` | `GET /api/tests/integration`, экспорт `templateIntegrationTestsRoute`. |
 | `tables/settings.table.ts` | Heap schema `Settings`. |
 | `tables/logs.table.ts` | Heap schema `Logs`. |
+| `tables/segments.table.ts` | Heap schema `Segments` — динамические сектора колеса. |
+| `tables/spins.table.ts` | Heap schema `Spins` — история вращений. |
+| `tables/spinGrants.table.ts` | Heap schema `SpinGrants` — доначисленные попытки. |
 | `tables/.gitkeep` | Placeholder каталога tables; не содержит поведения. |
 | `repos/settings.repo.ts` | CRUD repository для settings без logger recursion. |
 | `repos/logs.repo.ts` | CRUD/query repository для logs. |
+| `repos/segments.repo.ts` | Query repository для segments: `findAllEnabled`. |
+| `repos/spins.repo.ts` | Write/count repository для spins: `create`, `countByPhone`, `countByPrizeKey`. |
+| `repos/spinGrants.repo.ts` | Write/sum repository для spin grants: `create`, `sumByPhone`. |
 | `lib/settings.lib.ts` | Settings business logic and validation. |
+| `lib/wheel.lib.ts` | Бизнес-логика колеса: загрузка сегментов, правило чётности, взвешенный выбор, проверка лимита. |
 | `lib/logger.lib.ts` | Server logging pipeline. |
 | `lib/htmlRedirect.ts` | Typed wrapper around `ctx.resp.redirect` for html routes. |
 | `lib/admin/dashboard.lib.ts` | Dashboard counters and reset logic. |
@@ -578,6 +587,67 @@ Repo: `repos/logs.repo.ts`.
 - `countErrorsAfter(ctx, sinceTimestamp)` суммирует severities `0,1,2,3`;
 - `countWarningsAfter(ctx, sinceTimestamp)` считает severity `4`.
 
+### 8.3 Segments
+
+Heap table: TBD — ID назначается при реализации.  
+Файл: `tables/segments.table.ts`.  
+Repo: `repos/segments.repo.ts`.
+
+Поля:
+
+| Поле | Тип | Требование |
+| --- | --- | --- |
+| `order` | `Heap.Number` | Позиция сектора (0, 1, 2, …). Определяет угол `order × (360/N_eff)` и цвет через чётность. Searchable: нет. |
+| `label` | `Heap.String` | Текст на секторе. Допускает `<br>`. |
+| `prizeKey` | `Heap.String` | Уникальный код приза. Используется в `spins.prizeKey` и при проверке `maxWins`. Должен быть уникальным среди enabled-сегментов. |
+| `full` | `Heap.String` | Текст приза на экране результата. |
+| `weight` | `Heap.Number` | Относительный вес при случайном выборе. `P(i) = weight_i / Σweight`. |
+| `maxWins` | `Heap.Number` | Максимум выигрышей по этому призу. `null` = без ограничения. |
+| `enabled` | `Heap.Boolean` | `false` — сегмент не участвует ни в выборке, ни в отображении. |
+
+Repo `repos/segments.repo.ts`:
+
+- `findAllEnabled(ctx)` — все enabled-сегменты, sorted `order asc`.
+
+### 8.4 Spins
+
+Heap table: TBD — ID назначается при реализации.  
+Файл: `tables/spins.table.ts`.  
+Repo: `repos/spins.repo.ts`.
+
+Поля:
+
+| Поле | Тип | Требование |
+| --- | --- | --- |
+| `phone` | `Heap.Number` | Номер телефона (формат: 71234567890). |
+| `prizeKey` | `Heap.String` | Код выигранного приза. |
+| `timestamp` | `Heap.Number` | Unix time в миллисекундах. |
+
+Repo `repos/spins.repo.ts`:
+
+- `countByPhone(ctx, phone)` — количество спинов для телефона.
+- `countByPrizeKey(ctx, prizeKey)` — количество выигрышей по коду приза.
+- `create(ctx, data)` — создаёт запись; не логирует через `writeServerLog`.
+
+### 8.5 Spin Grants
+
+Heap table: TBD — ID назначается при реализации.  
+Файл: `tables/spinGrants.table.ts`.  
+Repo: `repos/spinGrants.repo.ts`.
+
+Поля:
+
+| Поле | Тип | Требование |
+| --- | --- | --- |
+| `phone` | `Heap.Number` | Номер телефона. |
+| `count` | `Heap.Number` | Количество дополнительных попыток. |
+| `grantedAt` | `Heap.Number` | Unix time в миллисекундах. |
+
+Repo `repos/spinGrants.repo.ts`:
+
+- `sumByPhone(ctx, phone)` — суммарный `count` по всем записям для телефона.
+- `create(ctx, data)`.
+
 ## 9. Настройки
 
 Ключи и значения по умолчанию задаются в `lib/settings.lib.ts`.
@@ -590,6 +660,8 @@ Repo: `repos/logs.repo.ts`.
 | `logs_limit` | `100` | Parse positive integer; на save допустимо `1..10000`, хранится строкой. |
 | `log_webhook` | `{ enable: false, url: '' }` | Объект; `enable` boolean, `url` string. |
 | `dashboard_reset_at` | `null` | На чтение `null/invalid` дает `0`; на save требуется неотрицательное число, хранится `Math.floor`. |
+| `wheel_enabled` | `true` | Boolean. `false` — колесо недоступно, `POST /api/wheel/spin` возвращает ошибку. |
+| `wheel_max_spins` | `1` | Positive integer. Базовый лимит попыток на телефон. Фактический лимит = `wheel_max_spins + sum(spin_grants.count)`. |
 
 Runtime-использование настроек:
 
@@ -917,6 +989,23 @@ Dashboard:
 - `POST /api/admin/dashboard/reset` записывает `Date.now()` в `dashboard_reset_at` через `settings.lib.setSetting` и возвращает нулевые counters;
 - оба endpoint-а catch-ят ошибки как `{ success:false, error:String(error) }`.
 
+### 11.5 Wheel
+
+| Method/path | Auth | Request | Success response | Validation errors |
+| --- | --- | --- | --- | --- |
+| `POST /api/wheel/spin` | Guest (нет auth) | body `{ phone: number }` | `{ success:true, targetIdx:number, prizeKey:string, full:string }` | `phone` отсутствует или не число; колесо выключено; лимит исчерпан; все квоты исчерпаны. |
+| `GET /api/wheel/segments` | Guest | none | `{ success:true, segments: EffectiveSegment[], nEff:number }` | Catch string. |
+
+`POST /api/wheel/spin` — полная логика §16: проверка `wheel_enabled`, лимит попыток, взвешенный выбор, запись в `spins`. Не требует авторизации.
+
+`GET /api/wheel/segments` — возвращает эффективный список сегментов (с авто-retry при нечётном N) для первоначального рендеринга колеса на SSR или клиенте.
+
+`EffectiveSegment`:
+
+```ts
+{ order: number, label: string, prizeKey: string, weight: number, isAutoRetry?: true }
+```
+
 ### 11.4 Tests
 
 | Method/path | Auth | Request | Response |
@@ -1149,7 +1238,71 @@ rg -n "p/template_project|template_project|template-project|t__template-project|
 - открыть приложение по пути `https://<домен>/p/units/larina/wheel/`;
 - при необходимости задать человекочитаемое название проекта через админку.
 
-## 16. Правила изменений
+## 16. Бэкенд колеса
+
+### 16.1 Загрузка сегментов и правило чётности
+
+Сервер загружает enabled-сегменты через `segments.repo.findAllEnabled(ctx)` (sorted `order asc`). Пусть `N` — их количество.
+
+**Правило чётности.** Если `N % 2 !== 0`, сервер добавляет в конец авто-retry сектор:
+
+```
+{ order: N, label: 'Ещё попытка', prizeKey: '__retry__', full: '', weight: 0, isAutoRetry: true }
+```
+
+Эффективный список (`N_eff = N` или `N+1`) всегда чётный. Авто-retry **никогда не выбирается** алгоритмом как результат.
+
+### 16.2 Динамический CSS
+
+CSS-параметры колеса вычисляются из `N_eff`:
+
+- `sectorAngle = 360 / N_eff`
+- `conic-gradient(from -${sectorAngle / 2}deg, ...)` — чередование `#c9a24a` (gold, чётный `order`) / `#14100a` (dark, нечётный)
+- Дивайдеры: `N_eff` делителей на углах `order × sectorAngle + sectorAngle / 2`
+
+CSS передаётся SSR через динамически вычисленный `<style>` блок, не через статический `wheelPageCss1.ts`.
+
+### 16.3 Алгоритм выбора (серверный)
+
+1. Взять сегменты с `weight > 0` из `findAllEnabled` (исключая авто-retry).
+2. Для каждого сегмента с `maxWins != null`: `spins.repo.countByPrizeKey(ctx, prizeKey)`. Если `>= maxWins` → обнулить `weight`.
+3. Если `Σweight === 0` — все квоты исчерпаны; вернуть `{ success: false, error: 'Все призы разыграны' }`.
+4. Нормализовать веса, выбрать `targetIdx` взвешенным случайным образом.
+5. Вернуть `{ success: true, targetIdx, prizeKey, full }`.
+
+### 16.4 Проверка лимита попыток
+
+Выполняется до шага выбора:
+
+```
+if (!wheel_enabled) → { success: false, error: 'Колесо временно недоступно' }
+spinsUsed    = spins.repo.countByPhone(ctx, phone)
+spinsGranted = spinGrants.repo.sumByPhone(ctx, phone)
+maxAllowed   = wheel_max_spins + spinsGranted
+if spinsUsed >= maxAllowed → { success: false, error: 'Лимит попыток исчерпан' }
+```
+
+### 16.5 UX-поток главной страницы
+
+1. Пользователь вводит номер телефона (11 цифр, начинается с 7).
+2. Клиент валидирует формат на стороне UI (`/^7\d{10}$/`).
+3. Кнопка «Крутить» разблокируется после ввода валидного номера.
+4. Клиент отправляет `POST /api/wheel/spin` с `{ phone }`.
+5. При `success: true` — анимация вращения на `targetIdx`, затем экран результата.
+6. При `success: false` — сообщение об ошибке; колесо остаётся доступным для повторного ввода (если ошибка не «лимит»).
+
+### 16.6 Что остаётся на клиенте
+
+После миграции на бэкенд `WheelPage.vue` отвечает только за:
+
+- форму ввода телефона и валидацию формата;
+- рендеринг сегментов из SSR props;
+- анимацию вращения на полученный `targetIdx`;
+- экран результата с `full`.
+
+`Math.random()` на клиенте для выбора `targetIdx` **удаляется**.
+
+## 17. Правила изменений
 
 Любое изменение проекта должно поддерживать этот порядок истинности:
 
@@ -1183,7 +1336,7 @@ rg -n "p/template_project|template_project|template-project|t__template-project|
 - добавлять новый shared composable без описания его ownership/lifecycle в этой спецификации;
 - добавлять retention/pruning/rate limiting логов без явного контракта и тестов.
 
-## 17. Остаточные ограничения
+## 18. Остаточные ограничения
 
 - Login page не подключает browser remote logger, потому что `/api/logger/browser` требует AnyUser.
 - Home page публичная и всё равно устанавливает browser remote logger; для Guest отправка `/api/logger/browser` может получить auth-ответ платформы и должна быть проглочена без поломки страницы.
