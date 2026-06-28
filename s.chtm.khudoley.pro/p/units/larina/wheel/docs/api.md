@@ -49,11 +49,37 @@
 | GET    | /api/tests/unit        | api/tests/unit/index.ts        | AnyUser | Юнит: `runTemplateUnitChecks()` — routes, project, logLevel script, logger.lib, shared/logger, целостность каталога. `{ success, kind: 'unit', results[], summary, at }`.            |
 | GET    | /api/tests/integration | api/tests/integration/index.ts | AnyUser | Интеграция: Heap, libs, API через `route.run`, e2e-сценарии; в конце добавляется проверка `api_tests_integration_shape`. `{ success, kind: 'integration', results[], summary, at }`. |
 
-## Публичные эндпоинты
+## Колесо удачи — публичные (api/wheel/)
 
-| Method | Path | File | Auth | Назначение |
-| ------ | ---- | ---- | ---- | ---------- |
-| -      | -    | -    | -    | -          |
+Email-идентичность хранится в `localStorage` (`larina-wheel:auth`). Chatium-авторизация на главной не требуется.
+
+| Method | Path                 | File                   | Auth  | Назначение                                                                                                                                                                                                             |
+| ------ | -------------------- | ---------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST   | /api/wheel/authorize | api/wheel/authorize.ts | Guest | Email-гейт + GetCourse gating. Body: `{ email }`. Возвращает `{ success, locked }`. При `locked: true` — пользователь не прошёл gating.                                                                                |
+| POST   | /api/wheel/spin      | api/wheel/spin.ts      | Guest | Спин под `runWithExclusiveLock` (ключ `wheel:spin:email`): проверка лимита → взвешенный выбор → запись победы → награда GetCourse. Body: `{ email }`. Возвращает `{ success, targetIdx, full, spinsRemaining, nEff }`. |
+| GET    | /api/wheel/segments  | api/wheel/segments.ts  | Guest | Публичные сегменты: `{ segments: [{order,label,weight,isAutoRetry?,redirectUrl?}], nEff }`. id и maxWins клиенту не передаются.                                                                                        |
+| GET    | /api/wheel/winners   | api/wheel/winners.ts   | Guest | Публичный список побед. Query: `limit`, `offset`. Возвращает `{ success, winners: WinnerRow[], hasMore }`. Email маскирован серверно (`maskEmail` в `lib/wheel.lib.ts`).                                               |
+
+## Колесо удачи — GetCourse (api/getcourse/)
+
+| Method | Path                  | File                    | Auth  | Назначение                                                                                                                             |
+| ------ | --------------------- | ----------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | /api/getcourse/groups | api/getcourse/groups.ts | Admin | Список групп GetCourse через gateway. Зависит от gateway-операций getUserGroups/getAllGroups (сейчас disabled в p/gateways/getcourse). |
+
+## Колесо удачи — Управление сегментами (api/admin/segments/)
+
+| Method | Path                        | File                          | Auth  | Назначение                                             |
+| ------ | --------------------------- | ----------------------------- | ----- | ------------------------------------------------------ |
+| GET    | /api/admin/segments/list    | api/admin/segments/list.ts    | Admin | Список всех сегментов (полная схема, включая id).      |
+| POST   | /api/admin/segments/save    | api/admin/segments/save.ts    | Admin | Создать или обновить сегмент. Body: поля сегмента.     |
+| POST   | /api/admin/segments/delete  | api/admin/segments/delete.ts  | Admin | Удалить сегмент. Body: `{ id }`. Guard: если у сегмента есть зависимые spins (`countBySegment > 0` через RefLink), возвращает `{ success: false }` — удаление заблокировано. |
+| POST   | /api/admin/segments/reorder | api/admin/segments/reorder.ts | Admin | Изменить порядок сегментов. Body: `{ ids: string[] }`.                                                                                                                        |
+
+## Колесо удачи — Сброс (api/admin/wheel/)
+
+| Method | Path                    | File                        | Auth  | Назначение                                                                                                                  |
+| ------ | ----------------------- | --------------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------- |
+| POST   | /api/admin/wheel/reset  | api/admin/wheel/reset.ts    | Admin | Полный сброс: удаляет все Spins и SpinGrants (`deleteAll(limit:null)`). Возвращает `{ success, deletedSpins, deletedGrants }`. |
 
 ## События и webhooks
 

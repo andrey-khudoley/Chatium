@@ -23,6 +23,7 @@
 - `web/profile/index.tsx` — профиль, `requireRealUser()`.
 - `web/tests/index.tsx` — страница тестов, `requireRealUser()`.
 - `web/login/index.tsx` — вход (редирект на системный `/s/auth/signin`).
+- `web/winners/index.tsx` — публичная страница «Список победителей» (SSR + Vue, `WinnersPage.vue`). Пагинация батчами по 50 через `offset`. Дизайн в стиле темы колеса.
 
 ## Вёрстка админки и страницы тестов
 
@@ -74,28 +75,49 @@
 - **Сервер** (`lib/logger.lib.ts`): функция `shouldIncludePayload` — payload в ctx.account.log, Heap, WebSocket и webhook только при Debug.
 - **Браузер** (`shared/logger.ts`): `emitLog` фильтрует non-string args при уровне != Debug.
 
-## Архитектура колеса (текущая, мок)
+## Архитектура колеса (бэкенд реализован)
 
-`WheelPage.vue` реализует всю логику на клиенте без обращений к backend:
+Источник истины — `docs/spec/spec.md`.
 
-- Сегменты и их призы заданы статическим массивом `SEGMENTS` (6 сегментов, центры на `i*60°`).
-- Результат вращения определяется `Math.random()` на клиенте; алгоритм гарантирует точное попадание под указатель.
-- Конфетти: 110 DOM-элементов с `confetti-fall` @keyframes, cleanup в `onBeforeUnmount`.
+### Клиентская идентичность
 
-**Алгоритм вращения.** CSS: `conic-gradient(from -30deg, ...)` — золотые сектора центрированы в `0°, 60°, 120°...`. Указатель фиксирован вверху в `0°`. После поворота на угол `R` (CW) сектор `i` оказывается на фиксированном угле `(i*60 + R) % 360`. Чтобы `targetIdx` попал под указатель:
+Email сохраняется в `localStorage` под ключом `larina-wheel:auth`. Chatium-авторизация на главной странице не требуется.
 
-```
-desiredMod  = (360 - targetIdx*60 + 360) % 360
-currentMod  = ((currentRotation % 360) + 360) % 360
-delta       = (desiredMod - currentMod + 360) % 360
-targetRotation = currentRotation + 5*360 + delta + jitter   // jitter = ±19°
-```
+### Серверная логика спина
 
-`currentRotation` накапливается между вращениями, поэтому `delta` всегда корректен относительно текущего положения колеса. Анимация: `setInterval` 16 мс, ease-out `1-(1-p)^3.6` за 5200 мс.
+1. `POST /api/wheel/authorize` — email-гейт + GetCourse gating (`passesGcUserCheck`, `passesGcGroupCheck` из `lib/getcourse.lib.ts`).
+2. `POST /api/wheel/spin` — выполняется под `runWithExclusiveLock` (ключ `wheel:spin:email`):
+   - Проверка лимита (`checkSpinLimit` в `lib/wheel.lib.ts`): `countByEmail` из `repos/spins.repo` + `sumByEmail` из `repos/spinGrants.repo` vs `wheel_max_spins`.
+   - Загрузка сегментов (`loadEffectiveSegments`): правило чётности 2..8 — нечётные сегменты дополняются авто-retry-копиями до чётного числа.
+   - Взвешенный выбор (`selectTarget`): по полю `weight` среди enabled-сегментов.
+   - Запись победы в `repos/spins.repo`.
+   - Выдача награды через `lib/getcourse.lib.ts` (createDeal), если `getcourse_issue_rewards = true`.
+3. Ответ: `{ success, targetIdx, full, spinsRemaining, nEff }`. `targetIdx` — позиция в массиве `EffectiveSegment[]`, id и maxWins клиенту не передаются.
 
-Следующий шаг — переход на серверный backend (призы из Heap, история, лимиты попыток).
+### Разделение типов сегментов
+
+- `LoadedSegment` (серверный) — полная схема: id, maxWins, full, prizeOfferID, все поля.
+- `EffectiveSegment` (публичный) — урезанный: order, label, weight, isAutoRetry?, redirectUrl?. id не утекает клиенту.
+
+### Система тем
+
+`config/themes.tsx` — 6 предустановленных тем (`var(--theme-*)`). Активная тема инжектируется в `:root` через SSR в `index.tsx`. Выбор темы — через настройку `theme` (AdminWheelSettings).
+
+### Алгоритм вращения (клиент)
+
+CSS: `conic-gradient(from -30deg, ...)`. Указатель фиксирован вверху в `0°`. `targetIdx` из ответа сервера определяет `desiredMod`, анимация вращается на `5×360° + delta + jitter (±19°)`, ease-out `1-(1-p)^3.6` за 5200 мс.
+
+### Маскировка email (приватность)
+
+Функция `maskEmail` в `lib/wheel.lib.ts` (§16.10 spec): email маскируется на сервере перед отдачей клиенту (`tester@khudoley.pro → te***@***ey.pro`). Полный email не покидает сервер — используется в `GET /api/wheel/winners` и `WinnersPage`.
+
+### Компоненты adminки
+
+- `AdminWheelSettings` — настройки wheel_enabled, wheel_max_spins, тема; кнопка «Сброс» (POST /api/admin/wheel/reset, удаляет все Spins и SpinGrants); ссылка «Список победителей» (`winnersUrl` проп от `AdminPage`).
+- `AdminSegments` — CRUD сегментов (list/save/delete/reorder через `api/admin/segments/`). Удаление сегмента блокируется guard'ом если есть зависимые spins (RefLink).
+- `AdminGetcourseSettings` — gateway_base_url, gc_school_host, gc_school_api_key (маскируется), гейтинг и флаг наград.
 
 ## Интеграции
 
-- Внешние сервисы: нет.
+- **GetCourse** — через внутренний gateway (`gateway_base_url`, envelope-транспорт `@app/request`). Операции: getGroups, userGetFields, userGetGroups, createDeal. Групповой gating зависит от gateway-операций getUserGroups/getAllGroups (сейчас disabled в `p/gateways/getcourse`).
 - Внутренние SDK: стандартные модули Chatium.
