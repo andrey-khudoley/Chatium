@@ -847,7 +847,7 @@ onBeforeUnmount(() => {
 
       <!-- Wheel assembly -->
       <div
-        style="position: relative; width: min(82vw, 358px); aspect-ratio: 1; margin-bottom: 30px"
+        style="position: relative; width: min(82vw, 358px); aspect-ratio: 1; margin-top: 34px; margin-bottom: 30px"
       >
         <!-- ambient glow -->
         <div :style="glowStyle"></div>
