@@ -11,10 +11,12 @@ import * as loggerLib from '../../lib/logger.lib'
 import { getFullUrl, ROUTES } from '../../config/routes'
 import { ADMIN_PAGE_NAME, getPageTitle, getHeaderText } from '../../config/project'
 import * as settingsLib from '../../lib/settings.lib'
+import { THEMES } from '../../config/themes'
 import { customScrollbarStyles } from '../../styles'
 import { adminPageCss1 } from '../../pagecss/adminPageCss1'
 import { adminPageCss2 } from '../../pagecss/adminPageCss2'
 import { adminPageCss3 } from '../../pagecss/adminPageCss3'
+import { adminPageCss4 } from '../../pagecss/adminPageCss4'
 import { headerCss1 } from '../../pagecss/headerCss1'
 import { headerCss2 } from '../../pagecss/headerCss2'
 
@@ -149,6 +151,7 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
   const profileUrl = getFullUrl(ROUTES.profile)
   const adminUrl = getFullUrl(ROUTES.admin)
   const loginUrl = getFullUrl(ROUTES.login)
+  const winnersUrl = getFullUrl(ROUTES.winners)
   await loggerLib.writeServerLog(ctx, {
     severity: 6,
     message: `[${LOG_PATH}] URL-ы`,
@@ -174,6 +177,8 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
     payload: { logLevel, logsSocketId }
   })
 
+  const themeOptions = THEMES.map((t) => ({ id: t.id, name: t.name }))
+
   return (
     <html>
       <head>
@@ -187,6 +192,7 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
         <style>{adminPageCss1}</style>
         <style>{adminPageCss2}</style>
         <style>{adminPageCss3}</style>
+        <style>{adminPageCss4}</style>
         <style>{headerCss1}</style>
         <style>{headerCss2}</style>
         <style>{getPreloaderStyles()}</style>
@@ -217,6 +223,8 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
           isAdmin={true}
           adminUrl={adminUrl}
           encodedLogsSocketId={encodedLogsSocketId}
+          themeOptions={themeOptions}
+          winnersUrl={winnersUrl}
         />
       </body>
     </html>
