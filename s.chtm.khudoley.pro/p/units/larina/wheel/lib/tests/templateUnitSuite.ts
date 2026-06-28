@@ -33,6 +33,7 @@ import {
 
 import { type TemplateUnitTestResult, push, tryPush } from './templateUnitSuiteHelpers'
 import { runRoutesChecks } from './templateUnitRoutesChecks'
+import { runThemesChecks, runWheelEmailChecks } from './wheelUnitChecks'
 
 export type { TemplateUnitTestResult } from './templateUnitSuiteHelpers'
 
@@ -288,6 +289,8 @@ export function runTemplateUnitChecks(
   runLoggerLibPureChecks(results)
   runSharedLoggerChecks(results)
   runCatalogIntegrityChecks(results)
+  runThemesChecks(results)
+  runWheelEmailChecks(results)
 
   const idsBeforeSyncCheck = [...results.map((r) => r.id), ...extraRunnerIds]
   tryPush(

@@ -30,16 +30,18 @@ export const HTTP_PATH_BY_TEST_ID: Record<string, string> = {
   'web-admin': '/web/admin',
   'web-profile': '/web/profile',
   'web-login': '/web/login',
-  'web-tests': '/web/tests'
+  'web-tests': '/web/tests',
+  'web-winners': '/web/winners'
 }
 
 /** Минимальные фрагменты SSR для проверки. */
 export const HTTP_HTML_SNIPPETS: Record<string, string[]> = {
-  index: ['window.__BOOT__', 'Шаблон проекта'],
+  index: ['window.__BOOT__', 'Колесо удачи'],
   'web-admin': ['window.__BOOT__', 'Админка'],
   'web-profile': ['window.__BOOT__', 'Профиль'],
   'web-login': ['Вход'],
-  'web-tests': ['window.__BOOT__', 'larina-wheel-page']
+  'web-tests': ['window.__BOOT__', 'larina-wheel-page'],
+  'web-winners': ['Список победителей']
 }
 
 export function httpPagePassed(

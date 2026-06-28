@@ -109,6 +109,36 @@ export const UNIT_TEST_BLOCKS: TestCatalogBlock[] = [
       { id: 'catalog_flatten_order', title: 'flattenCatalogBlocks порядок' },
       { id: 'catalog_unit_ids_match_runner', title: 'UNIT_TEST_BLOCKS содержит все id прогона' }
     ]
+  },
+  {
+    id: 'unit-themes',
+    title: 'Темы оформления',
+    description: 'config/themes — каталог тем (getTheme, segFills)',
+    tests: [
+      { id: 'themes_count_at_least_6', title: 'не менее 6 тем' },
+      { id: 'themes_ids_unique', title: 'id тем уникальны' },
+      { id: 'themes_getTheme_known', title: 'getTheme(known) → объект темы' },
+      { id: 'themes_getTheme_fallback', title: 'getTheme(unknown) → дефолт' },
+      { id: 'themes_all_have_segfills', title: 'у всех тем непустые segFills/segTexts' }
+    ]
+  },
+  {
+    id: 'unit-wheel-email',
+    title: 'Email-хелперы колеса',
+    description: 'wheel.lib normalizeEmail / isValidEmail (чистые функции)',
+    tests: [
+      { id: 'wheel_normalizeEmail_trim_lowercase', title: 'normalizeEmail trim + lowercase' },
+      { id: 'wheel_normalizeEmail_idempotent', title: 'normalizeEmail идемпотентен' },
+      { id: 'wheel_isValidEmail_valid', title: 'isValidEmail валидный' },
+      { id: 'wheel_isValidEmail_no_at', title: 'isValidEmail без @' },
+      { id: 'wheel_isValidEmail_no_domain', title: 'isValidEmail без домена' },
+      { id: 'wheel_isValidEmail_spaces', title: 'isValidEmail с пробелами' },
+      { id: 'wheel_isValidEmail_empty', title: 'isValidEmail пустой' },
+      { id: 'wheel_maskEmail_basic', title: 'maskEmail tester@khudoley.pro → te***@***ey.pro' },
+      { id: 'wheel_maskEmail_short_local', title: 'maskEmail короткий local' },
+      { id: 'wheel_maskEmail_no_dot_domain', title: 'maskEmail домен без точки' },
+      { id: 'wheel_maskEmail_no_at', title: 'maskEmail без @ → ***' }
+    ]
   }
 ]
 
@@ -198,6 +228,8 @@ export const INTEGRATION_SERVER_TEST_BLOCKS: TestCatalogBlock[] = [
       { id: 'api_admin_logs_recent', title: 'GET admin/logs/recent' },
       { id: 'api_admin_logs_before', title: 'GET admin/logs/before' },
       { id: 'api_admin_dashboard_counts', title: 'GET admin/dashboard/counts' },
+      { id: 'api_wheel_winners', title: 'GET wheel/winners (маскировка, hasMore)' },
+      { id: 'api_admin_wheel_reset', title: 'POST admin/wheel/reset (Admin)' },
       { id: 'api_tests_list_shape', title: 'GET tests/list структура' },
       { id: 'api_tests_unit_shape', title: 'GET tests/unit shape' },
       { id: 'api_tests_integration_shape', title: 'GET tests/integration shape' }
@@ -214,6 +246,97 @@ export const INTEGRATION_SERVER_TEST_BLOCKS: TestCatalogBlock[] = [
       { id: 'e2e_dashboard_reset_flow', title: 'counts → reset → counts' },
       { id: 'e2e_log_payload_roundtrip', title: 'payload объект → Heap → recent' }
     ]
+  },
+  {
+    id: 'int-segments-repo',
+    title: 'segments.repo',
+    description: 'CRUD сегментов колеса (Heap)',
+    tests: [
+      { id: 'segments_repo_create_findById', title: 'create → findById' },
+      {
+        id: 'segments_repo_findAllEnabled_filter_sort',
+        title: 'findAllEnabled: enabled + order asc'
+      },
+      { id: 'segments_repo_findAll_includes_disabled', title: 'findAll включает disabled' },
+      { id: 'segments_repo_update', title: 'update полей сегмента' },
+      { id: 'segments_repo_updateOrder', title: 'updateOrder' },
+      { id: 'segments_repo_deleteById', title: 'deleteById' },
+      { id: 'segments_delete_blocked_by_spins', title: 'delete с победами → success:false' }
+    ]
+  },
+  {
+    id: 'int-spins-repo',
+    title: 'spins.repo',
+    description: 'История вращений (Heap)',
+    tests: [
+      { id: 'spins_repo_create_countByEmail', title: 'create → countByEmail' },
+      { id: 'spins_repo_countByEmail_normalized', title: 'countByEmail по email' },
+      { id: 'spins_repo_countBySegment', title: 'countBySegment по RefLink' },
+      {
+        id: 'spins_repo_findRecent_order_limit',
+        title: 'findRecent: timestamp desc + limit/offset'
+      },
+      { id: 'spins_repo_deleteAll', title: 'deleteAll → 0 записей' }
+    ]
+  },
+  {
+    id: 'int-spinGrants-repo',
+    title: 'spinGrants.repo',
+    description: 'Доначисленные попытки (Heap)',
+    tests: [
+      { id: 'spinGrants_repo_create_sumByEmail', title: 'create → sumByEmail' },
+      { id: 'spinGrants_repo_sumByEmail_empty_zero', title: 'sumByEmail без записей → 0' },
+      { id: 'spinGrants_repo_deleteAll', title: 'deleteAll → 0 записей' }
+    ]
+  },
+  {
+    id: 'int-wheel-lib',
+    title: 'wheel.lib',
+    description: 'Загрузка сегментов, выбор, лимит',
+    tests: [
+      { id: 'wheel_loadEffectiveSegments_range_low', title: 'N<2 → error' },
+      { id: 'wheel_loadEffectiveSegments_range_high', title: 'N>8 → error' },
+      { id: 'wheel_loadEffectiveSegments_even', title: 'чётное N → nEff=N' },
+      { id: 'wheel_loadEffectiveSegments_odd_autoretry', title: 'нечётное N → авто-retry' },
+      { id: 'wheel_selectTarget_weighted', title: 'взвешенный выбор' },
+      { id: 'wheel_selectTarget_maxWins_excluded', title: 'maxWins исчерпан → исключён' },
+      { id: 'wheel_selectTarget_all_exhausted', title: 'Σweight=0 → error' },
+      { id: 'wheel_checkSpinLimit_base', title: 'лимит без грантов' },
+      { id: 'wheel_checkSpinLimit_with_grants', title: 'лимит + гранты' }
+    ]
+  },
+  {
+    id: 'int-settings-wheel',
+    title: 'settings.lib (колесо)',
+    description: 'Новые настройки колеса и gating',
+    tests: [
+      { id: 'settings_wheel_enabled_default_set', title: 'wheel_enabled default/set' },
+      { id: 'settings_wheel_max_spins_validation', title: 'wheel_max_spins положительный' },
+      { id: 'settings_theme_validation', title: 'theme — из THEMES' },
+      { id: 'settings_gateway_base_url_normalize', title: 'gateway_base_url префикс/срез' },
+      { id: 'settings_gc_school_host_strip', title: 'gc_school_host срез схемы/пути' },
+      { id: 'settings_gc_api_key_masked', title: 'gc_school_api_key маскируется' },
+      { id: 'settings_required_group_ids_dedup', title: 'required_group_ids дедуп' },
+      { id: 'settings_getGetcourseGating_user_implied', title: 'requireGroup влечёт requireUser' },
+      { id: 'settings_require_group_needs_ids', title: 'require_group=true требует группы' }
+    ]
+  },
+  {
+    id: 'int-getcourse-lib',
+    title: 'getcourse.lib (мок gateway)',
+    description: 'Проверки доступа и createDeal через _setRequestFn',
+    tests: [
+      { id: 'gc_passesGcUserCheck_allowed', title: 'пользователь найден → allowed' },
+      { id: 'gc_passesGcUserCheck_not_found', title: 'не найден → !allowed' },
+      { id: 'gc_passesGcUserCheck_transient_failclosed', title: 'сбой → transient fail-closed' },
+      { id: 'gc_passesGcGroupCheck_intersection', title: 'пересечение групп → allowed' },
+      { id: 'gc_passesGcGroupCheck_empty', title: 'нет пересечения → !allowed' },
+      { id: 'gc_passesGcGroupCheck_transient', title: 'сбой групп → transient' },
+      { id: 'gc_createDeal_ok', title: 'createDeal успех' },
+      { id: 'gc_createDeal_invalid_offerId', title: 'createDeal нечисловой offerId' },
+      { id: 'gc_envelope_invalid_json', title: 'невалидный JSON gateway' },
+      { id: 'gc_settings_missing', title: 'пустые настройки → SETTINGS_MISSING' }
+    ]
   }
 ]
 
@@ -226,7 +349,8 @@ export const INTEGRATION_HTTP_TEST_BLOCK: TestCatalogBlock = {
     { id: 'web-admin', title: 'GET /web/admin' },
     { id: 'web-profile', title: 'GET /web/profile' },
     { id: 'web-login', title: 'GET /web/login' },
-    { id: 'web-tests', title: 'GET /web/tests' }
+    { id: 'web-tests', title: 'GET /web/tests' },
+    { id: 'web-winners', title: 'GET /web/winners' }
   ]
 }
 
