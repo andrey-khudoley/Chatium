@@ -40,7 +40,7 @@
 
 ## Библиотеки (lib/)
 
-- `lib/settings.lib.ts` — getSetting, getAllSettings, setSetting, getLogLevel, getLogsLimit, getLogWebhook (бизнес-логика, дефолты, валидация).
+- `lib/settings.lib.ts` — getSetting, getAllSettings, setSetting, getLogLevel, getLogsLimit, getLogWebhook (бизнес-логика, дефолты, валидация). Бэкап: `getBackupSettings` (эффективные значения всех `SETTING_KEYS` без маскировки секрета — для экспорта) и `applyBackupSettings` (применение бэкапа с безопасным порядком gating, пропуском неизвестных/служебных ключей и пустого секрета).
 - `lib/logger.lib.ts` — getAdminLogsSocketId, shouldLogByLevel, writeServerLog (проверка уровня, запись в ctx.log/ctx.account.log, Heap, WebSocket, вебхук).
 - `lib/wheel.lib.ts` — loadEffectiveSegments (правило чётности 2..8 + авто-retry для нечётного числа сегментов), selectTarget (взвешенный выбор сегмента), checkSpinLimit (лимит попыток), maskEmail (серверная маскировка: `tester@khudoley.pro → te***@***ey.pro`; полный email клиенту не передаётся). Серверный тип `LoadedSegment` (с id/maxWins/full/prizeOfferID) vs публичный `EffectiveSegment` (без них — id не утекает клиенту).
 - `lib/getcourse.lib.ts` — клиент gateway GetCourse: getGroups, userGetFields, userGetGroups, createDeal; passesGcUserCheck, passesGcGroupCheck. Envelope-транспорт через `@app/request`.

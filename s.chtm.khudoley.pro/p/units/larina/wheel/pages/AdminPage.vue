@@ -8,6 +8,7 @@ import AdminSettings from '../components/admin/AdminSettings.vue'
 import AdminGetcourseSettings from '../components/admin/AdminGetcourseSettings.vue'
 import AdminWheelSettings from '../components/admin/AdminWheelSettings.vue'
 import AdminSegments from '../components/admin/AdminSegments.vue'
+import AdminBackup from '../components/admin/AdminBackup.vue'
 import AdminLogMonitor from '../components/admin/AdminLogMonitor.vue'
 import { createComponentLogger, type LogEntry } from '../shared/logger'
 import { useLogStream } from '../shared/useLogStream'
@@ -254,6 +255,7 @@ onUnmounted(() => {
             />
             <AdminSegments />
             <AdminGetcourseSettings />
+            <AdminBackup />
           </div>
 
           <aside class="ap-side">

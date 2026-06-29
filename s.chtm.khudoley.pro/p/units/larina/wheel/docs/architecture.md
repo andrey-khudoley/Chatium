@@ -116,6 +116,13 @@ CSS: `conic-gradient(from -30deg, ...)`. Указатель фиксирован
 - `AdminWheelSettings` — настройки wheel_enabled, wheel_max_spins, тема; кнопка «Сброс» (POST /api/admin/wheel/reset, удаляет все Spins и SpinGrants); ссылка «Список победителей» (`winnersUrl` проп от `AdminPage`).
 - `AdminSegments` — CRUD сегментов (list/save/delete/reorder через `api/admin/segments/`). Удаление сегмента блокируется guard'ом если есть зависимые spins (RefLink).
 - `AdminGetcourseSettings` — gateway_base_url, gc_school_host, gc_school_api_key (маскируется), гейтинг и флаг наград.
+- `AdminBackup` — экспорт/импорт. Экспорт: `GET /api/admin/settings/export` → клиент скачивает JSON через Blob+`<a download>`. Импорт: чтение файла через `FileReader`, подтверждение замены, `POST /api/admin/settings/import`. Без импорта `lib/repos/tables` в `.vue` — только вызовы route-консолей `.run(ctx)`.
+
+### Поток бэкапа настроек
+
+- Экспорт собирает `{ _meta, settings, segments }`. `settings` = `getBackupSettings` (эффективные значения всех `SETTING_KEYS`, секрет `gc_school_api_key` в открытом виде — иначе перенос ломается; значение не логируется). `segments` = `segmentsRepo.findAll` без `id` (назначается заново при импорте).
+- Импорт валидирует `_meta.type === "larina-wheel-backup"`. Настройки применяет `applyBackupSettings`: сначала нейтрализует `getcourse_require_group`, затем применяет ключи через `setSetting` (валидация на ключ), `getcourse_require_group` — последним (его валидация требует непустой `required_group_ids`); неизвестные/служебные (`gc_school_api_key_set`) ключи и пустой секрет пропускаются.
+- Сегменты при импорте — replace-all: если ни у одного текущего сегмента нет истории побед (`spinsRepo.countBySegment`), все удаляются и создаются заново из файла; иначе импорт сегментов пропускается с сообщением (настройки при этом применяются). Так restore/перенос на чистый экземпляр работает, а на «грязном» — не рвёт ссылки spins.
 
 ## Интеграции
 

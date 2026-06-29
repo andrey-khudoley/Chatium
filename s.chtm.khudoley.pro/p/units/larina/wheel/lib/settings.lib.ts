@@ -482,3 +482,139 @@ export async function getWheelBrandLabel(ctx: app.Ctx): Promise<string> {
   }
   return DEFAULTS[SETTING_KEYS.WHEEL_BRAND_LABEL] as string
 }
+
+// ---------------------------------------------------------------------------
+// Экспорт/импорт настроек (бэкап для сохранения/восстановления/переноса)
+// ---------------------------------------------------------------------------
+
+/**
+ * Полный набор настроек для бэкапа: эффективные значения всех известных ключей
+ * (DEFAULTS, перекрытые сохранёнными). В ОТЛИЧИЕ от getAllSettings секрет
+ * gc_school_api_key НЕ маскируется — иначе бэкап нельзя восстановить/перенести.
+ * Возвращает только известные ключи SETTING_KEYS (без служебного gc_school_api_key_set).
+ * Использовать только в Admin-эндпоинте экспорта. Значение секрета не логируем (§18).
+ */
+export async function getBackupSettings(ctx: app.Ctx): Promise<Record<string, unknown>> {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] getBackupSettings entry`,
+    payload: {}
+  })
+  const rows = await repo.findAll(ctx)
+  const stored: Record<string, unknown> = {}
+  for (const row of rows) {
+    if (row.key && row.value !== undefined && row.value !== null) {
+      stored[row.key] = row.value
+    }
+  }
+  const result: Record<string, unknown> = {}
+  for (const key of Object.values(SETTING_KEYS)) {
+    result[key] = key in stored ? stored[key] : ((DEFAULTS as Record<string, unknown>)[key] ?? null)
+  }
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] getBackupSettings exit`,
+    payload: {
+      keys: Object.keys(result),
+      apiKeySet:
+        typeof result[SETTING_KEYS.GC_SCHOOL_API_KEY] === 'string' &&
+        (result[SETTING_KEYS.GC_SCHOOL_API_KEY] as string).length > 0
+    }
+  })
+  return result
+}
+
+/** Служебные ключи, которые не являются настройками и в импорте игнорируются. */
+const NON_SETTING_KEYS = new Set<string>(['gc_school_api_key_set'])
+
+/**
+ * Применяет настройки из бэкапа. Игнорирует неизвестные ключи (не из SETTING_KEYS)
+ * и служебные поля. Секрет gc_school_api_key с пустым значением пропускается —
+ * чтобы случайно не затереть рабочий ключ при импорте маскированного файла.
+ *
+ * Порядок применения важен из-за межключевых зависимостей gating (§9):
+ * сначала нейтрализуем GETCOURSE_REQUIRE_GROUP, затем применяем все ключи
+ * (включая required_group_ids и require_user), затем выставляем require_group
+ * последним (его валидация требует непустой required_group_ids).
+ * Возвращает список применённых и пропущенных ключей.
+ */
+export async function applyBackupSettings(
+  ctx: app.Ctx,
+  settings: Record<string, unknown>
+): Promise<{ applied: string[]; skipped: string[] }> {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] applyBackupSettings entry`,
+    payload: { incomingKeys: Object.keys(settings) }
+  })
+
+  const knownKeys = new Set<string>(Object.values(SETTING_KEYS))
+  const applied: string[] = []
+  const skipped: string[] = []
+
+  // Нейтрализуем require_group, чтобы валидации required_group_ids/require_group не падали
+  await setSetting(ctx, SETTING_KEYS.GETCOURSE_REQUIRE_GROUP, false)
+
+  // require_group применяем последним
+  const deferred = SETTING_KEYS.GETCOURSE_REQUIRE_GROUP as string
+
+  for (const [key, value] of Object.entries(settings)) {
+    if (NON_SETTING_KEYS.has(key)) {
+      skipped.push(key)
+      continue
+    }
+    if (!knownKeys.has(key)) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 6,
+        message: `[${LOG_MODULE}] applyBackupSettings: неизвестный ключ пропущен`,
+        payload: { key }
+      })
+      skipped.push(key)
+      continue
+    }
+    if (key === deferred) {
+      continue
+    }
+    // Не затираем рабочий секрет пустым значением (маскированный экспорт)
+    if (
+      key === SETTING_KEYS.GC_SCHOOL_API_KEY &&
+      (typeof value !== 'string' || value.trim() === '')
+    ) {
+      skipped.push(key)
+      continue
+    }
+    try {
+      await setSetting(ctx, key, value)
+      applied.push(key)
+    } catch (error) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 3,
+        message: `[${LOG_MODULE}] applyBackupSettings: ошибка применения ключа`,
+        payload: { key, error: String(error) }
+      })
+      skipped.push(key)
+    }
+  }
+
+  // require_group — последним, если присутствует в бэкапе
+  if (deferred in settings) {
+    try {
+      await setSetting(ctx, deferred, settings[deferred])
+      applied.push(deferred)
+    } catch (error) {
+      await loggerLib.writeServerLog(ctx, {
+        severity: 3,
+        message: `[${LOG_MODULE}] applyBackupSettings: ошибка применения require_group`,
+        payload: { error: String(error) }
+      })
+      skipped.push(deferred)
+    }
+  }
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 4,
+    message: `[${LOG_MODULE}] applyBackupSettings exit`,
+    payload: { appliedCount: applied.length, skippedCount: skipped.length, skipped }
+  })
+  return { applied, skipped }
+}

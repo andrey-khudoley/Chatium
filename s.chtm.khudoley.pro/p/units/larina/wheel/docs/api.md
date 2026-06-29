@@ -68,18 +68,25 @@ Email-идентичность хранится в `localStorage` (`larina-wheel
 
 ## Колесо удачи — Управление сегментами (api/admin/segments/)
 
-| Method | Path                        | File                          | Auth  | Назначение                                             |
-| ------ | --------------------------- | ----------------------------- | ----- | ------------------------------------------------------ |
-| GET    | /api/admin/segments/list    | api/admin/segments/list.ts    | Admin | Список всех сегментов (полная схема, включая id).      |
-| POST   | /api/admin/segments/save    | api/admin/segments/save.ts    | Admin | Создать или обновить сегмент. Body: поля сегмента.     |
+| Method | Path                        | File                          | Auth  | Назначение                                                                                                                                                                   |
+| ------ | --------------------------- | ----------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | /api/admin/segments/list    | api/admin/segments/list.ts    | Admin | Список всех сегментов (полная схема, включая id).                                                                                                                            |
+| POST   | /api/admin/segments/save    | api/admin/segments/save.ts    | Admin | Создать или обновить сегмент. Body: поля сегмента.                                                                                                                           |
 | POST   | /api/admin/segments/delete  | api/admin/segments/delete.ts  | Admin | Удалить сегмент. Body: `{ id }`. Guard: если у сегмента есть зависимые spins (`countBySegment > 0` через RefLink), возвращает `{ success: false }` — удаление заблокировано. |
-| POST   | /api/admin/segments/reorder | api/admin/segments/reorder.ts | Admin | Изменить порядок сегментов. Body: `{ ids: string[] }`.                                                                                                                        |
+| POST   | /api/admin/segments/reorder | api/admin/segments/reorder.ts | Admin | Изменить порядок сегментов. Body: `{ ids: string[] }`.                                                                                                                       |
 
 ## Колесо удачи — Сброс (api/admin/wheel/)
 
-| Method | Path                    | File                        | Auth  | Назначение                                                                                                                  |
-| ------ | ----------------------- | --------------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------- |
-| POST   | /api/admin/wheel/reset  | api/admin/wheel/reset.ts    | Admin | Полный сброс: удаляет все Spins и SpinGrants (`deleteAll(limit:null)`). Возвращает `{ success, deletedSpins, deletedGrants }`. |
+| Method | Path                   | File                     | Auth  | Назначение                                                                                                                     |
+| ------ | ---------------------- | ------------------------ | ----- | ------------------------------------------------------------------------------------------------------------------------------ |
+| POST   | /api/admin/wheel/reset | api/admin/wheel/reset.ts | Admin | Полный сброс: удаляет все Spins и SpinGrants (`deleteAll(limit:null)`). Возвращает `{ success, deletedSpins, deletedGrants }`. |
+
+## Колесо удачи — Бэкап настроек (api/admin/settings/)
+
+| Method | Path                       | File                         | Auth  | Назначение                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ------ | -------------------------- | ---------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | /api/admin/settings/export | api/admin/settings/export.ts | Admin | Выгрузка всех настроек и сегментов в JSON. Ответ `{ success, backup }`, где `backup = { _meta:{ type:"larina-wheel-backup", version, projectRoot, exportedAt }, settings, segments }`. Секрет `gc_school_api_key` выгружается в открытом виде (нужен для переноса); в логи не пишется.                                                                                                                                             |
+| POST   | /api/admin/settings/import | api/admin/settings/import.ts | Admin | Восстановление из бэкапа. Body: `{ backup }`. Проверяет `_meta.type`. Настройки применяются через `applyBackupSettings` (gating в безопасном порядке). Сегменты — replace-all, но пропускаются, если у текущих сегментов есть история побед (защита ссылок spins). Ответ `{ success, settingsApplied, settingsSkipped, segmentsImported, segmentsImportedOk, segmentsMessage }`. Пустой секрет в импорте не затирает рабочий ключ. |
 
 ## События и webhooks
 
