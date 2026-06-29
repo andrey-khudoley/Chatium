@@ -18,6 +18,14 @@ export const adminPageCss4 = `
   gap: 0.45rem;
   cursor: pointer;
 }
+/* Неактивная (серая) строка чекбокса — временно отключённая опция */
+.ap-row--disabled {
+  opacity: 0.45;
+}
+.ap-row--disabled .ap-label,
+.ap-row--disabled .ap-checkbox {
+  cursor: not-allowed;
+}
 
 /* ── LABELS ── */
 .ap-label {

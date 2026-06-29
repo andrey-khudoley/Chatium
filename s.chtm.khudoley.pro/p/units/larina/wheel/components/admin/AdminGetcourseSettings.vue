@@ -29,6 +29,11 @@ const requireUser = ref(false)
 const requireGroup = ref(false)
 const requiredGroupIds = ref<number[]>([])
 
+// Групповой gating временно отключён в админке: галочка «членство в группе» серая/неактивная,
+// блок выбора групп скрыт. Снять флаг (true), когда операции gateway getUserGroups/getAllGroups
+// будут подтверждены end-to-end. Сам тумблер на сервере не трогаем — меняется только UI.
+const GROUP_GATING_AVAILABLE = false
+
 // --- Rewards ---
 const issueRewards = ref(false)
 
@@ -446,18 +451,23 @@ onBeforeUnmount(() => {
       <i class="fas fa-exclamation-circle"></i> {{ requireUserError }}
     </p>
 
-    <!-- require_group -->
-    <div class="ap-field-row ap-field-row--checkbox">
+    <!-- require_group (групповой gating временно недоступен — серая/неактивная галочка) -->
+    <div
+      class="ap-field-row ap-field-row--checkbox"
+      :class="{ 'ap-row--disabled': !GROUP_GATING_AVAILABLE }"
+    >
       <label class="ap-label">
         <input
           type="checkbox"
-          :checked="requireGroup"
+          :checked="GROUP_GATING_AVAILABLE && requireGroup"
           class="ap-checkbox"
+          :disabled="!GROUP_GATING_AVAILABLE"
           @change="saveRequireGroup(($event.target as HTMLInputElement).checked)"
         />
         Обязательное членство в группе GetCourse
+        <span v-if="!GROUP_GATING_AVAILABLE" class="ap-muted">(временно недоступно)</span>
         <span
-          v-if="requireGroupStatus"
+          v-if="GROUP_GATING_AVAILABLE && requireGroupStatus"
           class="ap-badge ap-badge--inline"
           :class="requireGroupStatus === 'saved' ? 'ap-badge--ok' : 'ap-badge--err'"
           >{{ requireGroupStatus === 'saved' ? 'OK' : 'ERR' }}</span
@@ -469,7 +479,10 @@ onBeforeUnmount(() => {
     </p>
 
     <!-- Выбор групп (виден если requireGroup или если группы загружены для выбора) -->
-    <div v-if="requireGroup || requiredGroupIds.length > 0 || groupsError" class="ap-groups-block">
+    <div
+      v-if="GROUP_GATING_AVAILABLE && (requireGroup || requiredGroupIds.length > 0 || groupsError)"
+      class="ap-groups-block"
+    >
       <div class="ap-field-row">
         <label class="ap-label">
           Обязательные группы
