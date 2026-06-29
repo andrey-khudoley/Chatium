@@ -399,6 +399,28 @@ export async function createDeal(
 // ---------------------------------------------------------------------------
 
 /**
+ * Достаёт gcHttpStatus из error.details ответа gateway, если он там есть.
+ * Gateway кладёт его для INVOKE_GC_UPSTREAM_ERROR (manual §10, §8.3).
+ */
+function extractGcHttpStatus(details: unknown): number | undefined {
+  if (typeof details !== 'object' || details === null) return undefined
+  const v = (details as Record<string, unknown>).gcHttpStatus
+  return typeof v === 'number' ? v : undefined
+}
+
+/**
+ * GetCourse отдаёт «сущность не найдена» как HTTP 404 (NotFoundException). Gateway по своей
+ * спецификации (§2.8.1, §8.3) превращает ЛЮБОЙ не-2xx ответ GC в INVOKE_GC_UPSTREAM_ERROR
+ * (семантика распознаётся только при HTTP 2xx), прокидывая исходный статус в
+ * error.details.gcHttpStatus. Поэтому для gating «не найден» приходит не как
+ * INVOKE_GC_SEMANTIC_ERROR, а как INVOKE_GC_UPSTREAM_ERROR + gcHttpStatus=404 — это не
+ * инфраструктурный сбой, а определённый ответ «пользователя нет».
+ */
+function isGcNotFound(error: GatewayErrorResult['error']): boolean {
+  return error.code === 'INVOKE_GC_UPSTREAM_ERROR' && extractGcHttpStatus(error.details) === 404
+}
+
+/**
  * Проверяет, найден ли пользователь в GetCourse (userGetFields).
  * Возвращает GatingCheckResult:
  *   { allowed: true, transient: false }   — пользователь найден
@@ -440,6 +462,16 @@ export async function passesGcUserCheck(ctx: app.Ctx, email: string): Promise<Ga
     await loggerLib.writeServerLog(ctx, {
       severity: 5,
       message: `[${LOG_MODULE}] passesGcUserCheck: пользователь не найден (SEMANTIC_ERROR)`,
+      payload: {}
+    })
+    return { allowed: false, transient: false }
+  }
+
+  // GC HTTP 404 (NotFoundException) → пользователь не найден, а не инфраструктурный сбой.
+  if (isGcNotFound(r.error)) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 5,
+      message: `[${LOG_MODULE}] passesGcUserCheck: пользователь не найден (GC HTTP 404)`,
       payload: {}
     })
     return { allowed: false, transient: false }
@@ -523,6 +555,16 @@ export async function passesGcGroupCheck(
     await loggerLib.writeServerLog(ctx, {
       severity: 5,
       message: `[${LOG_MODULE}] passesGcGroupCheck: SEMANTIC_ERROR (пользователь не найден)`,
+      payload: {}
+    })
+    return { allowed: false, transient: false }
+  }
+
+  // GC HTTP 404 (NotFoundException) → пользователь не найден, не состоит в группе; не сбой.
+  if (isGcNotFound(r.error)) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 5,
+      message: `[${LOG_MODULE}] passesGcGroupCheck: пользователь не найден (GC HTTP 404)`,
       payload: {}
     })
     return { allowed: false, transient: false }

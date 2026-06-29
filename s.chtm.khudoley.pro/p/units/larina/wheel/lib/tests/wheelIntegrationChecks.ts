@@ -894,6 +894,60 @@ async function runGetcourseLibChecks(
     }
   )
 
+  // gc_passesGcUserCheck_not_found_404 — GC HTTP 404 (NotFoundException) → не найден, не transient
+  await tryAsync(
+    results,
+    'gc_passesGcUserCheck_not_found_404',
+    'GC 404 → !allowed, !transient',
+    async () => {
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.GATEWAY_BASE_URL, testGatewayUrl)
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.GC_SCHOOL_HOST, testSchoolHost)
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.GC_SCHOOL_API_KEY, testApiKey)
+      const mockBody = JSON.stringify({
+        ok: false,
+        error: {
+          code: 'INVOKE_GC_UPSTREAM_ERROR',
+          message: 'gc upstream',
+          details: { gcHttpStatus: 404 }
+        }
+      })
+      getcourseLib._setRequestFn(makeMock(200, mockBody))
+      try {
+        const r = await getcourseLib.passesGcUserCheck(ctx, 'tester1@khudoley.pro')
+        return r.allowed === false && r.transient === false
+      } finally {
+        getcourseLib._resetRequestFn()
+      }
+    }
+  )
+
+  // gc_passesGcUserCheck_upstream_5xx_transient — не-404 upstream остаётся transient (регрессия)
+  await tryAsync(
+    results,
+    'gc_passesGcUserCheck_upstream_5xx_transient',
+    'GC 5xx upstream → transient',
+    async () => {
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.GATEWAY_BASE_URL, testGatewayUrl)
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.GC_SCHOOL_HOST, testSchoolHost)
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.GC_SCHOOL_API_KEY, testApiKey)
+      const mockBody = JSON.stringify({
+        ok: false,
+        error: {
+          code: 'INVOKE_GC_UPSTREAM_ERROR',
+          message: 'gc upstream',
+          details: { gcHttpStatus: 502 }
+        }
+      })
+      getcourseLib._setRequestFn(makeMock(200, mockBody))
+      try {
+        const r = await getcourseLib.passesGcUserCheck(ctx, 'down@example.com')
+        return r.allowed === false && r.transient === true
+      } finally {
+        getcourseLib._resetRequestFn()
+      }
+    }
+  )
+
   // gc_passesGcGroupCheck_intersection
   await tryAsync(
     results,
@@ -953,6 +1007,33 @@ async function runGetcourseLibChecks(
       getcourseLib._resetRequestFn()
     }
   })
+
+  // gc_passesGcGroupCheck_not_found_404 — GC HTTP 404 → пользователь не найден, не transient
+  await tryAsync(
+    results,
+    'gc_passesGcGroupCheck_not_found_404',
+    'GC 404 групп → !allowed, !transient',
+    async () => {
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.GATEWAY_BASE_URL, testGatewayUrl)
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.GC_SCHOOL_HOST, testSchoolHost)
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.GC_SCHOOL_API_KEY, testApiKey)
+      const mockBody = JSON.stringify({
+        ok: false,
+        error: {
+          code: 'INVOKE_GC_UPSTREAM_ERROR',
+          message: 'gc upstream',
+          details: { gcHttpStatus: 404 }
+        }
+      })
+      getcourseLib._setRequestFn(makeMock(200, mockBody))
+      try {
+        const r = await getcourseLib.passesGcGroupCheck(ctx, 'tester1@khudoley.pro', [1])
+        return r.allowed === false && r.transient === false
+      } finally {
+        getcourseLib._resetRequestFn()
+      }
+    }
+  )
 
   // gc_createDeal_ok
   await tryAsync(results, 'gc_createDeal_ok', 'createDeal успех', async () => {
