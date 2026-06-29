@@ -403,7 +403,7 @@ onBeforeUnmount(() => {
 
     <!-- Inline-подтверждение (§7) -->
     <div v-if="resetConfirmVisible" class="ap-confirm">
-      <p class="ap-confirm__text">
+      <p class="ap-confirm__msg">
         <i class="fas fa-exclamation-triangle" style="color: #e07070; margin-right: 6px"></i>
         Точно? Это удалит все попытки и результаты
       </p>

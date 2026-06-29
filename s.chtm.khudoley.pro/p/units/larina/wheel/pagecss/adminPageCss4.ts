@@ -153,6 +153,7 @@ export const adminPageCss4 = `
   background: none;
   border: none;
   padding: 0;
+  position: relative;
   cursor: pointer;
   color: var(--c-tx2);
   font-family: inherit;
