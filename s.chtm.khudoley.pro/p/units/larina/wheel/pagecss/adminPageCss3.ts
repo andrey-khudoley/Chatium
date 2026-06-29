@@ -254,7 +254,11 @@ export const adminPageCss3 = `
     max-height: 100dvh;
     overflow: hidden auto;
   }
-  .ap-wrap {
+  /* Селектор повышенной специфичности (.app-layout .ap-wrap): на элементе .ap-wrap висят
+     utility-классы .flex-1 и .overflow-hidden из платформенного бандла, который грузится
+     ПОСЛЕ pagecss; при равной специфичности (один класс) они перебивали обычное .ap-wrap.
+     Двойной селектор (0,2,0) выигрывает у одиночных utility (0,1,0) независимо от порядка. */
+  .app-layout .ap-wrap {
     flex: none;
     overflow: visible;
   }
