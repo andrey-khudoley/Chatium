@@ -240,8 +240,21 @@ export const adminPageCss3 = `
 }
 
 @media (max-width: 1100px) {
+  /* Мобайл/планшет: уходим от «фиксируем 100dvh + внутренний скролл колонки» к
+     естественному скроллу всей страницы. Иначе .app-layout и .ap-wrap (overflow:hidden,
+     высота = окно) обрезают карточки ниже первого экрана, и они недоступны (страница не
+     скроллится). flex:none снимает ограничение высоты, overflow:visible — клиппинг.
+     Важно: для .ap-wrap нужен shorthand overflow (longhand overflow-y не переопределял
+     базовый overflow:hidden). */
+  .app-layout {
+    height: auto;
+    max-height: none;
+    min-height: 100dvh;
+    overflow: visible;
+  }
   .ap-wrap {
-    overflow-y: auto;
+    flex: none;
+    overflow: visible;
   }
   .ap {
     flex: none;
