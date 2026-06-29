@@ -130,10 +130,18 @@ export const operationsCatalogNew2: OperationEntry[] = [
     contour: 'new',
     httpMethod: 'GET',
     pathTemplate: '/user/get-groups',
-    availability: 'disabled',
+    availability: 'enabled',
     legacyImportAction: null,
-    argsValidator: s.object({}),
-    argsSchema: EMPTY_SCHEMA
+    // GC /user/get-groups идентифицирует пользователя по email или userId (один из них).
+    // Без объявления полей валидатор s.object({}) отбросил бы email из query — gateway
+    // не передал бы его в GC. Схема зеркалит getUserFields (manual §2.4, §3.1).
+    argsValidator: s.object({ userId: s.number().optional(), email: s.string().optional() }),
+    argsSchema: {
+      fields: [
+        { name: 'userId', type: 'number', required: false },
+        { name: 'email', type: 'string', required: false }
+      ]
+    }
   },
   {
     op: 'getUserLessonAnswers',
