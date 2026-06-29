@@ -240,17 +240,19 @@ export const adminPageCss3 = `
 }
 
 @media (max-width: 1100px) {
-  /* Мобайл/планшет: уходим от «фиксируем 100dvh + внутренний скролл колонки» к
-     естественному скроллу всей страницы. Иначе .app-layout и .ap-wrap (overflow:hidden,
-     высота = окно) обрезают карточки ниже первого экрана, и они недоступны (страница не
-     скроллится). flex:none снимает ограничение высоты, overflow:visible — клиппинг.
-     Важно: для .ap-wrap нужен shorthand overflow (longhand overflow-y не переопределял
-     базовый overflow:hidden). */
+  /* Мобайл/планшет: документ/боди на мобиле НЕ скроллятся — у body стоит overflow:hidden
+     (оболочка Chatium, body.boot-complete). На десктопе страница скроллится через html, но
+     мобильные браузеры из-за body{overflow:hidden} блокируют прокрутку страницы целиком.
+     Поэтому НЕ полагаемся на скролл документа, а делаем сам .app-layout скролл-контейнером:
+     фиксированная высота 100dvh + overflow:auto. Тогда body остаётся = окну и его
+     overflow:hidden безвреден, а .app-layout прокручивает весь контент (хедер/карточки/футер).
+     .ap-wrap/.ap/.ap-grid раскрываются на полную высоту (flex:none), чтобы было что скроллить.
+     overflow задаём shorthand'ом: longhand overflow-y не переопределял базовый overflow:hidden. */
   .app-layout {
-    height: auto;
-    max-height: none;
-    min-height: 100dvh;
-    overflow: visible;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden auto;
   }
   .ap-wrap {
     flex: none;
