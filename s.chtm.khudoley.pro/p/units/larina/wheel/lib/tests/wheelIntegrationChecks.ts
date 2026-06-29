@@ -894,6 +894,33 @@ async function runGetcourseLibChecks(
     }
   )
 
+  // gc_passesGcUserCheck_not_found_400 — GC HTTP 400 (ValidationException) → не найден, не transient (реальный прод-кейс)
+  await tryAsync(
+    results,
+    'gc_passesGcUserCheck_not_found_400',
+    'GC 400 → !allowed, !transient',
+    async () => {
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.GATEWAY_BASE_URL, testGatewayUrl)
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.GC_SCHOOL_HOST, testSchoolHost)
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.GC_SCHOOL_API_KEY, testApiKey)
+      const mockBody = JSON.stringify({
+        ok: false,
+        error: {
+          code: 'INVOKE_GC_UPSTREAM_ERROR',
+          message: 'gc upstream',
+          details: { gcHttpStatus: 400 }
+        }
+      })
+      getcourseLib._setRequestFn(makeMock(200, mockBody))
+      try {
+        const r = await getcourseLib.passesGcUserCheck(ctx, 'tester1@khudoley.pro')
+        return r.allowed === false && r.transient === false
+      } finally {
+        getcourseLib._resetRequestFn()
+      }
+    }
+  )
+
   // gc_passesGcUserCheck_not_found_404 — GC HTTP 404 (NotFoundException) → не найден, не transient
   await tryAsync(
     results,
@@ -1007,6 +1034,33 @@ async function runGetcourseLibChecks(
       getcourseLib._resetRequestFn()
     }
   })
+
+  // gc_passesGcGroupCheck_not_found_400 — GC HTTP 400 → пользователь не найден, не transient (реальный прод-кейс)
+  await tryAsync(
+    results,
+    'gc_passesGcGroupCheck_not_found_400',
+    'GC 400 групп → !allowed, !transient',
+    async () => {
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.GATEWAY_BASE_URL, testGatewayUrl)
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.GC_SCHOOL_HOST, testSchoolHost)
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.GC_SCHOOL_API_KEY, testApiKey)
+      const mockBody = JSON.stringify({
+        ok: false,
+        error: {
+          code: 'INVOKE_GC_UPSTREAM_ERROR',
+          message: 'gc upstream',
+          details: { gcHttpStatus: 400 }
+        }
+      })
+      getcourseLib._setRequestFn(makeMock(200, mockBody))
+      try {
+        const r = await getcourseLib.passesGcGroupCheck(ctx, 'tester1@khudoley.pro', [1])
+        return r.allowed === false && r.transient === false
+      } finally {
+        getcourseLib._resetRequestFn()
+      }
+    }
+  )
 
   // gc_passesGcGroupCheck_not_found_404 — GC HTTP 404 → пользователь не найден, не transient
   await tryAsync(

@@ -409,15 +409,27 @@ function extractGcHttpStatus(details: unknown): number | undefined {
 }
 
 /**
- * GetCourse отдаёт «сущность не найдена» как HTTP 404 (NotFoundException). Gateway по своей
- * спецификации (§2.8.1, §8.3) превращает ЛЮБОЙ не-2xx ответ GC в INVOKE_GC_UPSTREAM_ERROR
- * (семантика распознаётся только при HTTP 2xx), прокидывая исходный статус в
- * error.details.gcHttpStatus. Поэтому для gating «не найден» приходит не как
- * INVOKE_GC_SEMANTIC_ERROR, а как INVOKE_GC_UPSTREAM_ERROR + gcHttpStatus=404 — это не
- * инфраструктурный сбой, а определённый ответ «пользователя нет».
+ * HTTP-статусы GetCourse, означающие «такого пользователя/сущности нет» (определённый ответ,
+ * а не сбой инфраструктуры). Проверено на проде: новый Tech API GetCourse на /user/get-fields
+ * и /user/get-groups для несуществующего email отвечает HTTP 400 (ValidationException);
+ * 404 (NotFoundException) тоже документирован в OpenAPI. Повтор запроса не поможет.
+ */
+const GC_NOT_FOUND_HTTP_STATUSES = [400, 404]
+
+/**
+ * Gateway по своей спецификации (§2.8.1, §8.3) превращает ЛЮБОЙ не-2xx ответ GC в
+ * INVOKE_GC_UPSTREAM_ERROR (семантика распознаётся только при HTTP 2xx), прокидывая исходный
+ * статус в error.details.gcHttpStatus. Поэтому для gating «не найден» приходит не как
+ * INVOKE_GC_SEMANTIC_ERROR, а как INVOKE_GC_UPSTREAM_ERROR + gcHttpStatus ∈ {400, 404}.
+ * Это НЕ инфраструктурный сбой (5xx/timeout/network/403) — доступ закрыт определённо.
  */
 function isGcNotFound(error: GatewayErrorResult['error']): boolean {
-  return error.code === 'INVOKE_GC_UPSTREAM_ERROR' && extractGcHttpStatus(error.details) === 404
+  const status = extractGcHttpStatus(error.details)
+  return (
+    error.code === 'INVOKE_GC_UPSTREAM_ERROR' &&
+    status !== undefined &&
+    GC_NOT_FOUND_HTTP_STATUSES.includes(status)
+  )
 }
 
 /**
@@ -467,12 +479,12 @@ export async function passesGcUserCheck(ctx: app.Ctx, email: string): Promise<Ga
     return { allowed: false, transient: false }
   }
 
-  // GC HTTP 404 (NotFoundException) → пользователь не найден, а не инфраструктурный сбой.
+  // GC 4xx (400 ValidationException / 404 NotFoundException) → пользователь не найден, не сбой.
   if (isGcNotFound(r.error)) {
     await loggerLib.writeServerLog(ctx, {
       severity: 5,
-      message: `[${LOG_MODULE}] passesGcUserCheck: пользователь не найден (GC HTTP 404)`,
-      payload: {}
+      message: `[${LOG_MODULE}] passesGcUserCheck: пользователь не найден (GC 4xx)`,
+      payload: { gcHttpStatus: extractGcHttpStatus(r.error.details) }
     })
     return { allowed: false, transient: false }
   }
@@ -560,12 +572,12 @@ export async function passesGcGroupCheck(
     return { allowed: false, transient: false }
   }
 
-  // GC HTTP 404 (NotFoundException) → пользователь не найден, не состоит в группе; не сбой.
+  // GC 4xx (400/404) → пользователь не найден, не состоит в группе; не инфраструктурный сбой.
   if (isGcNotFound(r.error)) {
     await loggerLib.writeServerLog(ctx, {
       severity: 5,
-      message: `[${LOG_MODULE}] passesGcGroupCheck: пользователь не найден (GC HTTP 404)`,
-      payload: {}
+      message: `[${LOG_MODULE}] passesGcGroupCheck: пользователь не найден (GC 4xx)`,
+      payload: { gcHttpStatus: extractGcHttpStatus(r.error.details) }
     })
     return { allowed: false, transient: false }
   }
