@@ -143,6 +143,7 @@ export const adminPageCss4 = `
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
+  position: relative;
   background: none;
   border: none;
   padding: 0;
