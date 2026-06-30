@@ -7,6 +7,7 @@ import * as logsRepo from '../../repos/logs.repo'
 import * as dashboardLib from '../admin/dashboard.lib'
 import * as loggerLib from '../logger.lib'
 import { runIntegrationApiChecks } from './integrationApiSuite'
+import { runWheelIntegrationChecks } from './wheelIntegrationChecks'
 import { type TemplateIntegrationTestResult, tryAsync, isAdmin } from './integrationSuiteHelpers'
 
 export type { TemplateIntegrationTestResult } from './integrationSuiteHelpers'
@@ -246,14 +247,22 @@ export async function runTemplateIntegrationChecks(
     'regression_payload_not_object_object',
     'payload JSON в Heap',
     async () => {
-      await loggerLib.writeServerLog(ctx, {
-        severity: 6,
-        message: '[tpl] payload obj',
-        payload: { a: 1 }
-      })
-      const rows = await logsRepo.findAll(ctx, { limit: 30, offset: 0 })
-      const hit = rows.find((r) => r.message === '[tpl] payload obj')
-      return hit != null && typeof hit.payload === 'string' && hit.payload.includes('"a"')
+      // payload object сериализуется в Heap только при log_level=Debug (§10.2)
+      const prevLevel = await settingsLib.getLogLevel(ctx)
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.LOG_LEVEL, 'Debug')
+      try {
+        const mark = `[tpl] payload obj ${Date.now()}`
+        await loggerLib.writeServerLog(ctx, {
+          severity: 6,
+          message: mark,
+          payload: { a: 1 }
+        })
+        const rows = await logsRepo.findAll(ctx, { limit: 30, offset: 0 })
+        const hit = rows.find((r) => r.message === mark)
+        return hit != null && typeof hit.payload === 'string' && hit.payload.includes('"a"')
+      } finally {
+        await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.LOG_LEVEL, prevLevel)
+      }
     }
   )
 
@@ -277,6 +286,8 @@ export async function runTemplateIntegrationChecks(
     const c = await dashboardLib.getDashboardCounts(ctx)
     return c.errorCount === 0 && c.warnCount === 0
   })
+
+  await runWheelIntegrationChecks(ctx, results, admin)
 
   await runIntegrationApiChecks(ctx, results, admin)
 

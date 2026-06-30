@@ -1,3 +1,4 @@
+// @shared
 // PROJECT_ROOT — путь от корня воркспэйса до проекта (от /)
 export const PROJECT_ROOT = 'p/units/larina/wheel'
 
@@ -10,7 +11,8 @@ export const ROUTES = {
   admin: './web/admin',
   profile: './web/profile',
   login: './web/login',
-  tests: './web/tests'
+  tests: './web/tests',
+  winners: './web/winners'
 } as const
 
 /** Пути для getFullUrl (абсолютные от корня проекта) */
@@ -19,7 +21,8 @@ export const ROUTE_PATHS = {
   admin: '/web/admin',
   profile: '/web/profile',
   login: '/web/login',
-  tests: '/web/tests'
+  tests: '/web/tests',
+  winners: '/web/winners'
 } as const
 
 /**

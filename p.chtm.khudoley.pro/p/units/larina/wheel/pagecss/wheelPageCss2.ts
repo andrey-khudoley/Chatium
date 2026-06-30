@@ -1,4 +1,8 @@
 // @shared
+/**
+ * CSS результата, toast, @keyframes (§14.1, §16.2).
+ * Цвета — через var(--theme-*), инжектируемые SSR из активной темы.
+ */
 export const wheelPageCss2 = `
   .wheel-toast {
     position: fixed;
@@ -9,7 +13,7 @@ export const wheelPageCss2 = `
     border-radius: 100px;
     background: rgba(217,182,95,.12);
     border: 1px solid rgba(217,182,95,.4);
-    color: #f0d99a;
+    color: var(--theme-text, #f0d99a);
     font-size: 14px;
     font-weight: 500;
     letter-spacing: .3px;
@@ -38,7 +42,7 @@ export const wheelPageCss2 = `
     position: absolute;
     inset: -20%;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(217,182,95,.4) 0%, rgba(217,182,95,0) 65%);
+    background: radial-gradient(circle, var(--theme-accent-glow, rgba(217,182,95,.4)) 0%, transparent 65%);
     animation: spin-glow 3.4s ease-in-out infinite;
   }
   .result-prize-icon-circle {
@@ -49,8 +53,8 @@ export const wheelPageCss2 = `
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(140deg, #f6e2a6, #c79a3f 60%, #a6802f);
-    box-shadow: 0 14px 34px rgba(199,154,63,.4), inset 0 2px 5px rgba(255,255,255,.5);
+    background: var(--theme-hub, linear-gradient(140deg, #f6e2a6, #c79a3f 60%, #a6802f));
+    box-shadow: 0 14px 34px var(--theme-accent-glow, rgba(199,154,63,.4)), inset 0 2px 5px rgba(255,255,255,.5);
     font-size: 44px;
     line-height: 1;
   }
@@ -58,7 +62,7 @@ export const wheelPageCss2 = `
     font-size: 12px;
     letter-spacing: 3.4px;
     text-transform: uppercase;
-    color: #c79a3f;
+    color: var(--theme-accent, #c79a3f);
     font-weight: 500;
     margin-bottom: 12px;
   }
@@ -68,11 +72,11 @@ export const wheelPageCss2 = `
     font-size: clamp(40px, 12vw, 56px);
     line-height: 1;
     margin: 0 0 14px;
-    color: #f4ead2;
+    color: var(--theme-text, #f4ead2);
   }
   .result-subtitle {
     font-size: 16px;
-    color: #a59a83;
+    color: var(--theme-text-secondary, #a59a83);
     margin: 0 0 22px;
   }
   .prize-card {
@@ -88,7 +92,7 @@ export const wheelPageCss2 = `
     font-size: 11px;
     letter-spacing: 2.4px;
     text-transform: uppercase;
-    color: #8a7d63;
+    color: var(--theme-text-secondary, #8a7d63);
     margin-bottom: 10px;
   }
   .prize-card-name {
@@ -96,7 +100,7 @@ export const wheelPageCss2 = `
     font-weight: 600;
     font-size: clamp(24px, 6.5vw, 30px);
     line-height: 1.16;
-    color: #f3dd9b;
+    color: var(--theme-text, #f3dd9b);
   }
   .claim-btn {
     position: relative;
@@ -111,9 +115,9 @@ export const wheelPageCss2 = `
     font-size: 16px;
     letter-spacing: 1px;
     text-transform: uppercase;
-    color: #1a1408;
-    background: linear-gradient(135deg, #f6e2a6, #d9b65f 50%, #c79a3f);
-    box-shadow: 0 14px 32px rgba(199,154,63,.4), inset 0 1px 2px rgba(255,255,255,.6);
+    color: var(--theme-btn-text, #1a1408);
+    background: var(--theme-btn-hover-bg, linear-gradient(135deg, #f6e2a6, #d9b65f 50%, #c79a3f));
+    box-shadow: 0 14px 32px var(--theme-accent-glow, rgba(199,154,63,.4)), inset 0 1px 2px rgba(255,255,255,.6);
   }
   .claim-btn-label {
     position: relative;
@@ -132,7 +136,7 @@ export const wheelPageCss2 = `
   .result-hint {
     margin-top: 18px;
     font-size: 12.5px;
-    color: #6e6552;
+    color: var(--theme-text-secondary, #6e6552);
     line-height: 1.5;
   }
   @keyframes spin-glow {

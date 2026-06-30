@@ -5,6 +5,10 @@ import GlobalGlitch from '../components/GlobalGlitch.vue'
 import AppFooter from '../components/AppFooter.vue'
 import AdminCounters from '../components/admin/AdminCounters.vue'
 import AdminSettings from '../components/admin/AdminSettings.vue'
+import AdminGetcourseSettings from '../components/admin/AdminGetcourseSettings.vue'
+import AdminWheelSettings from '../components/admin/AdminWheelSettings.vue'
+import AdminSegments from '../components/admin/AdminSegments.vue'
+import AdminBackup from '../components/admin/AdminBackup.vue'
 import AdminLogMonitor from '../components/admin/AdminLogMonitor.vue'
 import { createComponentLogger, type LogEntry } from '../shared/logger'
 import { useLogStream } from '../shared/useLogStream'
@@ -33,6 +37,8 @@ const props = defineProps<{
   isAdmin?: boolean
   adminUrl?: string
   encodedLogsSocketId?: string
+  themeOptions?: { id: string; name: string }[]
+  winnersUrl?: string
 }>()
 
 const bootLoaderDone = ref(false)
@@ -181,7 +187,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="app-layout flex flex-col w-full min-w-0">
+  <div class="app-layout ap-admin flex flex-col w-full min-w-0">
     <GlobalGlitch />
     <Header
       v-if="bootLoaderDone"
@@ -243,6 +249,13 @@ onUnmounted(() => {
               @update:project-name="statusProjectName = $event"
               @update:log-level="statusLogLevel = $event"
             />
+            <AdminWheelSettings
+              :theme-options="props.themeOptions || []"
+              :winners-url="props.winnersUrl"
+            />
+            <AdminSegments />
+            <AdminGetcourseSettings />
+            <AdminBackup />
           </div>
 
           <aside class="ap-side">

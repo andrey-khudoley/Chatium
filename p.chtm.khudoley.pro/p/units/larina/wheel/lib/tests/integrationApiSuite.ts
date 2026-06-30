@@ -145,15 +145,22 @@ export async function runIntegrationApiChecks(
 
   await tryAsync(results, 'e2e_log_payload_roundtrip', 'payload в recent', async () => {
     if (!admin) return true
-    const mark = `[tpl-payload-${Date.now()}]`
-    await loggerLib.writeServerLog(ctx, { severity: 6, message: mark, payload: { x: 1 } })
-    const recent = (await getRecentLogsRoute.query({ limit: '20' }).run(ctx)) as {
-      entries?: Array<{ args?: unknown[] }>
+    // payload в Heap/recent сохраняется только при log_level=Debug (§10.2) — выставляем и восстанавливаем
+    const prevLevel = await settingsLib.getLogLevel(ctx)
+    await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.LOG_LEVEL, 'Debug')
+    try {
+      const mark = `[tpl-payload-${Date.now()}]`
+      await loggerLib.writeServerLog(ctx, { severity: 6, message: mark, payload: { x: 1 } })
+      const recent = (await getRecentLogsRoute.query({ limit: '20' }).run(ctx)) as {
+        entries?: Array<{ args?: unknown[] }>
+      }
+      return (
+        Array.isArray(recent.entries) &&
+        recent.entries.some((e) => e.args?.some((a) => String(a).includes('"x"')))
+      )
+    } finally {
+      await settingsLib.setSetting(ctx, settingsLib.SETTING_KEYS.LOG_LEVEL, prevLevel)
     }
-    return (
-      Array.isArray(recent.entries) &&
-      recent.entries.some((e) => e.args?.some((a) => String(a).includes('"x"')))
-    )
   })
 
   await tryAsync(

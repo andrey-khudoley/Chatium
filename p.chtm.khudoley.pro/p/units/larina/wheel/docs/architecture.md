@@ -2,7 +2,7 @@
 
 ## Назначение
 
-Базовый шаблон проекта Chatium с минимальным набором страниц и документации.
+Проект «Колесо удачи»: интерактивная главная страница с анимированным колесом фортуны. Построен на базе шаблона `p/template_project`.
 
 ## Ограничения платформы
 
@@ -12,17 +12,18 @@
 
 ## Основные сценарии
 
-- Открыть главную страницу.
+- Открыть главную страницу — запустить колесо удачи, получить результат.
 - Авторизоваться и попасть в профиль.
 - Открыть админку (только роль Admin).
 
 ## Роутинг
 
-- `index.tsx` — главная (SSR + Vue), единственный роут в корне.
+- `index.tsx` — главная (SSR + Vue), маршрут `/`. Монтирует `WheelPage.vue`; подключает Google Fonts и CSS из `pagecss/`.
 - `web/admin/index.tsx` — админка, `requireAccountRole('Admin')`.
 - `web/profile/index.tsx` — профиль, `requireRealUser()`.
 - `web/tests/index.tsx` — страница тестов, `requireRealUser()`.
 - `web/login/index.tsx` — вход (редирект на системный `/s/auth/signin`).
+- `web/winners/index.tsx` — публичная страница «Список победителей» (SSR + Vue, `WinnersPage.vue`). Пагинация батчами по 50 через `offset`. Дизайн в стиле темы колеса.
 
 ## Вёрстка админки и страницы тестов
 
@@ -45,7 +46,8 @@
 
 - `config/` — маршруты и `PROJECT_ROOT`.
 - `web/` — браузерные роуты модулей (admin, profile, tests, login).
-- `pages/` — Vue‑страницы (минимальные).
+- `pages/` — Vue‑страницы. `WheelPage.vue` — основная страница (колесо удачи, мок Math.random, конфетти, таймеры очищаются в `onBeforeUnmount`). `HomePage.vue` — прежняя заглушка, не используется в роутинге.
+- `pagecss/` — CSS для страниц, хранимый как `// @shared` TypeScript-модули. `wheelPageCss1.ts` — стили колеса (conic-gradient, pointer, hub, кнопка). `wheelPageCss2.ts` — стили результата и @keyframes (spin-glow, hub-pulse, pointer-nudge, confetti-fall, rise-in, toast-in, sheen).
 - `components/` — переиспользуемые Vue‑компоненты (Header, AppFooter, GlobalGlitch, LogoutModal).
 - `api/` — API‑эндпоинты (получение и валидация входных данных). File-based: один файл — один эндпоинт с `/`. Пример: `api/settings/list.ts`, `api/logger/log.ts`, `api/admin/logs/recent.ts`, `api/tests/list.ts`, `api/tests/unit/index.ts`, `api/tests/integration/index.ts`.
 - `tables/` — Heap‑таблицы (схемы: settings, logs).
@@ -73,7 +75,56 @@
 - **Сервер** (`lib/logger.lib.ts`): функция `shouldIncludePayload` — payload в ctx.account.log, Heap, WebSocket и webhook только при Debug.
 - **Браузер** (`shared/logger.ts`): `emitLog` фильтрует non-string args при уровне != Debug.
 
+## Архитектура колеса (бэкенд реализован)
+
+Источник истины — `docs/spec/spec.md`.
+
+### Клиентская идентичность
+
+Email сохраняется в `localStorage` под ключом `larina-wheel:auth`. Chatium-авторизация на главной странице не требуется.
+
+### Серверная логика спина
+
+1. `POST /api/wheel/authorize` — email-гейт + GetCourse gating (`passesGcUserCheck`, `passesGcGroupCheck` из `lib/getcourse.lib.ts`).
+2. `POST /api/wheel/spin` — выполняется под `runWithExclusiveLock` (ключ `wheel:spin:email`):
+   - Проверка лимита (`checkSpinLimit` в `lib/wheel.lib.ts`): `countByEmail` из `repos/spins.repo` + `sumByEmail` из `repos/spinGrants.repo` vs `wheel_max_spins`.
+   - Загрузка сегментов (`loadEffectiveSegments`): правило чётности 2..8 — нечётные сегменты дополняются авто-retry-копиями до чётного числа.
+   - Взвешенный выбор (`selectTarget`): по полю `weight` среди enabled-сегментов.
+   - Запись победы в `repos/spins.repo`.
+   - Выдача награды через `lib/getcourse.lib.ts` (createDeal), если `getcourse_issue_rewards = true`.
+3. Ответ: `{ success, targetIdx, full, spinsRemaining, nEff }`. `targetIdx` — позиция в массиве `EffectiveSegment[]`, id и maxWins клиенту не передаются.
+
+### Разделение типов сегментов
+
+- `LoadedSegment` (серверный) — полная схема: id, maxWins, full, prizeOfferID, все поля.
+- `EffectiveSegment` (публичный) — урезанный: order, label, weight, isAutoRetry?, redirectUrl?. id не утекает клиенту.
+
+### Система тем
+
+`config/themes.tsx` — 6 предустановленных тем (`var(--theme-*)`). Активная тема инжектируется в `:root` через SSR в `index.tsx`. Выбор темы — через настройку `theme` (AdminWheelSettings).
+
+### Алгоритм вращения (клиент)
+
+CSS: `conic-gradient(from -30deg, ...)`. Указатель фиксирован вверху в `0°`. `targetIdx` из ответа сервера определяет `desiredMod`, анимация вращается на `5×360° + delta + jitter (±19°)`, ease-out `1-(1-p)^3.6` за 5200 мс.
+
+### Маскировка email (приватность)
+
+Функция `maskEmail` в `lib/wheel.lib.ts` (§16.10 spec): email маскируется на сервере перед отдачей клиенту (`tester@khudoley.pro → te***@***ey.pro`). Полный email не покидает сервер — используется в `GET /api/wheel/winners` и `WinnersPage`.
+
+### Компоненты adminки
+
+- `AdminWheelSettings` — настройки wheel_enabled, wheel_max_spins, тема; кнопка «Сброс» (POST /api/admin/wheel/reset, удаляет все Spins и SpinGrants); ссылка «Список победителей» (`winnersUrl` проп от `AdminPage`).
+- `AdminSegments` — CRUD сегментов (list/save/delete/reorder через `api/admin/segments/`). Удаление сегмента блокируется guard'ом если есть зависимые spins (RefLink).
+- `AdminGetcourseSettings` — gateway_base_url, gc_school_host, gc_school_api_key (маскируется), гейтинг и флаг наград.
+- `AdminBackup` — экспорт/импорт. Экспорт: `GET /api/admin/settings/export` → клиент скачивает JSON через Blob+`<a download>`. Импорт: чтение файла через `FileReader`, подтверждение замены, `POST /api/admin/settings/import`. Без импорта `lib/repos/tables` в `.vue` — только вызовы route-консолей `.run(ctx)`.
+
+### Поток бэкапа настроек
+
+- Экспорт собирает `{ _meta, settings, segments }`. `settings` = `getBackupSettings` (эффективные значения всех `SETTING_KEYS`, секрет `gc_school_api_key` в открытом виде — иначе перенос ломается; значение не логируется). `segments` = `segmentsRepo.findAll` без `id` (назначается заново при импорте).
+- Импорт валидирует `_meta.type === "larina-wheel-backup"`. Настройки применяет `applyBackupSettings`: сначала нейтрализует `getcourse_require_group`, затем применяет ключи через `setSetting` (валидация на ключ), `getcourse_require_group` — последним (его валидация требует непустой `required_group_ids`); неизвестные/служебные (`gc_school_api_key_set`) ключи и пустой секрет пропускаются.
+- Сегменты при импорте — replace-all: если ни у одного текущего сегмента нет истории побед (`spinsRepo.countBySegment`), все удаляются и создаются заново из файла; иначе импорт сегментов пропускается с сообщением (настройки при этом применяются). Так restore/перенос на чистый экземпляр работает, а на «грязном» — не рвёт ссылки spins.
+
 ## Интеграции
 
-- Внешние сервисы: нет.
+- **GetCourse** — через внутренний gateway (`gateway_base_url`, envelope-транспорт `@app/request`). Операции: getGroups, userGetFields, userGetGroups, createDeal. Групповой gating зависит от gateway-операций getUserGroups/getAllGroups (сейчас disabled в `p/gateways/getcourse`).
 - Внутренние SDK: стандартные модули Chatium.

@@ -1,44 +1,33 @@
 // @shared
 export const adminPageCss3 = `
 .ap-badge i {
-  font-size: 0.55rem;
-  margin-right: 0.1rem;
-}
-@keyframes ap-badge-flash {
-  0% {
-    opacity: 0;
-    transform: scale(0.85);
-  }
-  50% {
-    transform: scale(1.04);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
+  font-size: 0.62rem;
+  margin-right: 0.15rem;
 }
 .ap-badge--ok {
   color: var(--c-ok);
-  border-color: rgba(106, 175, 126, 0.4);
+  background: var(--c-ok-bg);
+  border-color: transparent;
 }
 .ap-badge--err {
-  color: var(--c-alert);
-  border-color: rgba(217, 122, 138, 0.4);
+  color: var(--c-red-s);
+  background: var(--c-accent-bg);
+  border-color: transparent;
 }
 
 .ap-err {
-  margin: 0.4rem 0 0;
-  color: var(--c-alert);
-  font-size: 0.76rem;
-  position: relative;
-  z-index: 1;
+  margin: 0.45rem 0 0;
+  color: var(--c-red-s);
+  font-size: 0.78rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
 }
 .ap-err i {
-  margin-right: 0.2rem;
-  font-size: 0.65rem;
+  font-size: 0.72rem;
 }
 
-/* ── LOG MONITOR: высота = ячейка сетки (ровно ряд между шапкой страницы и футером); движется только список в .ap-log-out ── */
+/* ── LOG MONITOR ── */
 .ap-side {
   min-width: 0;
   min-height: 0;
@@ -56,112 +45,100 @@ export const adminPageCss3 = `
   min-height: 0;
 }
 .ap-log-ct {
-  font-size: 0.7rem;
-  color: var(--c-tx3);
-  letter-spacing: 0.04em;
+  font-size: 0.72rem;
+  color: var(--c-tx2);
   font-variant-numeric: tabular-nums;
-}
-.ap-log-filters {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.4rem;
-  margin-bottom: 0.6rem;
-  position: relative;
-  z-index: 1;
-  flex-shrink: 0;
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--c-bg-deep);
+  border: 1px solid var(--c-bdr);
 }
 .ap-logs > .ap-card-hd {
   flex-shrink: 0;
 }
-.ap-flt {
-  padding: 0.35rem;
+.ap-log-filters {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.3rem;
+  margin-bottom: 0.7rem;
+  padding: 0.25rem;
   border: 1px solid var(--c-bdr);
+  border-radius: var(--radius);
   background: var(--c-bg-deep);
+  flex-shrink: 0;
+}
+.ap-flt {
+  padding: 0.45rem 0.3rem;
+  border: none;
+  border-radius: calc(var(--radius) - 3px);
+  background: transparent;
   color: var(--c-tx2);
   font-family: inherit;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
   text-align: center;
-  letter-spacing: 0.03em;
-  position: relative;
-  overflow: hidden;
-}
-.ap-flt::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: var(--c-red);
-  transform: scaleX(0);
-  transition: transform 0.2s ease;
 }
 .ap-flt:hover {
-  border-color: var(--c-bdr-hi);
-}
-.ap-flt:hover::after {
-  transform: scaleX(1);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--c-tx);
 }
 .ap-flt.active {
-  border-color: var(--c-red-s);
-  background: rgba(196, 33, 63, 0.12);
-  color: #fff;
-}
-.ap-flt.active::after {
-  transform: scaleX(1);
+  background: var(--c-accent-bg);
+  color: var(--c-red-s);
 }
 
 .ap-log-out {
   flex: 1 1 auto;
   min-height: 7rem;
   overflow-y: auto;
-  border: 1px solid rgba(50, 44, 54, 0.35);
-  background: rgba(5, 4, 7, 0.98);
-  padding: 0.55rem;
-  margin-bottom: 0.55rem;
+  border: 1px solid var(--c-bdr);
+  border-radius: var(--radius);
+  background: #08080a;
+  padding: 0.6rem 0.7rem;
+  margin-bottom: 0.6rem;
+  font-family: var(--font-mono);
   font-size: 0.74rem;
-  line-height: 1.6;
-  position: relative;
-  z-index: 1;
-  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.25);
+  line-height: 1.65;
 }
 .ap-log-empty {
   color: var(--c-tx3);
   padding: 2rem;
   text-align: center;
-  font-size: 0.8rem;
-  letter-spacing: 0.03em;
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
 }
 .ap-log-div {
   text-align: center;
-  padding: 0.35rem 0;
+  padding: 0.4rem 0;
   margin: 0.3rem 0;
 }
 .ap-log-div span {
-  font-size: 0.64rem;
-  color: var(--c-warn);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.5;
+  font-family: var(--font-ui);
+  font-size: 0.66rem;
+  color: var(--c-tx3);
+  letter-spacing: 0.02em;
   padding: 0.1rem 0.6rem;
-  border-top: 1px solid rgba(201, 166, 96, 0.12);
-  border-bottom: 1px solid rgba(201, 166, 96, 0.12);
+  border-radius: var(--radius-pill);
+  background: var(--c-bg-deep);
+  border: 1px solid var(--c-bdr);
 }
 .ap-log-row {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0 0.4rem;
-  padding: 0.2rem 0;
-  border-bottom: 1px solid rgba(50, 44, 54, 0.1);
+  gap: 0 0.45rem;
+  padding: 0.22rem 0.3rem;
+  border-radius: calc(var(--radius) - 3px);
   cursor: pointer;
   transition: background 0.1s ease;
   user-select: none;
 }
 .ap-log-row:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.04);
 }
 .ap-log-t {
   flex-shrink: 0;
@@ -171,7 +148,7 @@ export const adminPageCss3 = `
 }
 .ap-log-l {
   flex-shrink: 0;
-  font-weight: 700;
+  font-weight: 600;
   white-space: nowrap;
 }
 .ap-log-m {
@@ -188,20 +165,22 @@ export const adminPageCss3 = `
   word-break: break-word;
   overflow: visible;
   text-overflow: unset;
-  margin-top: 0.15rem;
-  padding: 0.2rem 0 0.1rem 0.5rem;
-  border-left: 2px solid rgba(50, 44, 54, 0.3);
+  margin-top: 0.2rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: calc(var(--radius) - 3px);
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 2px solid var(--c-bdr-hi);
   user-select: text;
 }
 
 .lvl-debug {
-  color: #7e767a;
+  color: var(--c-tx3);
 }
 .lvl-info {
   color: var(--c-tx2);
 }
 .lvl-notice {
-  color: #8bb89c;
+  color: var(--c-ok);
 }
 .lvl-warning {
   color: var(--c-warn);
@@ -210,15 +189,13 @@ export const adminPageCss3 = `
 .lvl-critical,
 .lvl-alert,
 .lvl-emergency {
-  color: var(--c-alert);
+  color: var(--c-red-s);
 }
 
 .ap-log-ft {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  position: relative;
-  z-index: 1;
+  gap: 0.45rem;
   flex-shrink: 0;
 }
 .ap-log-sync {
@@ -229,19 +206,31 @@ export const adminPageCss3 = `
   gap: 0.35rem;
 }
 .ap-log-sync i {
-  font-size: 0.62rem;
+  font-size: 0.66rem;
 }
 .ap-log-btns {
   display: flex;
-  gap: 0.4rem;
+  gap: 0.45rem;
 }
 .ap-log-btns .ap-btn:first-child {
   flex: 1;
 }
 
 @media (max-width: 1100px) {
-  .ap-wrap {
-    overflow-y: auto;
+  /* Мобайл/планшет: документ/боди на мобиле НЕ скроллятся — у body стоит overflow:hidden
+     (оболочка Chatium, body.boot-complete). Поэтому делаем сам .app-layout скролл-контейнером:
+     фикс. высота 100dvh + overflow:auto. .ap-wrap/.ap/.ap-grid раскрываются на полную высоту
+     (flex:none). overflow задаём shorthand'ом; селектор .app-layout .ap-wrap повышенной
+     специфичности перебивает utility-классы .flex-1/.overflow-hidden из платформенного бандла. */
+  .app-layout {
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden auto;
+  }
+  .app-layout .ap-wrap {
+    flex: none;
+    overflow: visible;
   }
   .ap {
     flex: none;
@@ -257,6 +246,7 @@ export const adminPageCss3 = `
   }
   .ap-main {
     overflow: visible;
+    padding-right: 0;
   }
   .ap-side {
     overflow: visible;
@@ -272,7 +262,7 @@ export const adminPageCss3 = `
 }
 @media (max-width: 680px) {
   .ap {
-    padding: 0.5rem 0.625rem 1rem;
+    padding: 0.7rem 0.7rem 1rem;
   }
   .ap-cfg-row {
     grid-template-columns: 1fr;
@@ -283,17 +273,13 @@ export const adminPageCss3 = `
   .ap-log-filters {
     grid-template-columns: repeat(2, 1fr);
   }
-  .ap-log-row {
-    grid-template-columns: 1fr;
-    gap: 0.1rem;
-  }
   .ap-status {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.35rem;
+    gap: 0.4rem;
   }
   .ap-lvls {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 `

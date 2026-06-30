@@ -2,7 +2,7 @@
 
 ## Назначение
 
-Chatium-проект, скопированный из `p/template_project`. Минимальный старт: главная страница, админка, профиль и логин.
+Chatium-проект «Колесо удачи» для Ларины. Email-гейт, взвешенное вращение с серверным бэкендом, интеграция с GetCourse (gating + награды), динамические сегменты через Heap, система тем. Скопирован из `p/template_project`.
 
 ## Важно
 
@@ -12,7 +12,14 @@ Chatium-проект, скопированный из `p/template_project`. Ми
 
 ## Текущее состояние
 
-- Главная, админка, профиль и логин существуют как минимальные страницы.
+- Главная страница (`/`) — `WheelPage.vue`: анимированное колесо удачи с серверным бэкендом. Email-идентичность через `localStorage` (`larina-wheel:auth`). Анимация вращения 5200ms ease-out, конфетти при выигрыше, экран результата, toast «Ещё попытка». Шрифты Cormorant Garamond + Jost. CSS: `pagecss/wheelPageCss1.ts`, `pagecss/wheelPageCss2.ts`.
+- **Бэкенд колеса реализован**: сегменты в Heap (Segments), история вращений (Spins), доначисленные попытки (SpinGrants). Спин атомарен через `runWithExclusiveLock`. Взвешенный выбор, правило чётности 2..8, авто-retry-сегменты.
+- **GetCourse-интеграция**: email-гейт, user/group gating, выдача наград через gateway (`lib/getcourse.lib.ts`). Групповой gating зависит от gateway-операций getUserGroups/getAllGroups — в текущей конфигурации gateway disabled (внешняя зависимость).
+- **Система тем**: 6 предустановленных тем в `config/themes.tsx`, инжекция в `:root` через SSR, выбор в AdminWheelSettings.
+- **Администрирование**: AdminWheelSettings (включение/лимиты/тема, кнопка «Сброс» всех Spins+SpinGrants, ссылка «Список победителей»), AdminSegments (CRUD сегментов через `api/admin/segments/`; удаление сегмента с зависимыми победами заблокировано guard'ом), AdminGetcourseSettings (gateway, gating, награды), AdminBackup (экспорт/импорт всех настроек и сегментов в JSON).
+- **Бэкап/перенос настроек**: карточка AdminBackup в админке. Экспорт — `GET /api/admin/settings/export` (Admin) собирает все настройки (`getBackupSettings`, секрет включён в открытом виде) и сегменты в объект `{ _meta, settings, segments }`, клиент скачивает его JSON-файлом `larina-wheel-backup_YYYY-MM-DD_HH-MM.json`. Импорт — `POST /api/admin/settings/import` (Admin) проверяет `_meta.type`, применяет настройки (`applyBackupSettings`, gating в безопасном порядке, пустой секрет не затирает рабочий ключ), сегменты заменяет целиком (replace-all) при отсутствии истории побед (иначе пропускает с сообщением). Удобно для сохранения, восстановления и переноса конфигурации на другой экземпляр.
+- **Победители и сброс**: публичная страница `/web/winners` (`WinnersPage.vue`) со списком побед, пагинацией (батч 50) и серверной маскировкой email (`maskEmail` в `lib/wheel.lib.ts`). API `GET /api/wheel/winners` (Guest, query limit/offset). Полный сброс — `POST /api/admin/wheel/reset` (Admin, удаляет все Spins и SpinGrants через `deleteAll(limit:null)`).
+- Административная часть, профиль и логин существуют как минимальные страницы (унаследовано от шаблона).
 - Реализованы: API настроек (list, get, save), Heap-таблица settings, репозиторий, lib (бизнес-логика).
 - Серверные логи: Heap-таблица logs (message, payload, severity, level, timestamp), repos/logs.repo (create, findAll, findById, findBeforeTimestamp, countBySeverityAfter, countErrorsAfter, countWarningsAfter), lib/logger.lib (проверка уровня по настройке log_level, запись в ctx.log — только сообщение, в ctx.account.log — сообщение и payload, Heap, WebSocket с хэшем для уникальности канала, вебхук log_webhook { enable, url } по умолчанию url: ""). API POST /api/logger/log (AnyUser), body: { severity, level, message, payload?, timestamp? }; GET /api/admin/logs/recent (Admin) — последние N логов; GET /api/admin/logs/before (Admin) — N логов старше указанного timestamp для пагинации. Админка получает encodedLogsSocketId, подписывается на new-log для отображения в дашборде, загружает историю логов через recent при монтировании, может догружать старые логи через before (кнопка «Загрузить ещё 50»); кнопка «Очистить логи» очищает вывод и сдвигает таймштамп на текущий — повторное нажатие «Загрузить ещё 50» восстанавливает последние логи.
 - Дашборд админки: счётчики ошибок и предупреждений. Настройка `dashboard_reset_at` (таймштамп сброса в ms); lib/admin/dashboard.lib (getDashboardCounts, resetDashboard), GET /api/admin/dashboard/counts и POST /api/admin/dashboard/reset (Admin). При монтировании загружаются счётчики; кнопка «Сбросить» записывает текущее время в настройки; при новых логах (sink/WebSocket) инкремент только если timestamp >= dashboardResetAt.
@@ -23,9 +30,9 @@ Chatium-проект, скопированный из `p/template_project`. Ми
 ## Навигация по документации
 
 - Источник истины: `docs/spec/spec.md`
-- Архитектура: `docs/architecture.md`
-- API: `docs/api.md`
-- Данные: `docs/data.md`
+- Архитектура: `docs/architecture.md` (роутинг, слои, страница победителей, маскировка email)
+- API: `docs/api.md` (все эндпоинты, включая /api/wheel/winners и /api/admin/wheel/reset)
+- Данные: `docs/data.md` (таблицы, репозитории, методы deleteAll/findRecent)
 - Запуск, деплой и копирование: `docs/spec/spec.md`, раздел 15
 - Импорты/циклы: `docs/imports.md`
 - Решения: `docs/ADR/`
@@ -33,12 +40,18 @@ Chatium-проект, скопированный из `p/template_project`. Ми
 
 ## TODO
 
-- Заполнить UI для главной/админки/профиля.
-- Добавить реальные сценарии авторизации.
-- Описать бизнес‑логику и данные.
+- Включить групповой gating GetCourse — зависит от gateway-операций getUserGroups/getAllGroups в `p/gateways/getcourse` (сейчас disabled); требует активации на стороне gateway.
+- Заполнить UI профиля (унаследован от шаблона).
+- Интеграционные тесты для бэкенда колеса (spin/authorize/segments).
+- ADR по решению «email-идентичность без Chatium-авторизации».
 
 ## Changelog
 
+- 2026-06-29: экспорт/импорт настроек в админке. Новая карточка `AdminBackup.vue` (кнопки «Экспорт в JSON» и «Выбрать файл…» с подтверждением замены). API `GET /api/admin/settings/export` и `POST /api/admin/settings/import` (Admin, `// @shared-route`). В `lib/settings.lib.ts` — `getBackupSettings` (сырые настройки всех ключей `SETTING_KEYS`, секрет без маскировки) и `applyBackupSettings` (применение бэкапа: нейтрализация и отложенное применение `getcourse_require_group`, пропуск неизвестных и служебных ключей, защита от затирания секрета пустым значением). Импорт сегментов — replace-all с guard'ом по истории побед (`spinsRepo.countBySegment`). Подключение `AdminBackup` в `AdminPage.vue`. Обновлены `docs/api.md`, `docs/architecture.md`, `docs/data.md`.
+- 2026-06-29: фикс отображения админки колеса: `.ap-toggle` получил `position: relative`, чтобы абсолютно позиционированный `.ap-toggle__thumb` слайдера «Колесо включено» оставался внутри трека, а не уезжал в угол карточки (`pagecss/adminPageCss4.ts`); в `AdminWheelSettings.vue` класс блока подтверждения сброса исправлен `ap-confirm__text` → `ap-confirm__msg` (только этот класс стилизован в CSS).
+- 2026-06-28: победители / сброс / маскировка email: страница `/web/winners` (`WinnersPage.vue`, пагинация батч 50), `GET /api/wheel/winners` (Guest, query limit/offset, `WinnerRow[]`, email маскирован), `maskEmail` в `lib/wheel.lib.ts` (серверная маскировка, полный email не передаётся клиенту); `POST /api/admin/wheel/reset` (Admin, `deleteAll(limit:null)` по Spins и SpinGrants, ответ `{deletedSpins,deletedGrants}`); guard в `api/admin/segments/delete` (блокирует удаление сегмента с зависимыми spins через RefLink); `spins.repo` +findRecent, +deleteAll; `spinGrants.repo` +deleteAll; кнопка «Сброс» и ссылка «Список победителей» в AdminWheelSettings.
+- 2026-06-28: реализован бэкенд колеса: таблицы Segments/Spins/SpinGrants, репозитории, `lib/wheel.lib.ts` (loadEffectiveSegments, selectTarget, checkSpinLimit), `lib/getcourse.lib.ts` (gateway-клиент GetCourse); API `/api/wheel/authorize`, `/api/wheel/spin`, `/api/wheel/segments`; CRUD сегментов (`api/admin/segments/`); система тем (`config/themes.tsx`); компоненты AdminWheelSettings, AdminSegments, AdminGetcourseSettings. Спин атомарен через `runWithExclusiveLock`.
+- 2026-06-26: реализована главная страница — `WheelPage.vue` (6-сегментное колесо удачи, мок Math.random, анимация, конфетти, экран результата); CSS в `pagecss/wheelPageCss1.ts` и `pagecss/wheelPageCss2.ts`; `index.tsx` переключён с `HomePage.vue` на `WheelPage.vue`.
 - 2026-06-26: проект скопирован из `p/template_project`; заменены PROJECT_ROOT, Heap table IDs, socket hash, SSR meta marker; обновлена документация.
 - 2026-06-17: добавлена spec-as-source спецификация `docs/spec/spec.md` как источник истины по маршрутам, API, данным, логированию, UI, тестам и правилам развития проекта.
 - 2026-04-05: разделение логирования по уровням Info/Debug — trace-логи (карта вызовов) severity 6, видны при Info; payload (сырые данные) автоматически отсекается при уровне != Debug; shouldIncludePayload в lib/logger.lib.ts, фильтрация non-string args в shared/logger.ts; добавлены недостающие trace-логи на сервере (api/logger/browser, api/tests/list) и в Vue-компонентах (onBeforeUnmount, saveProjectName, loadProjectName, setupLogsWebSocket, loadRecentLogs и др.).
