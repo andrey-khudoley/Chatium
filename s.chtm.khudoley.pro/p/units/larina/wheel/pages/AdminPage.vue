@@ -187,7 +187,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="app-layout flex flex-col w-full min-w-0">
+  <div class="app-layout ap-admin flex flex-col w-full min-w-0">
     <GlobalGlitch />
     <Header
       v-if="bootLoaderDone"

@@ -19,6 +19,7 @@ import { adminPageCss3 } from '../../pagecss/adminPageCss3'
 import { adminPageCss4 } from '../../pagecss/adminPageCss4'
 import { headerCss1 } from '../../pagecss/headerCss1'
 import { headerCss2 } from '../../pagecss/headerCss2'
+import { adminPageCss5 } from '../../pagecss/adminPageCss5'
 
 const LOG_PATH = 'web/admin/index'
 
@@ -195,6 +196,7 @@ export const adminPageRoute = app.html('/', async (ctx, req) => {
         <style>{adminPageCss4}</style>
         <style>{headerCss1}</style>
         <style>{headerCss2}</style>
+        <style>{adminPageCss5}</style>
         <style>{getPreloaderStyles()}</style>
         <script>{getPreloaderScript()}</script>
         <script src="/s/static/lib/tailwind.3.4.16.min.js"></script>

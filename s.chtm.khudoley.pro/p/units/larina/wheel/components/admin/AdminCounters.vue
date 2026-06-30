@@ -19,17 +19,17 @@ defineEmits<{ (e: 'reset'): void }>()
     </div>
     <div class="ap-meters">
       <div class="ap-meter ap-meter--err">
-        <div class="ap-meter-accent"></div>
+        <div class="ap-meter-accent"><i class="fas fa-times-circle"></i></div>
         <div class="ap-meter-body">
           <strong>{{ errorCount }}</strong>
-          <span><i class="fas fa-times-circle"></i> Ошибки</span>
+          <span>Ошибки</span>
         </div>
       </div>
       <div class="ap-meter ap-meter--wrn">
-        <div class="ap-meter-accent"></div>
+        <div class="ap-meter-accent"><i class="fas fa-exclamation-triangle"></i></div>
         <div class="ap-meter-body">
           <strong>{{ warnCount }}</strong>
-          <span><i class="fas fa-exclamation-triangle"></i> Предупреждения</span>
+          <span>Предупреждения</span>
         </div>
       </div>
     </div>
