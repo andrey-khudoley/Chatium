@@ -37,3 +37,4 @@ inner/docs/.obsidian-hybrid-search.db-shm
 
 # Runtime/debug логи
 *.log
+temp/
