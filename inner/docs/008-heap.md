@@ -24,8 +24,22 @@
   - [Простые фильтры](#простые-фильтры)
   - [Операторы сравнения](#операторы-сравнения)
   - [Логические операторы](#логические-операторы)
+  - [Оператор $not на уровне поля](#оператор-not-на-уровне-поля)
+  - [Фильтрация BooleanKind (три состояния)](#фильтрация-booleankind-три-состояния)
+  - [Вложенные поля ObjectKind](#вложенные-поля-objectkind)
+  - [Строки и массивы: $ilike, $includes](#строки-и-массивы-ilike-includes)
+  - [Шпаргалка: фильтры по типам полей](#шпаргалка-фильтры-по-типам-полей)
 - [Сортировка](#сортировка)
 - [Подсчёт записей](#подсчёт-записей)
+- [Агрегации и вычисления (select)](#агрегации-и-вычисления-select)
+  - [Синтаксис select](#синтаксис-select)
+  - [Виды выражений](#виды-выражений)
+  - [Агрегатные функции](#агрегатные-функции)
+  - [Скалярные функции и арифметика](#скалярные-функции-и-арифметика)
+  - [Группировка group и autoGroup](#группировка-group-и-autogroup)
+  - [where, having, order, limit](#where-having-order-limit)
+  - [Запуск запроса: run и варианты](#запуск-запроса-run-и-варианты)
+  - [Практические примеры](#практические-примеры)
 - [Полнотекстовый поиск](#полнотекстовый-поиск)
 - [Работа с Money](#работа-с-money)
 - [Работа со связями RefLink](#работа-со-связями-reflink)
@@ -59,6 +73,15 @@
 - ✅ Поддержка транзакций
 - ✅ Полнотекстовый поиск с эмбеддингами
 - ⚠️ **Эмбединги** (`embeddings: false`) — по умолчанию **ВЫКЛЮЧЕНЫ**, включайте только при необходимости семантического поиска
+
+### Лимиты (тариф «Бизнес»)
+
+Ограничения тарифа платформы Chatium, не самого Heap-движка — источник: страница тарифов Chatium («Включённые ресурсы»), актуально для тарифа **Бизнес** (используется в этом workspace):
+
+- **Максимальный объём базы данных:** 15 Гб. Превышение → тариф «Крупный бизнес».
+- **Максимальное количество строк в одной Heap-таблице:** **1 000 000** (не 10 млн). Превышение → тариф «Private».
+
+При проектировании append-only/журнальных таблиц (историю событий, логи, доставки и т.п.) закладывайте retention/очистку заранее — таблица без чистки на 1 млн строк упрётся в лимит.
 
 ---
 
@@ -568,9 +591,16 @@ const products = await Products.findAll(ctx, {
 
 // Больше или равно
 { price: { $gte: 500 } }
+```
 
-// Диапазон
-{ price: { $gte: 500, $lte: 1000 } }
+**⚠️ Диапазон на одно поле — только через `$and`.** Значение поля принимает **ровно один** оператор сравнения (в типах это `HsCompareOperators` — union одиночных операторов). Форма `{ price: { $gte: 500, $lte: 1000 } }` ненадёжна — фактически применится лишь одно условие. Правильно:
+
+```typescript
+const midrange = await Products.findAll(ctx, {
+  where: {
+    $and: [{ price: { $gte: 500 } }, { price: { $lte: 1000 } }]
+  }
+})
 ```
 
 **Пример**:
@@ -630,6 +660,81 @@ const products = await Products.findAll(ctx, {
   }
 })
 ```
+
+### Оператор $not на уровне поля
+
+Внутри значения поля `$not` работает как `!=` (или `NOT IN` для массива). Это не то же самое, что логический `$not` на уровне всего `where` (он инвертирует условие целиком, см. выше).
+
+```typescript
+// Все заказы, кроме отменённых
+await Orders.findAll(ctx, { where: { status: { $not: 'cancelled' } } })
+
+// Кроме нескольких статусов (NOT IN)
+await Orders.findAll(ctx, { where: { status: { $not: ['cancelled', 'refunded'] } } })
+```
+
+### Фильтрация BooleanKind (три состояния)
+
+Поле `Heap.Boolean()` имеет три состояния: `true`, `false` и **не задано** (`null`/`undefined`). Частая ловушка: `{ isActive: false }` находит только строки, где поле **явно** `false`, и пропускает те, где значения нет.
+
+```typescript
+// ❌ Пропустит записи, где isActive не задано
+await Subscriptions.findAll(ctx, { where: { isActive: false } })
+
+// ✅ «Не активно» = false ИЛИ не задано
+await Subscriptions.findAll(ctx, { where: { isActive: { $not: true } } })
+```
+
+**Правило:** для семантики «не включено / не активно / не выполнено» используйте `{ field: { $not: true } }`, а не `{ field: false }`.
+
+### Вложенные поля ObjectKind
+
+Для поля типа `Heap.Object({...})` фильтр по вложенному свойству задаётся **вложенным объектом**, а не строкой с точкой:
+
+```typescript
+// Таблица: settings: Heap.Object({ theme: Heap.String(), notifications: Heap.Boolean() })
+await Users.findAll(ctx, {
+  where: {
+    settings: { theme: 'dark' } // ✅ вложенный объект
+  }
+})
+```
+
+> В `where` путь к вложенному полю — это **вложенный объект** (`{ settings: { theme: 'dark' } }`). В `select` тот же путь задаётся **массивом** (`['settings', 'theme']`, см. раздел про `select`). Не путать эти две формы.
+
+### Строки и массивы: $ilike, $includes
+
+```typescript
+// Строка по шаблону (LIKE); % — любое число символов
+await Users.findAll(ctx, { where: { email: { $ilike: '%@gmail.com' } } })
+
+// Массив: вхождение одного значения
+await Posts.findAll(ctx, { where: { tags: { $includes: 'javascript' } } })
+
+// Массив: хотя бы одно из / все из
+await Posts.findAll(ctx, { where: { tags: { $includes: { $any: ['js', 'ts'] } } } })
+await Posts.findAll(ctx, { where: { tags: { $includes: { $all: ['js', 'ts'] } } } })
+```
+
+### Шпаргалка: фильтры по типам полей
+
+| Тип поля               | Пример фильтра                                                | Примечание                       |
+| ---------------------- | ------------------------------------------------------------ | -------------------------------- |
+| String                 | `{ name: 'Alice' }`                                          | точное совпадение                |
+| String                 | `{ name: ['Alice', 'Bob'] }`                                | IN                               |
+| String                 | `{ name: { $not: 'Alice' } }`                               | !=                               |
+| String                 | `{ email: { $ilike: '%@gmail.com' } }`                      | поиск по шаблону (LIKE)          |
+| Number                 | `{ age: { $gte: 18 } }`                                     | один оператор на поле            |
+| Number (диапазон)      | `{ $and: [{ age: { $gte: 18 } }, { age: { $lte: 65 } }] }`  | диапазон через `$and`            |
+| Money                  | `{ price: { $gt: new Money(1000, 'USD') } }`               | сравнение работает               |
+| DateTime               | `{ createdAt: { $gte: new Date(...) } }`                   | объект `Date`                    |
+| Boolean (включён)      | `{ isActive: true }`                                        | только `true`                    |
+| Boolean (не включён)   | `{ isActive: { $not: true } }`                             | `false` + не задано              |
+| Enum                   | `{ status: 'paid' }` / `{ status: ['paid', 'shipped'] }`   | значение или IN                  |
+| RefLink                | `{ category: 'id' }` / `{ category: ['id1', 'id2'] }`      | ID строкой, не объект            |
+| UserRefLink            | `{ userId: ctx.user.id }`                                  | ID пользователя                  |
+| Array                  | `{ tags: { $includes: 'js' } }`                            | вхождение; `$any`/`$all` для множеств |
+| Object (вложенное)     | `{ props: { color: 'red' } }`                              | вложенный объект                 |
 
 ---
 
@@ -732,7 +837,251 @@ const count = await Products.countBy(ctx, {
 })
 ```
 
-**Важно**: Не используйте `findAll` + `.length` для подсчёта! Используйте `countBy`.
+**Важно**: Не используйте `findAll` + `.length` для подсчёта! `findAll` ограничен 1000 записями (лимит по умолчанию и максимум), поэтому `.length` вернёт неверное число на больших таблицах. Для счётчика — `countBy`. Когда нужен не просто счётчик, а сумма/среднее/группировка или несколько агрегатов за один проход — используйте query builder `select` (см. [Агрегации и вычисления](#агрегации-и-вычисления-select)).
+
+---
+
+## Агрегации и вычисления (select)
+
+`countBy` считает строки. Когда нужны сумма, среднее, минимум/максимум, конкатенация, группировка или вычисляемые колонки — используется query builder `select`. Запрос выполняется **на стороне БД** (не тянет строки в память), поэтому не подчиняется лимиту 1000 записей `findAll`.
+
+Метод `select` (как и `selectAll`, `countBy`) есть у каждой таблицы Heap.
+
+### Синтаксис select
+
+```typescript
+await Table
+  .select({ alias: expression /* , ... */ }) // псевдонимы → выражения
+  .where(/* фильтр ДО агрегации */)
+  .group(/* псевдонимы */)
+  .having(/* фильтр ПОСЛЕ агрегации */)
+  .order(/* сортировка */)
+  .limit(10) // и .offset(n) — пагинация
+  .run(ctx) // выполнить → Promise<Array<{ alias: ... }>>
+```
+
+- Ключи объекта в `select({...})` — **псевдонимы (aliases)** колонок результата.
+- Значение псевдонима — выражение (`HqExpr`): имя поля, путь, функция, агрегат или литерал.
+- `.run(ctx)` **обязателен** — без него вернётся билдер, а не данные.
+- Типы результата **выводятся** из select-клаузы (это не `any[]`).
+
+```typescript
+// Объектная форма — псевдонимы + выражения
+const rows = await Orders.select({
+  st: 'status', // колонка как есть
+  total: { $sum: ['amount'] } // агрегат
+})
+  .group('st')
+  .run(ctx)
+// rows: Array<{ st: string; total: number }>  ← типы выведены
+
+// Краткая форма — только имена колонок
+const cols = await Orders.select('id', 'status').run(ctx)
+
+// Все поля
+const all = await Orders.selectAll().where({ status: 'paid' }).run(ctx)
+```
+
+### Виды выражений
+
+Каждое выражение внутри `select` — одно из:
+
+| Вид                     | Синтаксис                | Пример                          |
+| ----------------------- | ------------------------ | ------------------------------- |
+| Колонка                 | строка — имя поля        | `'amount'`, `'status'`          |
+| Путь к вложенному полю  | массив имён              | `['settings', 'theme']`         |
+| Литерал                 | `{ $dyn: value }`        | `{ $dyn: ' ' }`, `{ $dyn: 0.9 }`|
+| Функция                 | `{ $fn: [args] }`        | `{ $concat: [...] }`            |
+| Агрегат                 | `{ $agg: [args] }`       | `{ $count: ['*'] }`             |
+
+Аргументы функций и агрегатов — массив выражений, поэтому их можно вкладывать друг в друга.
+
+> **Путь vs where.** В `select` вложенное поле — это **массив** (`['settings', 'theme']`). В `where` тот же путь задаётся **вложенным объектом** (`{ settings: { theme: 'dark' } }`).
+
+### Агрегатные функции
+
+Все агрегаты принимают массив-аргумент и поддерживают опциональный сиблинг-ключ `$distinct: true` (не аргумент, а соседний ключ объекта).
+
+| Агрегат        | Возвращает            | Аргумент                          |
+| -------------- | --------------------- | --------------------------------- |
+| `$count`       | number                | `['*']`, `[]` или `['field']`     |
+| `$sum`         | number                | `['numField']`                    |
+| `$avg`         | number                | `['numField']`                    |
+| `$max`         | number/string/date    | `['field']`                       |
+| `$min`         | number/string/date    | `['field']`                       |
+| `$string_agg`  | string                | `['strField', 'разделитель']`     |
+| `$bool_and`    | boolean               | `['boolField']`                   |
+| `$bool_or`     | boolean               | `['boolField']`                   |
+
+```typescript
+// Подсчёт всех строк ('*' или пустой массив [] — эквивалентны)
+const totalRes = await Orders.select({ total: { $count: ['*'] } }).run(ctx)
+const total = totalRes[0]?.total ?? 0
+
+// Подсчёт непустых значений поля
+await Customers.select({ withEmail: { $count: ['email'] } }).run(ctx)
+
+// Подсчёт уникальных ($distinct — сиблинг-ключ)
+await Orders.select({ buyers: { $count: ['userId'], $distinct: true } }).run(ctx)
+
+// Несколько агрегатов за один проход
+const stats = await Orders.select({
+  revenue: { $sum: ['amount'] },
+  avgCheck: { $avg: ['amount'] },
+  maxCheck: { $max: ['amount'] },
+  minCheck: { $min: ['amount'] }
+})
+  .where({ status: 'paid' })
+  .run(ctx)
+
+// Склейка значений в строку через разделитель (разделитель — литерал $dyn)
+await Orders.select({ ids: { $string_agg: ['id', { $dyn: ', ' }] } }).run(ctx)
+```
+
+> **Важно про аргументы.** Строка внутри массива-аргумента — это **имя поля** (`'amount'` → колонка). Константу передавайте литералом `{ $dyn: ... }` (`{ $dyn: ', ' }`), иначе она будет истолкована как имя колонки.
+>
+> **Money.** Агрегируются числовые поля (`Heap.Number`/`Heap.Integer`). Для `Heap.Money` берите числовую часть по пути: `{ $sum: [['price', 'amount']] }`. В примерах ниже `amount` — числовое поле.
+
+### Скалярные функции и арифметика
+
+Работают над значениями строки (не агрегируют):
+
+- **Числовые:** `$abs`, `$ceil`, `$floor`, `$round`, `$length` (длина строки).
+- **Арифметика** (2+ числовых аргумента): `$add`, `$sub`, `$mul`, `$div`, `$mod`, `$exp` (степень); `$neg` — унарный минус.
+- **Строковые:** `$concat` (склейка), `$lower`, `$upper`, `$coalesce` (первое непустое).
+- **Дата:** `$now` (`[]`), `$date_trunc` (`[{ $dyn: 'month' }, 'dateField', { $dyn: 'UTC' }]`), `$coalesce`.
+- **Литерал:** `$dyn` — константа (строка/число/boolean/Date); нужна, чтобы смешивать литералы с именами полей.
+
+```typescript
+// Конкатенация с литералом $dyn
+await Users.select({
+  fullName: { $concat: ['firstName', { $dyn: ' ' }, 'lastName'] }
+}).run(ctx)
+
+// Первое непустое значение
+await Users.select({ name: { $coalesce: ['displayName', 'firstName'] } }).run(ctx)
+
+// Вычисляемая колонка над числовым полем: значение × 0.9
+await Products.select({ net: { $mul: ['weight', { $dyn: 0.9 }] } }).run(ctx)
+```
+
+### Группировка group и autoGroup
+
+- `.group('alias')` или `.group(['a', 'b'])` — группирует по **псевдонимам** из `select` (не по именам полей таблицы!).
+- `.autoGroup()` — автоматически группирует по всем неагрегатным псевдонимам.
+
+```typescript
+// Количество и сумма по каждому статусу
+const byStatus = await Orders.select({
+  st: 'status', // псевдоним 'st'
+  count: { $count: ['id'] },
+  total: { $sum: ['amount'] }
+})
+  .group('st') // ← псевдоним, НЕ имя поля 'status'
+  .run(ctx)
+// byStatus: Array<{ st: string; count: number; total: number }>
+```
+
+**⚠️ Частая ошибка:** в `group` передаётся псевдоним (ключ из `select`), а не имя поля таблицы. При псевдониме `st` вызов `.group('status')` не пройдёт типизацию.
+
+### where, having, order, limit
+
+- `.where(filter)` — фильтр **до** агрегации; тот же синтаксис `where`, что у `findAll`.
+- `.having(filter)` — фильтр **после** агрегации, по псевдонимам (в т.ч. агрегатам).
+- `.order(order)` — сортировка по псевдониму или полю; формат как у `findAll` (`[{ alias: 'desc' }]`).
+- `.limit(n)` / `.offset(n)` — пагинация результата.
+
+```typescript
+// Категории, где продано больше 5 штук; топ-3 по выручке
+const top = await Orders.select({
+  cat: 'category',
+  sold: { $count: ['id'] },
+  revenue: { $sum: ['amount'] }
+})
+  .where({ status: 'paid' }) // до агрегации
+  .group('cat')
+  .having({ sold: { $gt: 5 } }) // после агрегации
+  .order([{ revenue: 'desc' }])
+  .limit(3)
+  .run(ctx)
+```
+
+> `.having()` и `.order()`/`.limit()` существуют — сортировку и постфильтр агрегатов **не нужно** делать вручную в JavaScript.
+
+### Запуск запроса: run и варианты
+
+`.run(ctx)` возвращает массив с выведенными типами. Для агрегата без группировки это массив из одного элемента.
+
+| Метод                      | Возвращает                              |
+| -------------------------- | --------------------------------------- |
+| `run(ctx)`                 | `Array<{...}>`                          |
+| `runTakeFirst(ctx)`        | первый элемент или `null`               |
+| `runTakeFirstOrThrow(ctx)` | первый элемент или ошибка               |
+| `runFlatten(ctx)`          | массив значений первой колонки          |
+| `runJson(ctx)` / `run*Json`| те же данные как «плоский» JSON         |
+
+```typescript
+// Одиночный агрегат удобно брать через runTakeFirst
+const res = await Orders.select({ n: { $count: ['*'] } }).runTakeFirst(ctx)
+const count = res?.n ?? 0
+
+// runFlatten — быстро получить список значений одной колонки
+const ids = await Orders.select({ id: 'id' })
+  .where({ status: 'paid' })
+  .runFlatten(ctx) // string[]
+```
+
+### Практические примеры
+
+**Подсчёт: `countBy` vs `select`.**
+
+```typescript
+// Простой подсчёт — countBy короче
+const paid = await Orders.countBy(ctx, { status: 'paid' })
+
+// Несколько агрегатов сразу — только через select
+const m = await Orders.select({
+  cnt: { $count: ['*'] },
+  sum: { $sum: ['amount'] }
+})
+  .where({ status: 'paid' })
+  .runTakeFirst(ctx)
+```
+
+**Витрина: топ-5 клиентов по сумме покупок (без N+1).**
+
+```typescript
+const top5 = await Orders.select({
+  userId: 'userId',
+  spent: { $sum: ['amount'] },
+  purchases: { $count: ['id'] }
+})
+  .where({ status: 'paid' })
+  .group('userId')
+  .order([{ spent: 'desc' }])
+  .limit(5)
+  .run(ctx)
+
+// Обогащение данными пользователей одним batch-запросом
+const users = await Users.findAll(ctx, { where: { id: top5.map((r) => r.userId) } })
+const byId = new Map(users.map((u) => [u.id, u]))
+const result = top5.map((r) => ({ user: byId.get(r.userId), spent: r.spent }))
+```
+
+**Антипаттерны select:**
+
+```typescript
+// ❌ Забыли .run(ctx) — вернётся билдер, а не данные
+const bad = await Orders.select({ n: { $count: ['*'] } }) // нет .run!
+
+// ❌ Обращение к [0] без проверки — упадёт на пустом результате
+// const n = (await Orders.select({ n: { $count: ['*'] } }).run(ctx))[0].n
+// ✅ Безопасно
+const r = await Orders.select({ n: { $count: ['*'] } }).run(ctx)
+const n = r[0]?.n ?? 0
+
+// ❌ group по имени поля вместо псевдонима: .group('status') при псевдониме 'st'
+```
 
 ---
 
