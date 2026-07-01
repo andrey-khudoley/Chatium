@@ -89,16 +89,23 @@ flowchart LR
 | `subscriberModuleKey` | `moduleKey` подписчика строкой (не `RefLink`, §5.5). |
 | `status` | `pending` → `claimed` → `acked` / `failed` → `dead` (dead-letter). |
 
-Поля flow доставки (§5, в ядро пока не входят): `attempts`, `claimedAt`, `nextAttemptAt`, `lastError`, `subscriptionId`. Системные: `id`, `createdAt` (материализация; основа очистки), `updatedAt` (последний переход).
+Поля flow доставки (§5, в ядро пока не входят): `attempts`, `claimedAt`, `nextAttemptAt`, `lastError`, `subscriptionId`. Системные: `id`, `createdAt` (материализация; основа retention), `updatedAt` (последний переход).
 
-**Очистка (джоб ежедневно в полночь).** `BrokerDeliveries` растёт быстрее всех (fan-out × подписчики), а Heap-таблица ограничена ~10 млн строк. Джоб `app.job` запускается каждую полночь, самоперепланируется через `scheduleJobAt(ближайшие 00:00)`, удаляет батчами (`deleteAll` с явным `limit`) строки **старше 24ч со статусом `acked`**. `pending`/`claimed`/`failed` (в работе) и `dead` (dead-letter) — сохраняются. Накопление `dead` этим джобом не чистится — открытый вопрос (отдельная retention / DLQ).
+### `BrokerEventsArchive` — холодный архив журнала (согласована)
+
+Лимит 1 млн строк/таблицу несовместим с растущим неизменяемым журналом (§3.2), удалять события нельзя → **двухуровневое хранение**: горячая `BrokerEvents` = последний месяц, старше — **упаковка батчами до 1000 событий в одну строку архива** (ёмкость ×1000, до ~1 млрд). Поля: `batchFrom`/`batchTo` (диапазон `createdAt`), `count` (≤1000), `events` (JSON-массив строк **в самой таблице** — запрашивается через `where`; при слишком большом батче дробим на несколько строк, наружу в `ctx.storage` не выносим). Строковые `eventId` из доставок не ломаются (не `RefLink`). `ctx.storage` — лишь запасной путь на далёкое будущее при переполнении самого архива (~1 млрд, недостижимо — не реализуем сейчас).
+
+**Retention-джоб (ежедневно в полночь, общий для брокера).** Один `app.job` каждую полночь, самоперепланирование `scheduleJobAt(00:00)`, два прохода:
+1. **Очистка доставок:** `acked` старше 24ч → `deleteAll` батчами по 1000. `pending`/`claimed`/`failed` не трогаются.
+2. **Архивация старше месяца (батчами по 1000):** `BrokerEvents` → `BrokerEventsArchive`; `dead`-доставки → свой архив (закрывает вопрос роста dead-letter). Порядок «сначала архив, потом удаление по `id`» — без потерь при сбое; лимит батчей за прогон, остаток догоняет следующая полночь.
 
 ### Остальные таблицы — в проработке
 
 ```mermaid
 flowchart LR
   M["BrokerModules ✓"]
-  Ev["BrokerEvents ✓"]
+  Ev["BrokerEvents ✓ (горячая, ~1 мес)"]
+  Ar["BrokerEventsArchive ✓ (батчи ×1000)"]
   De["BrokerDeliveries ✓"]
   Co["BrokerContracts"]
   Su["BrokerSubscriptions"]
@@ -106,6 +113,8 @@ flowchart LR
   M -.-> Co
   M -.-> Su
   M --> Ev
+  Ev -->|"retention-джоб, >1 мес"| Ar
+  M --> De
   Ev --> De
   M -.-> Au
 ```
@@ -195,8 +204,8 @@ flowchart TB
     B3["Сверка токена в §5 / §7"]
     B4["Каскад deleteModule на подписки/доставки (§5.5)<br/>(события остаются — решено; детали зависят от таблиц)"]
   end
-  subgraph TBL["Таблицы (Modules ✓, Events ✓, Deliveries ✓)"]
+  subgraph TBL["Таблицы (Modules ✓, Events ✓, Deliveries ✓, EventsArchive ✓)"]
     C1["Contracts · Subscriptions · OpsAudit"]
-    C2["dead-letter retention (§3.3.1)"]
+    C2["retention/архивация решена (§3.5)"]
   end
 ```
