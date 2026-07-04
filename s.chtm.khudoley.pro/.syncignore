@@ -15,3 +15,8 @@ work/
 # Dev-only контент — не публиковать (внутренние LLM-логи, проектная документация)
 **/docs/LLM/
 **/project-docs/
+
+# Temporary directories
+p/units/aley/web_03_07_03/
+p/units/aley/web0307/
+p/units/aley/web0307_2/
