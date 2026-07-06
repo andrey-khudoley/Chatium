@@ -224,6 +224,8 @@ Admin может отозвать инвайт (`revoke-invite`) или гран
 
 Логика (Options API mixin): `pages/sbpHomePageMixin.ts`. Форматтеры, helpers и разделы навигации (чистые, без Heap/ctx): `shared/sbpHomeFormat.ts` — содержит `sbpHomeTabs()`, `sbpHomeSections()`, `sbpSectionForTab()`, тип `SbpHomeTabGroup` (`'monitoring'|'tools'|'config'|'access'`). CSS: `pagecss/sbpHomeCss1.ts`..`sbpHomeCss4.ts`.
 
+**Диплинки по query-параметрам URL (реализовано 2026-07-06):** `applyUrlParams()` (`pages/sbpHomePageMixin.ts`) вызывается один раз из `onReady()` — после `loadForTab(this.activeTab)`, до первого рендера с учётом URL. Разбирает `window.location.search` (`URLSearchParams`), первый совпавший параметр побеждает: `openRequest=<heapId>` → `setTab('requests')` + `openRaw('request', id)`; `openWebhook=<heapId>` → `setTab('webhooks')` + `openRaw('webhook', id)`; `requestId=<value>` → `setTab('requests')` + `doSearch()` (существующий поиск через `api/gateways/search-by-request-id`); `tab=<id>` → просто `setTab(id)`. Полностью клиентская логика существующей страницы `/`, переиспользует уже имеющиеся методы mixin'а — новых API-эндпоинтов и серверных изменений нет.
+
 **Иерархическая форма GC (реализовано 2026-05-29):**
 
 `sbpHomePageMixin.ts` содержит computed-блок для GC-ветки:

@@ -418,6 +418,7 @@ export default {
     },
     onReady() {
       this.loadForTab(this.activeTab)
+      this.applyUrlParams()
     },
     setTab(id) {
       const normalizedId = sbpNormalizeTabId(id)
