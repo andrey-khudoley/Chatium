@@ -253,6 +253,42 @@ export const sbpHomePageMethodsMixin = {
       this.rawModal = null
     },
 
+    /* ====== Диплинк по query-параметрам (?openRequest=/?openWebhook=/?requestId=/?tab=) ====== */
+    /**
+     * Открывает нужную запись прямо со ссылки — без ручного поиска в панели.
+     * Приоритет (первый совпавший параметр побеждает): `openRequest`/`openWebhook`
+     * (raw-модалка по внутреннему Heap id) → `requestId` (поиск search-by-request-id
+     * по человекочитаемому requestId, показывает запрос + связанные webhook) → `tab`
+     * (просто переключить раздел). Вызывается один раз после готовности страницы.
+     */
+    applyUrlParams(this: any) {
+      if (typeof window === 'undefined') return
+      const params = new URLSearchParams(window.location.search)
+      const openRequestId = params.get('openRequest')
+      const openWebhookId = params.get('openWebhook')
+      const requestIdParam = params.get('requestId')
+      const tabParam = params.get('tab')
+      if (openRequestId) {
+        this.setTab('requests')
+        this.openRaw('request', openRequestId)
+        return
+      }
+      if (openWebhookId) {
+        this.setTab('webhooks')
+        this.openRaw('webhook', openWebhookId)
+        return
+      }
+      if (requestIdParam) {
+        this.setTab('requests')
+        this.searchValue = requestIdParam
+        this.doSearch()
+        return
+      }
+      if (tabParam) {
+        this.setTab(tabParam)
+      }
+    },
+
     /* ====== Search & lookup ====== */
     clearSearch(this: any) {
       this.searchValue = ''
