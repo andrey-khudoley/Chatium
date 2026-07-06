@@ -42,6 +42,7 @@ export const ROUTES = {
   gatewaySearchByRequestId: './api/gateways/search-by-request-id',
   gatewayRawRequest: './api/gateways/raw-request',
   gatewayRawWebhook: './api/gateways/raw-webhook',
+  gatewayLogSearch: './api/gateways/log-search',
   gatewayAnalyticsFilterSave: './api/gateways/analytics/filter-save',
   gatewayPaymentSocket: './api/gateways/payment-socket'
 } as const
@@ -84,6 +85,7 @@ export const ROUTE_PATHS = {
   gatewaySearchByRequestId: '/api/gateways/search-by-request-id',
   gatewayRawRequest: '/api/gateways/raw-request',
   gatewayRawWebhook: '/api/gateways/raw-webhook',
+  gatewayLogSearch: '/api/gateways/log-search',
   gatewayAnalyticsFilterSave: '/api/gateways/analytics/filter-save',
   gatewayPaymentSocket: '/api/gateways/payment-socket'
 } as const

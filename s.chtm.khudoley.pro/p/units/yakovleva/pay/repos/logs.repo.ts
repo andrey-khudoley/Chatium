@@ -100,6 +100,74 @@ export async function findBeforeTimestamp(
   return rows
 }
 
+/** Кэп одного findAll (см. inner/docs/008-heap.md) — cursor-пагинация выше него. */
+const HARD_BATCH = 1000
+
+/**
+ * Условие по `timestamp` для диапазона [from?, to?] + опциональный список severity.
+ * Любая граница необязательна; без всего — `{}` (весь журнал).
+ */
+function rangeWhere(from?: number, to?: number, severities?: number[]): Record<string, unknown> {
+  const cond: Record<string, number> = {}
+  if (from !== undefined) cond.$gte = from
+  if (to !== undefined) cond.$lt = to
+  const where: Record<string, unknown> = {}
+  if (Object.keys(cond).length > 0) where.timestamp = cond
+  if (severities && severities.length > 0) where.severity = { $in: severities }
+  return where
+}
+
+/**
+ * Записи Logs в диапазоне дат [from?, to?] (Unix ms), свежие первыми. Опциональный
+ * фильтр по списку severity. В отличие от `findAll`/`findBeforeTimestamp`, не привязан
+ * к UI-фильтру панели — используется агентской диагностикой (api/gateways/log-search)
+ * для «окружающих» логов вокруг найденного инцидента за произвольный период.
+ * Cursor-пагинация по HARD_BATCH (см. request/webhookLog.repo.findInRange — тот же паттерн).
+ */
+export async function findInRange(
+  ctx: app.Ctx,
+  from?: number,
+  to?: number,
+  limit: number = 2000,
+  severities?: number[]
+): Promise<LogsRow[]> {
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] findInRange entry`,
+    payload: { from: from ?? null, to: to ?? null, limit, severities: severities ?? null }
+  })
+
+  const result: LogsRow[] = []
+  let cursor: number | null = null
+
+  while (result.length < limit) {
+    const upper = cursor !== null ? cursor : to
+    const where = rangeWhere(from, upper, severities)
+
+    const remaining = limit - result.length
+    const batchSize = Math.min(HARD_BATCH, remaining)
+
+    const rows = await Logs.findAll(ctx, {
+      where,
+      order: [{ timestamp: 'desc' }],
+      limit: batchSize
+    })
+
+    const last = rows[rows.length - 1]
+    if (!last) break
+    result.push(...rows)
+    cursor = last.timestamp
+    if (rows.length < batchSize) break
+  }
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_MODULE}] findInRange exit`,
+    payload: { from: from ?? null, to: to ?? null, count: result.length }
+  })
+  return result
+}
+
 /** Severity ошибок (syslog): 0 Emergency, 1 Alert, 2 Critical, 3 Error. */
 const ERROR_SEVERITIES = [0, 1, 2, 3] as const
 /** Severity предупреждений (syslog): 4 Warning. */

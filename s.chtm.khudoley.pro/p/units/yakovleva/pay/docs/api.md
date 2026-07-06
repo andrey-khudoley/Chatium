@@ -71,6 +71,7 @@
 | GET    | /webhooks/lavatop/status                                   | webhooks/lavatop/status.tsx           | Анонимный                               | Проверка доступности приёмника Lava.Top. Возвращает `{ ok, status: 'ready', webhookSecretConfigured }` без раскрытия секрета.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | POST   | /webhooks/lavatop                                          | webhooks/lavatop/index.tsx            | Анонимный + секрет (X-Api-Key / Basic)  | Приёмник webhook Lava.Top. Авторизация — `X-Api-Key` или Basic Authorization, значение должно совпадать с `lava_webhook_secret`. Без секрета — 503; неверная авторизация — 401; некорректное тело — 400. При валидном — запись в `webhook_log` с `gatewayId='lavatop'` и `gatewayExternalId=contractId`; дедупликация через `webhook_idempotency` по композитному ключу `lavatop:contractId:eventType:status` (`tryRegister`). Ответ 200 `{ success: true, duplicate }`.                                                                                                                                                                                                                           |
 | POST   | /api/gateways/payment-socket                               | api/gateways/payment-socket.ts        | requireRealUser + requireInternalAccess | Выдаёт `encodedSocketId` для подписки на канал уведомлений об оплате (`@app/socket`). Тело: `{ correlationId: string }` (1–128 символов, `[A-Za-z0-9._:-]`). Ответ: `{ success, channel, encodedSocketId }`. Имя сырого канала — `pay-payment-<correlationId>` (`shared/paymentSocket.ts`). Сервер публикует сообщение `{ type: 'payment', data: {...} }` в этот канал при получении соответствующего webhook (см. `webhooks/lifepay` и `webhooks/lavatop`). 400 `PAYMENT_SOCKET_CORRELATION_ID_INVALID` — невалидный/пустой correlationId.                                                                                                                                                        |
+| GET    | /api/gateways/log-search                                    | api/gateways/log-search.ts            | requireRealUser + requireInternalAccess | **Новый (2026-07-06).** Универсальный поиск логов для диагностики инцидентов (в т.ч. агентом/LLM), без похода в браузерную панель. См. подробный контракт ниже.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ### Контракт `/api/gateways/invoke`
 
@@ -233,6 +234,56 @@
 Если `correlationId` пустой / невалидный — публикация в канал не делается,
 но запись в `webhook_log` всё равно сохраняется (поведение приёмников не
 ломается отсутствием подписчика).
+
+### Контракт `/api/gateways/log-search` (2026-07-06)
+
+Read-only эндпоинт для расследования инцидентов (в т.ч. агентом/LLM) — единый поиск по логам без похода в браузерную панель. Реализует два независимых, комбинируемых режима:
+
+1. **Точный поиск по `orderNumbers`** — совпадения в `request_log` + `webhook_log` за весь исторический диапазон (без UI-фильтра панели `panel_date_filter`).
+2. **Срез «что происходило вокруг момента»** по `from`/`to` либо `around`+`windowMinutes` — по всем трём источникам: app Logs (таблица `logs`, через `logsRepo.findInRange`), `request_log`, `webhook_log`. Единственный способ увидеть guard-отклонения webhook (`token_missing`/`mismatch`, `webhook_rejected` с `reason=correlationId_missing`/`correlationId_not_found` — см. `webhooks/lifepay` guard «legacy-strict»), которые никогда не попадают в `webhook_log`, только в app Logs.
+
+Если задан только `orderNumbers` без периода — окно `surrounding` для тех же трёх источников вычисляется автоматически вокруг найденных таймстемпов request_log/webhook_log ± `windowMinutes` и возвращается тем же ответом (второй запрос не нужен).
+
+Query-параметры:
+
+| Параметр        | Тип                              | По умолчанию | Назначение                                                                                     |
+| --------------- | --------------------------------- | ------------ | ----------------------------------------------------------------------------------------------- |
+| `orderNumbers`  | `string` (CSV: `a,b,c`)            | —            | Список orderNumber для точного поиска по `request_log`/`webhook_log`.                           |
+| `from`          | `string` (Unix ms либо ISO)        | —            | Нижняя граница окна `surrounding` (включительно).                                               |
+| `to`            | `string` (Unix ms либо ISO)        | —            | Верхняя граница окна `surrounding` (исключительно).                                             |
+| `around`        | `string` (Unix ms либо ISO)        | —            | Опорная точка окна, если явные `from`/`to` не заданы.                                           |
+| `windowMinutes` | `number`                           | 30           | Половина ширины окна вокруг `around`/найденных таймстемпов; максимум 1440 (сутки).               |
+| `limit`         | `number`                           | 500          | Лимит записей на источник в `surrounding`; максимум 2000.                                        |
+| `maxSeverity`   | `number` (0–7)                     | 4            | Верхняя граница severity для app Logs: 4 — emergency..warning; 7 — вся трассировка (entry/exit). |
+
+Доступ: `guardInternalApi` (`requireRealUser` + `requireInternalAccess`) — как и остальные `api/gateways/*`.
+
+Ответ:
+
+```json
+{
+  "success": true,
+  "byOrder": [
+    {
+      "orderNumber": "A1",
+      "requests": [{ "source": "request", "id": "...", "at": 0, "gatewayId": "lifepay", "requestId": "...", "op": "createBill", "orderNumber": "A1", "correlationId": "...", "clientHttpStatus": 200, "ok": true, "errorCode": null, "lpSemanticRule": null, "durationMs": 120 }],
+      "webhooks": [{ "source": "webhook", "id": "...", "at": 0, "gatewayId": "lifepay", "number": "...", "orderNumber": "A1", "correlationId": "...", "tokenValid": true, "duplicate": false, "type": "payment", "status": "success", "amount": "1500.00" }]
+    }
+  ],
+  "window": { "from": 0, "to": 0 },
+  "surrounding": {
+    "logs": [{ "source": "log", "id": "...", "at": 0, "severity": 3, "level": "error", "message": "...", "payload": {} }],
+    "requests": ["<как в byOrder[].requests>"],
+    "webhooks": ["<как в byOrder[].webhooks>"]
+  }
+}
+```
+
+- `byOrder` — пустой массив, если `orderNumbers` не задан.
+- `window` — `{ from, to }` (Unix ms), если период определён явно или неявно (через `around`/найденные таймстемпы); иначе `null`.
+- `surrounding` — `null`, если окно не удалось определить (нет ни `from`/`to`/`around`, ни совпадений по `orderNumbers`).
+
+Репозиторий: новая функция `logsRepo.findInRange(ctx, from?, to?, limit = 2000, severities?)` (`repos/logs.repo.ts`) — курсорная пагинация по `HARD_BATCH=1000` (см. `008-heap.md`), диапазон `[from, to)` по `timestamp` + опциональный `where.severity: { $in: severities }`, свежие записи первыми. Не привязана к UI-фильтру панели — в отличие от `findAll`/`findBeforeTimestamp`, используется только `api/gateways/log-search` для произвольного периода.
 
 ## Публичные эндпоинты и страницы доступа
 
