@@ -75,7 +75,7 @@ flowchart LR
 | Поле | Назначение |
 |------|-----------|
 | `eventType` | Доменный тип (`tasks.created`). Сверяется с `allowedPublishTypes` при публикации, `allowedSubscribeTypes` при доставке. |
-| `schemaVersion` | Версия схемы `payload` внутри типа (целое, default `1`). Отдельным полем — для `where`-фильтра по версии без парсинга payload; непрозрачный тег, брокер контракт по `(eventType, schemaVersion)` не хранит и не проверяет (§1, §8). Бамп ≠ новый тип (вайтлисты/модерация не трогаются). ADR-0003. |
+| `schemaVersion` | Версия схемы `payload` внутри типа (целое, default `1`). Отдельным полем — для `where`-фильтра по версии **по индексу** (внутрь `any`-payload Heap тоже умеет, но неиндексированным сканом JSONB — медленнее, ADR-0003); непрозрачный тег, брокер контракт по `(eventType, schemaVersion)` не хранит и не проверяет (§1, §8). Бамп ≠ новый тип (вайтлисты/модерация не трогаются). ADR-0003. |
 | `producerModuleKey` | `moduleKey` продюсера обычной строкой (не `RefLink`, §5.5). Multi-producer: один тип — у разных модулей. |
 | `payload` | Данные факта (JSON). Структуру по `(eventType, schemaVersion)` согласуют продюсер и подписчики в своём коде — вне брокера (§1, §8). |
 | `idempotencyKey` | Дедуп публикации от продюсера (опц., пусто → без дедупа). Уникальность `(producerModuleKey, idempotencyKey)`, проверка `runWithExclusiveLock` (§5). |
