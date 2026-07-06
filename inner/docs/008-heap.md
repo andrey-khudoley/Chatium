@@ -28,6 +28,7 @@
   - [Фильтрация BooleanKind (три состояния)](#фильтрация-booleankind-три-состояния)
   - [Вложенные поля ObjectKind](#вложенные-поля-objectkind)
   - [Строки и массивы: $ilike, $includes](#строки-и-массивы-ilike-includes)
+  - [Поля AnyKind (Heap.Any)](#поля-anykind-heapany)
   - [Шпаргалка: фильтры по типам полей](#шпаргалка-фильтры-по-типам-полей)
 - [Сортировка](#сортировка)
 - [Подсчёт записей](#подсчёт-записей)
@@ -608,7 +609,7 @@ const products = await Products.findAll(ctx, {
 { price: { $gte: 500 } }
 ```
 
-**⚠️ Диапазон на одно поле — только через `$and`.** Значение поля принимает **ровно один** оператор сравнения (в типах это `HsCompareOperators` — union одиночных операторов). Форма `{ price: { $gte: 500, $lte: 1000 } }` ненадёжна — фактически применится лишь одно условие. Правильно:
+**⚠️ Диапазон на одно поле — только через `$and`.** Значение поля принимает **ровно один** оператор сравнения (в типах это `HsCompareOperators` — union одиночных операторов). Форма `{ price: { $gte: 500, $lte: 1000 } }` возвращает результат только по **одной** из границ (какая именно — не гарантируется), вторая молча игнорируется — **подтверждено поддержкой Chatium**. Для диапазона всегда пишите через `$and`:
 
 ```typescript
 const midrange = await Products.findAll(ctx, {
@@ -731,6 +732,35 @@ await Posts.findAll(ctx, { where: { tags: { $includes: { $any: ['js', 'ts'] } } 
 await Posts.findAll(ctx, { where: { tags: { $includes: { $all: ['js', 'ts'] } } } })
 ```
 
+### Поля AnyKind (Heap.Any)
+
+Фильтрация по `Heap.Any()` работает **той же нотацией, что и по обычным полям** (вложенный объект, операторы, `$includes`), но **менее эффективно**: значение лежит в JSONB без выделенного индекса, запрос идёт сканированием. Для данных, по которым часто фильтруют, предпочтительнее объявить поле явным типом (`Heap.Object`, `Heap.Array`, скаляр) и получить индекс и типобезопасность.
+
+Что доступно по `Heap.Any()` (**подтверждено поддержкой Chatium**):
+
+```typescript
+// Таблица: payload: Heap.Any()
+
+// Частичный матч по объекту — НЕ требует полного совпадения значения.
+// Найдёт запись со значением { theme: 'dark', fontSize: 14 }:
+await Events.findAll(ctx, { where: { payload: { theme: 'dark' } } })
+
+// Фильтр по вложенному пути — вложенным объектом (не строкой с точкой):
+await Events.findAll(ctx, { where: { payload: { user: { role: 'admin' } } } })
+
+// Операторы сравнения $gt/$lt/$gte/$lte работают; тип сравнения
+// определяется по ПРАВОЙ части: справа число → значение приводится к числу,
+// справа Date → к дате:
+await Events.findAll(ctx, { where: { payload: { amount: { $gt: 1000 } } } })
+
+// Массивы внутри — через $includes / $any / $all, как у ArrayKind:
+await Events.findAll(ctx, { where: { payload: { tags: { $includes: 'vip' } } } })
+await Events.findAll(ctx, { where: { payload: { tags: { $includes: { $any: ['vip', 'paid'] } } } } })
+await Events.findAll(ctx, { where: { payload: { tags: { $includes: { $all: ['vip', 'paid'] } } } } })
+```
+
+> Диапазон на одном вложенном поле внутри `Any` подчиняется тому же правилу, что и обычные поля: два оператора сразу ненадёжны, для диапазона — `$and` (см. выше).
+
 ### Шпаргалка: фильтры по типам полей
 
 | Тип поля               | Пример фильтра                                                | Примечание                       |
@@ -749,7 +779,8 @@ await Posts.findAll(ctx, { where: { tags: { $includes: { $all: ['js', 'ts'] } } 
 | RefLink                | `{ category: 'id' }` / `{ category: ['id1', 'id2'] }`      | ID строкой, не объект            |
 | UserRefLink            | `{ userId: ctx.user.id }`                                  | ID пользователя                  |
 | Array                  | `{ tags: { $includes: 'js' } }`                            | вхождение; `$any`/`$all` для множеств |
-| Object (вложенное)     | `{ props: { color: 'red' } }`                              | вложенный объект                 |
+| Object (вложенное)     | `{ props: { color: 'red' } }`                              | вложенный объект (частичный матч) |
+| Any (`Heap.Any`)       | `{ payload: { theme: 'dark' } }` / `{ payload: { tags: { $includes: 'vip' } } }` | как обычные поля: частичный матч, вложенный путь, сравнения, `$includes`; **медленнее** (JSONB без индекса) |
 
 ---
 
