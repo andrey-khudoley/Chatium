@@ -59,9 +59,8 @@ flowchart LR
 | `displayName` | Имя для админ-диагностики. |
 | `source` | `internal` / `external`. Проставляет гейтвей по каналу регистрации, не из тела запроса. |
 | `allowedPublishTypes` | Белый список glob-паттернов публикаций. Пустой = запрет. |
-| `allowedSubscribeTypes` | Белый список glob-паттернов подписок. Пустой = запрет. |
-| `enabled` | Активность. Начальное значение по `source` (см. Слой 3). |
-| `adminDisabled` | Админ-стоп, приоритет над `enabled`. История — в событиях. |
+| `allowedSubscribeTypes` | Белый список glob-паттернов подписок. Пустой = запрет. Fan-out резолвит подписчиков из этого поля: `where status=active` + развёртка предков-глобов `eventType` + `$includes/$any` (индексируемо) — доставки только активным; отдельной таблицы подписок нет, роутинг по типу, продюсер анонимен (ADR-0008). |
+| `status` | Состояние в обмене **единым полем** (заменяет `enabled`/`adminDisabled`, ADR-0010): `onModeration` / `active` / `reModeration` / `disabled`. «Активен сейчас» = `active`; `disabled` только из `active`. Переходы — `broker.*` события (ADR-0009). Начальное по `source` (см. Слой 3). |
 | `claimTimeoutMs` | Таймаут перезабора взятой доставки, задаёт модуль при регистрации (visibility-timeout применяет сам подписчик, §3.3). |
 | `authTokenHash` | SHA-256 токена, выданного гейтвеем. Токен отдаётся модулю один раз. |
 | `metadata` | Произвольные данные модуля. |
@@ -84,7 +83,7 @@ flowchart LR
 
 Системные поля: `id` — идентификатор события (на него ссылаются `BrokerDeliveries` строкой); `createdAt` — момент публикации (отметка для best-effort порядка); `updatedAt` не используется (журнал неизменяем).
 
-Служебные поля публикации (объявлены выше; сам flow publish/fan-out — §5): дедуп события по `(producerModuleKey, idempotencyKey)`; `dispatchedAt` ставится после ВСЕХ доставок, иначе восстановительный джоб повторяет fan-out; **повтор fan-out идемпотентен по ключу ДОСТАВКИ `(eventId, subscriberModuleKey)`, а не по `idempotencyKey` события** (два слоя идемпотентности, разные ключи). Открыто: область `seq` (глобальный vs по `eventType`) и цена сериализации; граница с историей операций (`BrokerOpsAudit` vs системные события здесь).
+Служебные поля публикации (объявлены выше; сам flow publish/fan-out — §5): дедуп события по `(producerModuleKey, idempotencyKey)`; `dispatchedAt` ставится после ВСЕХ доставок, иначе восстановительный джоб повторяет fan-out; **повтор fan-out идемпотентен по ключу ДОСТАВКИ `(eventId, subscriberModuleKey)`, а не по `idempotencyKey` события** (два слоя идемпотентности, разные ключи). Открыто: область `seq` (глобальный vs по `eventType`) и цена сериализации. История операций — **решена**: системные `broker.*` события в этом же журнале (продюсер — внутренний код брокера, сентинел `producerModuleKey=broker`, в обход `assertCanPublish`; namespace `broker.` и `moduleKey=broker` зарезервированы — публиковать модулям нельзя, подписываться можно), фан-аут единообразный, отдельной таблицы нет (ADR-0009).
 
 ### `BrokerDeliveries` — материализованные доставки (согласована)
 
@@ -100,7 +99,7 @@ flowchart LR
 | `status` | `pending` → `claimed` → `acked` / `dead`. `failed` нет: неподтверждённая `claimed` = повтор (перезабор после таймаута). |
 | `claimedAt` | Момент последнего claim; основа перезабора (просрочка по `claimTimeoutMs`, §3.1). |
 
-Жизненный цикл: fan-out → `pending` (со снимком), идемпотентно по `(eventId, subscriberModuleKey)` (под `runWithExclusiveLock` по событию); на pull подписчик берёт свои `pending` + просроченные `claimed` (порядок по `createdAt` доставки), ставит `claimed`+`claimedAt`, обрабатывает **прямо по строке**, успех → `acked`, упал → перезабор после таймаута; исчерпав попытки (политика модуля) → `dead`. Опц. поля: `attempts`, `lastError`, `subscriptionId`. Системные: `id`, `createdAt` (материализация; основа retention и порядка), `updatedAt` (последний переход). `eventCreatedAt` не нужен (порядок — по `createdAt` доставки).
+Жизненный цикл: fan-out → `pending` (со снимком), идемпотентно по `(eventId, subscriberModuleKey)` (под `runWithExclusiveLock` по событию); на pull подписчик берёт свои `pending` + просроченные `claimed` (порядок по `createdAt` доставки), ставит `claimed`+`claimedAt`, обрабатывает **прямо по строке**, успех → `acked`, упал → перезабор после таймаута; исчерпав попытки (политика модуля) → `dead`. Опц. поля: `attempts`, `lastError` (без `subscriptionId` — отдельной сущности-подписки нет, матч по типу через whitelist, ADR-0008). Системные: `id`, `createdAt` (материализация; основа retention и порядка), `updatedAt` (последний переход). `eventCreatedAt` не нужен (порядок — по `createdAt` доставки).
 
 ### `BrokerEventsArchive` — холодный архив журнала (согласована)
 
@@ -111,7 +110,7 @@ flowchart LR
 2. **Архивация событий старше месяца, строки по ~8 КБ:** тянем старые (`updatedAt < now−1мес`, `asc`), набираем полную строку → `BrokerEventsArchive`. «Хвост» ждёт. Порядок «архив → удаление по `id`» — без потерь; полнота — по «остался невлезший кандидат».
 3. **Выгрузка в файлы (tier 3), только у водораздела** (ADR-0007): при **700k** строк главный джоб лишь **оркеструет** — держим **200k** новейших оперативными, старые **500k** отдаём **10 независимым джобам** по непересекающимся диапазонам `batchFrom` (границы — offset-семплингом в одном потоке; стабильны под удалением). Джоб выгрузки пишет файлы **~40 МБ (≈5k строк)** — не один на слайс (400 МБ не влезли бы в 60 с/память); файл = **плоский массив событий** (`flatMap`, не массив батчей); имя — с датами первого/последнего события; store-then-delete. Всё под лимиты (60 с/джоб, 1000/запрос). В норме no-op.
 
-### Остальные таблицы — в проработке
+### Топология хранилища (все таблицы согласованы)
 
 ```mermaid
 flowchart LR
@@ -120,18 +119,14 @@ flowchart LR
   Ar["BrokerEventsArchive ✓ (инлайн ~8 КБ)"]
   Fs[("ctx.storage · файлы (tier 3)")]
   De["BrokerDeliveries ✓"]
-  Su["BrokerSubscriptions"]
-  Au["BrokerOpsAudit"]
-  M -.-> Su
   M --> Ev
   Ev -->|"retention, >1 мес"| Ar
   Ar -.->|"tier 3 у водораздела"| Fs
   M --> De
   Ev --> De
-  M -.-> Au
 ```
 
-`BrokerSubscriptions`, `BrokerOpsAudit` — поля ещё не согласованы (пунктир = намеченная связь). `BrokerContracts` намеренно исключена: контракт `payload` — соглашение продюсера и подписчиков в коде, брокер его не хранит и не валидирует (§1, §8 spec.md).
+Отдельных таблиц под контракты, подписки и операционный аудит **нет**: контракт `payload` — вне брокера (§1, §8 spec.md); подписка — whitelist по типу на строке модуля (роутинг по типу, продюсер анонимен, ADR-0008); операционная история — системные `broker.*` события в журнале `BrokerEvents` (ADR-0009).
 
 ---
 
@@ -153,10 +148,10 @@ sequenceDiagram
 
   M->>G: registerModule(moduleKey, allowedPublish, allowedSubscribe)<br/>internal app.function / external POST /broker/register
   Note over G: source по каналу запроса<br/>app.function → internal<br/>app.html / HTTP → external
-  G->>G: валидация заявки<br/>(синтаксис glob)
+  G->>G: валидация заявки<br/>(посегментный glob: сегмент = литерал или *)
   G->>G: случайный токен → hash = SHA-256(...)
-  G->>DB: upsert(source, authTokenHash, enabled)
-  Note over DB: internal → enabled = true<br/>external → enabled = false + модерация
+  G->>DB: upsert(source, authTokenHash, status)
+  Note over DB: internal → status = active<br/>external → status = onModeration + модерация
   G-->>M: token (один раз)
   Note over M,G: далее каждый вызов шлёт token → гейтвей сверяет hash
 ```
@@ -171,10 +166,10 @@ sequenceDiagram
 flowchart TB
   U["updatePublishTypes / updateSubscribeTypes<br/>(полная замена + токен)"] --> A{"токен ↔ authTokenHash?"}
   A -->|"нет"| X["отказ"]
-  A -->|"да"| V["валидация: синтаксис glob"]
+  A -->|"да"| V["валидация: посегментный glob<br/>(частично-сегментные / регэксп отвергаются)"]
   V --> S{"source"}
   S -->|"internal"| AP["применить сразу"]
-  S -->|"external · расширение"| MOD["enabled=false (ре-модерация);<br/>новый набор записан, модуль приостановлен"]
+  S -->|"external · расширение"| MOD["status=reModeration;<br/>новый набор записан, модуль приостановлен"]
   S -->|"external · сужение"| AP
   AP --> EV["запись набора + событие-история"]
   MOD --> EV
@@ -185,24 +180,28 @@ flowchart TB
 
 ### §5.5 Удаление регистрации (черновик)
 
-`deleteModule` (`POST /broker/delete`) — токен-гейт, только по существующей строке, **без модерации** (сокращение присутствия, не расширение прав). Строка удаляется, факт — событием-историей; `moduleKey` **освобождается** → можно занять заново через `registerModule`. Админ-снятие — это `adminDisabled`, не `deleteModule`.
+`deleteModule` (`POST /broker/delete`) — токен-гейт, только по существующей строке, **без модерации** (сокращение присутствия, не расширение прав). Строка удаляется, факт — `broker.*` событием-историей; `moduleKey` **освобождается** → можно занять заново через `registerModule`. Админ-снятие — это статус `disabled`, не `deleteModule`.
 
-**Каскад при удалении (решено):** события остаются (журнал/архив, строковый `producerModuleKey`); **все** доставки с `subscriberModuleKey` модуля удаляются независимо от статуса (иначе мисатрибуция при повторном занятии освободившегося ключа); подписки удаляются (детали — при дизайне `BrokerSubscriptions`).
+**Каскад при удалении (решено):** события остаются (журнал/архив, строковый `producerModuleKey`); **все** доставки с `subscriberModuleKey` модуля удаляются независимо от статуса (иначе мисатрибуция при повторном занятии освободившегося ключа); подписки отдельно не каскадируются — это whitelist на строке `BrokerModules`, удаляется вместе с ней (ADR-0008).
 
-Жизненный цикл: `registerModule` (create) → `updatePublishTypes` / `updateSubscribeTypes` (mutate) → `deleteModule` (remove, освобождает ключ).
+Жизненный цикл: `registerModule` (create) → `updatePublishTypes` / `updateSubscribeTypes` (mutate) → `disableModule` / `enableModule` (админ: `active`↔`disabled`, §5.7) → `deleteModule` (remove, освобождает ключ).
 
 ### §5.6 Модерация
 
-**Админ-операции** (`requireAccountRole admin`, не токен модуля). Не модульный API — вызываются из админ-страницы брокера через `.run()` (роут `// @shared-route`), без `app.function` и без HTTP-эндпоинта для модулей. Очередь = строки с `enabled = false` (только `external`); отдельной таблицы и pending-полей нет. Под модерацию попадают: первичная регистрация (§5.2) и ре-модерация после расширения типов (§5.3/§5.4). Идентификатор — `moduleKey`.
+**Админ-операции** (`requireAccountRole admin`, не токен модуля). Не модульный API — вызываются из админ-страницы брокера через `.run()` (роут `// @shared-route`), без `app.function` и без HTTP-эндпоинта для модулей. Очередь = строки со статусом `onModeration` или `reModeration` (только `external`); отдельной таблицы и полей ожидания нет. Под модерацию попадают: первичная регистрация (§5.2 → `onModeration`) и ре-модерация после расширения типов (§5.3/§5.4 → `reModeration`). Идентификатор — `moduleKey`.
 
 ```mermaid
 flowchart LR
-  L["listPendingModeration<br/>where source=external, enabled=false"] --> Q[["приостановленные external-модули"]]
-  Q --> AP["approveModeration → enabled=true<br/>(на текущем записанном наборе)"]
-  Q --> DC["declineModeration<br/>первичная рег. → удаление, ключ свободен<br/>ре-модерация → остаётся enabled=false"]
+  L["listPendingModeration<br/>where status ∈ {onModeration, reModeration}"] --> Q[["модули на модерации"]]
+  Q --> AP["approveModeration → status=active<br/>(на текущем записанном наборе)"]
+  Q --> DC["declineModeration<br/>onModeration → удаление, ключ свободен<br/>reModeration → остаётся reModeration"]
   AP --> EV["событие-история"]
   DC --> EV
 ```
+
+### §5.7 Выключение / включение (админ)
+
+Помимо модерации — админ-операции `disableModule` (`active`→`disabled`, только из `active`) и `enableModule` (`disabled`→`active`, на текущем наборе). Выключенный модуль не участвует: публикации отклоняются, fan-out его пропускает (доставки — только `status=active`); уже созданные доставки ждут включения. Переходы — `broker.*` события.
 
 ---
 
@@ -214,12 +213,12 @@ flowchart LR
 flowchart TB
   subgraph LIFE["Жизненный цикл"]
     B1["Ротация токена<br/>(ре-регистрация решена: запрет)"]
-    B2["Полный флоу enabled / adminDisabled"]
+    B2["Статус-модель модуля — решена (onModeration/active/reModeration/disabled, ADR-0010)"]
     B3["Сверка токена в §5 / §7"]
-    B4["Каскад deleteModule на подписки/доставки (§5.5)<br/>(события остаются — решено; детали зависят от таблиц)"]
+    B4["Каскад deleteModule: доставки удаляются, события остаются (§5.5)<br/>подписки — поле на модуле, уходят с ним (ADR-0008)"]
   end
   subgraph TBL["Таблицы (Modules ✓, Events ✓, Deliveries ✓, EventsArchive ✓)"]
-    C1["Contracts · Subscriptions · OpsAudit"]
+    C1["Contracts / Subscriptions / OpsAudit — НЕ таблицы<br/>(контракт вне брокера; подписка = whitelist на модуле ADR-0008; аудит = broker.* события ADR-0009)"]
     C2["retention/архивация решена (§3.5)"]
   end
 ```
