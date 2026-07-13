@@ -77,13 +77,11 @@ flowchart LR
 | `schemaVersion` | Версия схемы `payload` внутри типа (целое, default `1`). Отдельным полем — для `where`-фильтра по версии **по индексу** (внутрь `any`-payload Heap тоже умеет, но неиндексированным сканом JSONB — медленнее, ADR-0003); непрозрачный тег, брокер контракт по `(eventType, schemaVersion)` не хранит и не проверяет (§1, §8). Бамп ≠ новый тип (вайтлисты/модерация не трогаются). ADR-0003. |
 | `producerModuleKey` | `moduleKey` продюсера обычной строкой (не `RefLink`, §5.5). Multi-producer: один тип — у разных модулей. |
 | `payload` | Данные факта (JSON). Структуру по `(eventType, schemaVersion)` согласуют продюсер и подписчики в своём коде — вне брокера (§1, §8). |
-| `idempotencyKey` | Дедуп публикации от продюсера (опц., пусто → без дедупа). Уникальность `(producerModuleKey, idempotencyKey)`, проверка `runWithExclusiveLock` (§5). |
-| `seq` | Монотонный номер публикации — строгий тотальный порядок (тай-брейк к `createdAt`). Тип `Heap.Number` (**не `Integer`**): точно до 2^53, миллиарды с запасом. Под глобальным замком (§5). |
-| `dispatchedAt` | `number \| null`. «fan-out завершён» — ставится **после всех** строк `BrokerDeliveries`; `null` → рассылка не завершена (восстановление повторяет fan-out). Единственное мутируемое поле. |
+| `idempotencyKey` | Дедуп публикации от продюсера (опц., пусто → без дедупа). Уникальность `(producerModuleKey, idempotencyKey)`, проверка `runWithExclusiveLock` (§5). || `dispatchedAt` | `number \| null`. «fan-out завершён» — ставится **после всех** строк `BrokerDeliveries`; `null` → рассылка не завершена (восстановление повторяет fan-out). Единственное мутируемое поле. |
 
 Системные поля: `id` — идентификатор события (на него ссылаются `BrokerDeliveries` строкой); `createdAt` — момент публикации (отметка для best-effort порядка); `updatedAt` не используется (журнал неизменяем).
 
-Служебные поля публикации (объявлены выше; сам flow publish/fan-out — §5): дедуп события по `(producerModuleKey, idempotencyKey)`; `dispatchedAt` ставится после ВСЕХ доставок, иначе восстановительный джоб повторяет fan-out; **повтор fan-out идемпотентен по ключу ДОСТАВКИ `(eventId, subscriberModuleKey)`, а не по `idempotencyKey` события** (два слоя идемпотентности, разные ключи). Открыто: область `seq` (глобальный vs по `eventType`) и цена сериализации. История операций — **решена**: системные `broker.*` события в этом же журнале (продюсер — внутренний код брокера, сентинел `producerModuleKey=broker`, в обход `assertCanPublish`; namespace `broker.` и `moduleKey=broker` зарезервированы — публиковать модулям нельзя, подписываться можно), фан-аут единообразный, отдельной таблицы нет (ADR-0009).
+Служебные поля публикации (объявлены выше; сам flow — `publishEvent` + fan-out-дренер, §5.8): дедуп события по `(producerModuleKey, idempotencyKey)`; `dispatchedAt` ставит **дренер** после ВСЕХ доставок, fan-out **асинхронный** (дренер сканирует `dispatchedAt=null`, он же recovery); **повтор fan-out идемпотентен по ключу ДОСТАВКИ `(eventId, subscriberModuleKey)`, а не по `idempotencyKey` события** (два слоя идемпотентности, разные ключи). Порядок — best-effort по `createdAt` (счётчик `seq` убран, глобальный лок не окупает). История операций — **решена**: системные `broker.*` события в этом же журнале (продюсер — внутренний код брокера, сентинел `producerModuleKey=broker`, в обход `assertCanPublish`; namespace `broker.` и `moduleKey=broker` зарезервированы — публиковать модулям нельзя, подписываться можно), фан-аут единообразный, отдельной таблицы нет (ADR-0009).
 
 ### `BrokerDeliveries` — материализованные доставки (согласована)
 
@@ -202,6 +200,23 @@ flowchart LR
 ### §5.7 Выключение / включение (админ)
 
 Помимо модерации — админ-операции `disableModule` (`active`→`disabled`, только из `active`) и `enableModule` (`disabled`→`active`, на текущем наборе). Выключенный модуль не участвует: публикации отклоняются, fan-out его пропускает (доставки — только `status=active`); уже созданные доставки ждут включения. Переходы — `broker.*` события.
+
+### §5.8 publishEvent + fan-out-дренер
+
+Центральная операция. **Двухфазная, fan-out асинхронный** (поглощает всплески публикаций без backpressure/потерь):
+
+```mermaid
+flowchart LR
+  P["продюсер"] -->|"publishEvent (app.function / POST)"| PE["Фаза 1: auth + status=active + assertCanPublish<br/>дедуп (idempotencyKey) → запись события (dispatchedAt=null)<br/>триггер дренера asap → вернуть eventId"]
+  PE -.->|"scheduleJobAsap"| DR["Фаза 2: fan-out-дренер (app.job)"]
+  DR --> SC["скан dispatchedAt=null (createdAt asc, ≤1000)"]
+  SC --> FO["резолв активных подписчиков (status=active + $includes/$any)<br/>создать BrokerDeliveries (идемпотентно по (eventId, subscriberModuleKey))<br/>проставить dispatchedAt → push-триггер"]
+  FO -->|"backlog не пуст"| SC
+```
+
+- Фаза 1 — минимум синхронной работы (запись + дедуп); скачок запросов не транслируется в скачок fan-out на Heap.
+- Дренер = основной путь fan-out **и** recovery (незавершённое = `dispatchedAt=null`, подхватится). Отдельной `@app/jobs`-очереди на fan-out не нужно — очередь это сам журнал (`dispatchedAt=null`).
+- Порядок best-effort по `createdAt`; auth: external — токен, internal — платформенный caller-context. Bulk — чанкует **продюсер** своей custom job queue (`005-jobs.md`); batch-publish пока не вводится (иначе с кэпом / брокерской очередью приёма).
 
 ---
 
