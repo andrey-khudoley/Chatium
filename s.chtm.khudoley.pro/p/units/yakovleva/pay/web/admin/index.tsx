@@ -1,9 +1,9 @@
 // @shared
 import { jsx } from '@app/html-jsx'
-import { requireAccountRole } from '@app/auth'
+import { requireRealUser } from '@app/auth'
 import { genSocketId } from '@app/socket'
 import AdminPage from '../../pages/AdminPage.vue'
-import { loginPageRoute } from '../login'
+import { htmlRedirect } from '../../lib/htmlRedirect'
 import { getPreloaderStyles, getPreloaderScript } from '../../lib/preloader'
 import { getLogLevelForPage, getLogLevelScript } from '../../lib/logLevel'
 import { getAdminLogsSocketId } from '../../lib/logger.lib'
@@ -105,37 +105,36 @@ const adminPageStyles = `
 `
 
 export const adminPageRoute = app.html('/', async (ctx, req) => {
+  // Доступ: строго Admin. Различаем два случая провала, иначе — бесконечный цикл
+  // редиректов (авторизованный не-Admin, отправленный на /web/login, уже залогинен,
+  // /s/auth/signin сразу возвращает его сюда, роль снова не проходит):
+  //   - Анонимный / не авторизован → /s/auth/signin.
+  //   - Авторизован, но роль не Admin → /web/forbidden (страница 403, без петли).
   try {
-    requireAccountRole(ctx, 'Admin')
-    await loggerLib.writeServerLog(ctx, {
-      severity: 6,
-      message: `[${LOG_PATH}] requireAccountRole пройдена`,
-      payload: {}
-    })
+    requireRealUser(ctx)
   } catch (error) {
     await loggerLib.writeServerLog(ctx, {
       severity: 4,
-      message: `[${LOG_PATH}] Редирект на логин: требуется роль Admin`,
+      message: `[${LOG_PATH}] signin_redirect: требуется авторизация`,
       payload: { error: String(error), backUrl: req.url }
     })
-    const loginUrl = loginPageRoute.url() + `?back=${encodeURIComponent(req.url)}`
-    return (
-      <html>
-        <head>
-          <title>Вход</title>
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <meta charset="UTF-8" />
-          <script src="/s/metric/clarity.js"></script>
-          <meta http-equiv="refresh" content={`0; url=${loginUrl}`} />
-          <script>{`window.location.href = '${loginUrl}'`}</script>
-          <style>{adminPageStyles}</style>
-        </head>
-        <body>
-          <p>Перенаправление на страницу входа...</p>
-        </body>
-      </html>
-    )
+    return htmlRedirect(ctx, `/s/auth/signin?back=${encodeURIComponent(req.url)}`)
   }
+
+  if (!(ctx.user?.is('Admin') ?? false)) {
+    await loggerLib.writeServerLog(ctx, {
+      severity: 4,
+      message: `[${LOG_PATH}] forbidden_redirect: требуется роль Admin`,
+      payload: { userId: ctx.user?.id ?? null }
+    })
+    return htmlRedirect(ctx, getFullUrl(ROUTES.forbidden))
+  }
+
+  await loggerLib.writeServerLog(ctx, {
+    severity: 6,
+    message: `[${LOG_PATH}] requireAccountRole пройдена`,
+    payload: {}
+  })
 
   const indexUrl = getFullUrl(ROUTES.index)
   const profileUrl = getFullUrl(ROUTES.profile)
