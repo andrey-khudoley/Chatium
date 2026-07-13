@@ -23,6 +23,7 @@
   - [Периодическая очистка](#периодическая-очистка)
 - [Лучшие практики](#лучшие-практики)
 - [Отладка и мониторинг](#отладка-и-мониторинг)
+- [Custom Job Queue — очереди кастомных задач](#custom-job-queue--очереди-кастомных-задач)
 
 ---
 
@@ -1093,6 +1094,108 @@ const taskIdString = setting.value
 const taskIdNumber = parseInt(taskIdString, 10) // 4. Конвертируем в число
 await cancelScheduledJob(ctx, taskIdNumber) // 5. Отменяем
 ```
+
+---
+
+## Custom Job Queue — очереди кастомных задач
+
+Отдельный механизм в `@app/jobs` для **асинхронной пакетной обработки**: задачи **накапливаются** в именованной очереди и обрабатываются воркером **по одной** (FIFO, с ограничением конкурентности) — в отличие от `scheduleJob*`, где каждая задача планируется на конкретное время. Use-case: импорт больших пачек, массовое создание, генерация контента, bulk-операции.
+
+### API (`@app/jobs`)
+
+Точные тайпинги (из `node_modules/@app/jobs/index.d.ts`):
+
+```typescript
+export declare function pushToCustomJobQueue(
+  ctx: RichUgcCtx, queueName: string, path: string,
+  payload: JSONInputObject, priority: number,
+): Promise<void>
+
+export declare function pushToCustomJobQueueMulti(
+  ctx: RichUgcCtx, queueName: string, ugcJobCallPath: string,
+  ugcJobCallPayloads: Array<JSONInputObject>,
+  scheduleParams: { priority?: number },
+): Promise<void>
+
+export declare function pickFromCustomJobQueue(
+  ctx: RichUgcCtx, queueName: string, count: number,
+): Promise<Array<[string, JSONObject]>>
+
+export declare function deleteFromCustomJobQueue(ctx: RichUgcCtx, queueName: string, id: string): Promise<void>
+
+export declare function scheduleNextCustomJobQueueRunAfter(
+  ctx: RichUgcCtx, queueName: string, amount: number, unit: 'seconds' | 'minutes',
+): Promise<void>
+```
+
+| Функция | Назначение |
+|---|---|
+| `pushToCustomJobQueue(ctx, queueName, path, payload, priority)` | Добавить **одну** задачу. `path` = `worker.path()`; `priority` — чем больше, тем выше (типично `1e3`) |
+| `pushToCustomJobQueueMulti(ctx, queueName, path, payloads[], { priority? })` | **Пакетное** добавление массива задач |
+| `pickFromCustomJobQueue(ctx, queueName, count)` → `Array<[id, payload]>` | Забрать (заблокировать) до `count` задач; в проде всегда `1`. Пусто → `[]` |
+| `deleteFromCustomJobQueue(ctx, queueName, id)` | Удалить обработанную задачу по `id` от `pick` |
+| `scheduleNextCustomJobQueueRunAfter(ctx, queueName, amount, 'seconds' \| 'minutes')` | Запланировать следующий тик воркера; в проде `(…, 0, 'seconds')` |
+
+### Воркер (worker)
+
+`app.job('/')`, принимающий `queueName` в `params`. На каждый тик: забрать 1 задачу → обработать → **всегда** удалить (даже при ошибке) → запланировать следующий тик:
+
+```typescript
+import { pickFromCustomJobQueue, deleteFromCustomJobQueue, scheduleNextCustomJobQueueRunAfter } from '@app/jobs'
+
+export const myWorker = app.job('/', async (ctx, params: { queueName: string }) => {
+  const QUEUE_NAME = params.queueName
+  const task = await pickFromCustomJobQueue(ctx, QUEUE_NAME, 1).then((r) => r[0])
+  if (!task) {
+    ctx.account.log('[MyWorker] No tasks', { level: 'info' })
+    return // очередь пуста → НЕ перепланируем
+  }
+  const [taskId, taskData] = task as [string, MyTask]
+  try {
+    // --- бизнес-логика ---
+    await deleteFromCustomJobQueue(ctx, QUEUE_NAME, taskId)
+  } catch (error) {
+    ctx.account.log('[MyWorker] Error', { level: 'error', err: error as any, json: { taskId } })
+    await deleteFromCustomJobQueue(ctx, QUEUE_NAME, taskId) // удаляем ДАЖЕ при ошибке
+  } finally {
+    await scheduleNextCustomJobQueueRunAfter(ctx, QUEUE_NAME, 0, 'seconds')
+  }
+})
+```
+
+### Продюсер (producer)
+
+Любой роут, добавляющий задачи. После добавления **обязательно** запускает воркер через `scheduleNext…`:
+
+```typescript
+import { pushToCustomJobQueueMulti, scheduleNextCustomJobQueueRunAfter } from '@app/jobs'
+import { myWorker } from '../jobs/my-worker'
+
+const QUEUE_NAME = `my-feature-${entityId}` // префикс фичи + id сущности
+const tasks = items.map((item) => ({ entityId: item.id, someData: item.data }))
+await pushToCustomJobQueueMulti(ctx, QUEUE_NAME, myWorker.path(), tasks, { priority: 1e3 })
+await scheduleNextCustomJobQueueRunAfter(ctx, QUEUE_NAME, 0, 'seconds') // запустить воркер
+```
+
+### Важные правила
+
+1. **Удаляй задачу всегда** — и при успехе, и при ошибке (`catch`/`finally`). Иначе она остаётся заблокированной и очередь застревает.
+2. **Планируй следующий тик** после обработки (в `finally`), пока очередь не опустеет.
+3. **Не планируй тик, если очередь пуста** (`pick` вернул `[]`) — воркер снова стартует продюсер при добавлении задач.
+4. **После `push`/`pushMulti`** вызывай `scheduleNextCustomJobQueueRunAfter(ctx, QUEUE_NAME, 0, 'seconds')`, чтобы стартовать воркер.
+5. **Payload — только сериализуемое** (id, строки, числа, простые объекты). Не клади записи Heap — передавай `id` и перечитывай данные в воркере.
+6. **Имя очереди** — префикс фичи + id сущности: `scenario-import-{autowebinarId}`, `bulk-schedule-{bulkTaskId}`.
+7. Логируй ключевые точки через `ctx.account.log(...)` (взятие / ошибка / пусто).
+
+### Custom Job Queue vs Delayed Job
+
+| | `app.job` + `scheduleJob*` | Custom Job Queue |
+|---|---|---|
+| Когда | В конкретное время / через N | Сразу, воркером, по мере накопления |
+| Конкурентность | Каждая задача отдельно | 1 задача за тик (типичный паттерн) |
+| Массовость | Планировать каждую | `pushToCustomJobQueueMulti` пачкой |
+| Порядок | Не гарантирован | FIFO |
+| Повтор | Вручную | `scheduleNextCustomJobQueueRunAfter` |
 
 ---
 
