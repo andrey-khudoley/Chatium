@@ -20,10 +20,12 @@ export const SITE_CSS = `
   --ok: #2f7d5b;
   --shadow: 0 1px 2px rgba(27,26,25,.04), 0 8px 30px rgba(27,26,25,.06);
   --radius: 16px;
+  --shell-pad: 24px;
 }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body {
   background: var(--bg);
   color: var(--ink);
@@ -32,11 +34,17 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  overflow-wrap: break-word;
 }
 h1, h2, h3 { font-family: 'Lora', Georgia, 'Times New Roman', serif; font-weight: 600; letter-spacing: -.01em; line-height: 1.15; margin: 0; }
 a { color: var(--accent-ink); text-decoration: none; }
 
-.kp-shell { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+/* Боковые отступы учитывают вырез/скругления экрана (ландшафт на iPhone). */
+.kp-shell {
+  max-width: 1080px; margin: 0 auto;
+  padding-left: max(var(--shell-pad), env(safe-area-inset-left));
+  padding-right: max(var(--shell-pad), env(safe-area-inset-right));
+}
 
 /* ── header / tabs ── */
 .kp-header {
@@ -55,7 +63,7 @@ a { color: var(--accent-ink); text-decoration: none; }
   font: inherit; font-weight: 600; font-size: 14px; color: var(--ink-soft);
   padding: 8px 14px; border-radius: 999px; transition: all .15s ease; white-space: nowrap;
 }
-.kp-tab:hover { background: var(--surface); color: var(--ink); }
+@media (hover: hover) { .kp-tab:hover { background: var(--surface); color: var(--ink); } }
 .kp-tab.is-active { background: var(--ink); color: #fff; }
 
 /* ── language switcher ── */
@@ -65,7 +73,7 @@ a { color: var(--accent-ink); text-decoration: none; }
   font: inherit; font-weight: 700; font-size: 12px; letter-spacing: .05em; color: var(--muted);
   padding: 6px 8px; border-radius: 8px; transition: all .15s ease;
 }
-.kp-lang:hover { background: var(--surface); color: var(--ink); }
+@media (hover: hover) { .kp-lang:hover { background: var(--surface); color: var(--ink); } }
 .kp-lang.is-active { background: var(--accent-wash); color: var(--accent-ink); }
 
 /* ── hero ── */
@@ -92,7 +100,7 @@ a { color: var(--accent-ink); text-decoration: none; }
 .kp-layer-sub { color: var(--muted); font-size: 14px; margin: 2px 0 0; padding-left: 62px; }
 .kp-agents { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; margin-top: 20px; }
 .kp-agent { border: 1px solid var(--line); border-radius: 12px; padding: 14px 15px; background: var(--surface-2); transition: border-color .15s ease, transform .15s ease; }
-.kp-agent:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+@media (hover: hover) { .kp-agent:hover { border-color: var(--line-strong); transform: translateY(-2px); } }
 .kp-agent-head { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; }
 .kp-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; font-weight: 700; color: var(--accent-ink); background: var(--accent-wash); border: 1px solid var(--accent-soft); padding: 2px 7px; border-radius: 6px; }
 .kp-agent-name { font-weight: 700; font-size: 14.5px; }
@@ -128,8 +136,8 @@ a { color: var(--accent-ink); text-decoration: none; }
 .kp-qletter { font-family: 'Lora', serif; font-weight: 600; font-size: 18px; color: var(--accent); background: var(--accent-wash); border: 1px solid var(--accent-soft); width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; }
 .kp-qblock-head h3 { font-size: 19px; }
 .kp-q { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; margin-bottom: 12px; box-shadow: var(--shadow); overflow: hidden; }
-.kp-q-top { display: flex; align-items: flex-start; gap: 12px; padding: 18px 20px; cursor: pointer; user-select: none; }
-.kp-q-top:hover { background: var(--surface-2); }
+.kp-q-top { display: flex; align-items: flex-start; gap: 12px; padding: 18px 20px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+@media (hover: hover) { .kp-q-top:hover { background: var(--surface-2); } }
 .kp-q-text { flex: 1; }
 .kp-q-code { font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700; color: var(--accent-ink); }
 .kp-q-body { font-size: 15px; color: var(--ink); margin-top: 3px; }
@@ -162,7 +170,7 @@ a { color: var(--accent-ink); text-decoration: none; }
   appearance: none; border: 0; cursor: pointer; font: inherit; font-weight: 700; font-size: 14px;
   color: #fff; background: var(--accent); padding: 11px 22px; border-radius: 10px; transition: background .15s ease, transform .05s ease;
 }
-.kp-btn:hover { background: var(--accent-ink); }
+@media (hover: hover) { .kp-btn:hover { background: var(--accent-ink); } }
 .kp-btn:active { transform: translateY(1px); }
 .kp-btn:disabled { opacity: .55; cursor: default; }
 .kp-form-msg { font-size: 13px; font-weight: 600; }
@@ -173,16 +181,118 @@ a { color: var(--accent-ink); text-decoration: none; }
 .kp-footer { border-top: 1px solid var(--line); padding: 26px 0 40px; color: var(--muted); font-size: 13px; }
 .kp-footer b { color: var(--ink-soft); }
 
+/* ═══════════════  ШАПКА: УЗКИЕ ЭКРАНЫ  ═══════════════
+   Однорядной шапке нужно ~924px (бренд 215 + вкладки 510 + языки 117 + отступы).
+   Ниже этого перестраиваем в два ряда, иначе контент уезжает за экран. */
+@media (max-width: 940px) {
+  .kp-header-in { height: auto; flex-wrap: wrap; gap: 8px 10px; padding-top: 9px; padding-bottom: 9px; }
+  .kp-brand { flex: 1 1 auto; min-width: 0; gap: 9px; }
+  .kp-brand-dot { flex-shrink: 0; }
+  .kp-brand-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kp-langs { margin-left: auto; padding-left: 10px; flex-shrink: 0; }
+  .kp-lang { min-height: 36px; display: inline-flex; align-items: center; }
+
+  /* Вкладки — горизонтальная лента от края до края (компенсируем padding шелла),
+     со скрытым скроллбаром и снапом. Полные подписи сохраняются. */
+  .kp-tabs {
+    order: 3; flex: 1 0 100%; gap: 6px;
+    overflow-x: auto; overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none; -ms-overflow-style: none;
+    margin-left: calc(-1 * max(var(--shell-pad), env(safe-area-inset-left)));
+    margin-right: calc(-1 * max(var(--shell-pad), env(safe-area-inset-right)));
+    padding-left: max(var(--shell-pad), env(safe-area-inset-left));
+    padding-right: max(var(--shell-pad), env(safe-area-inset-right));
+  }
+  .kp-tabs::-webkit-scrollbar { display: none; }
+  .kp-tab {
+    flex: 0 0 auto; scroll-snap-align: start;
+    min-height: 38px; display: inline-flex; align-items: center;
+  }
+}
+
+/* ═══════════════  МОБИЛЬНЫЕ  ═══════════════ */
 @media (max-width: 720px) {
-  .kp-shell { padding: 0 16px; }
-  .kp-header-in { height: 56px; gap: 10px; }
-  .kp-tabs { gap: 2px; }
-  .kp-tab { padding: 7px 10px; font-size: 13px; }
-  .kp-langs { margin-left: 8px; padding-left: 8px; }
-  .kp-lang { padding: 5px 5px; font-size: 11px; }
-  .kp-hero { padding: 36px 0 28px; }
+  :root { --shell-pad: 16px; }
+
+  .kp-brand-dot { width: 8px; height: 8px; box-shadow: 0 0 0 3px var(--accent-wash); }
+  .kp-brand-name { font-size: 13.5px; }
+  .kp-lang { padding: 8px; font-size: 11.5px; }
+  .kp-tab { padding: 9px 13px; font-size: 13px; }
+
+  /* Hero */
+  .kp-hero { padding: 30px 0 24px; }
+  .kp-eyebrow { font-size: 11px; }
+  .kp-eyebrow::before { width: 20px; }
+  .kp-hero h1 { font-size: clamp(26px, 8vw, 34px); margin-top: 14px; max-width: none; }
+
+  /* Секции */
+  .kp-view { padding: 26px 0 52px; }
+  .kp-section-head { margin-bottom: 20px; }
+  .kp-section-head h2 { font-size: clamp(21px, 5.6vw, 26px); }
+  .kp-lead { margin-bottom: 22px; }
+
+  /* Архитектура */
+  .kp-layer { padding: 18px 16px; border-radius: 14px; margin-bottom: 14px; }
+  .kp-layer-top { gap: 12px; margin-bottom: 4px; }
+  .kp-layer-idx { font-size: 24px; min-width: 30px; }
+  .kp-layer-top h3 { font-size: 18px; }
   .kp-layer-sub { padding-left: 0; }
-  .kp-agents { grid-template-columns: 1fr; }
+  .kp-agents { grid-template-columns: 1fr; gap: 10px; margin-top: 16px; }
+  .kp-agent-head { align-items: flex-start; gap: 8px; }
+  .kp-agent-name { flex: 1 1 auto; min-width: 0; }
+  .kp-code, .kp-kind { flex-shrink: 0; }
+  .kp-group-title { margin-top: 18px; }
+
+  /* КП */
+  .kp-kpsec { padding: 18px 16px; border-radius: 14px; }
+  .kp-kpsec-head { gap: 10px; margin-bottom: 12px; }
+  .kp-kpsec-n { width: 30px; height: 30px; min-width: 30px; font-size: 15px; border-radius: 8px; }
+  .kp-kpsec-head h3 { font-size: 17.5px; }
+
+  /* Вопросы */
+  .kp-qblock { margin-bottom: 24px; }
+  .kp-qblock-head { gap: 10px; }
+  .kp-qletter { width: 32px; height: 32px; min-width: 32px; font-size: 16px; }
+  .kp-qblock-head h3 { font-size: 17px; }
+  .kp-q-top { padding: 14px; gap: 10px; }
+  .kp-q-body { font-size: 14.5px; }
+  .kp-q-count { font-size: 11px; padding: 2px 8px; }
+  .kp-q-panel { padding: 14px; }
+  .kp-answer-meta { flex-wrap: wrap; gap: 6px; }
   .kp-answer-date { margin-left: 0; }
+
+  /* Форма: кнопка на всю ширину, палец попадает гарантированно.
+     font-size 16px обязателен — иначе iOS Safari зумит страницу при фокусе. */
+  .kp-textarea { min-height: 96px; font-size: 16px; }
+  .kp-form-foot { flex-direction: column; align-items: stretch; gap: 10px; }
+  .kp-btn { width: 100%; min-height: 46px; font-size: 15px; }
+  .kp-form-msg { text-align: center; }
+
+  .kp-footer { padding: 22px 0 max(32px, env(safe-area-inset-bottom)); }
+}
+
+/* Ландшафт телефона: экран низкий, и двухрядная липкая шапка съедает четверть
+   высоты. Поджимаем её и вертикальные отступы, чтобы осталось место контенту. */
+@media (max-width: 940px) and (max-height: 500px) {
+  .kp-header-in { padding-top: 5px; padding-bottom: 5px; gap: 5px 10px; }
+  .kp-tab { min-height: 32px; padding-top: 5px; padding-bottom: 5px; }
+  .kp-lang { min-height: 30px; padding-top: 5px; padding-bottom: 5px; }
+  .kp-hero { padding: 20px 0 16px; }
+  .kp-hero h1 { margin-top: 10px; }
+  .kp-view { padding: 18px 0 40px; }
+}
+
+/* Узкие телефоны (iPhone SE и подобные).
+   Поджимаем бренд и языки так, чтобы они оставались в одном ряду:
+   иначе языки уезжают на третий ряд и шапка съедает ~23% экрана. */
+@media (max-width: 380px) {
+  .kp-header-in { gap: 8px; }
+  .kp-brand { gap: 7px; }
+  .kp-brand-name { font-size: 12px; letter-spacing: -.02em; }
+  .kp-langs { margin-left: auto; padding-left: 7px; gap: 0; }
+  .kp-lang { padding: 8px 5px; font-size: 10.5px; letter-spacing: .02em; }
+  .kp-tab { padding: 9px 11px; font-size: 12.5px; }
+  .kp-layer, .kp-kpsec { padding: 16px 14px; }
 }
 `
