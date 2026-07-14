@@ -6,16 +6,15 @@ import { ALL_QUESTION_IDS } from '../../shared/content'
 const LOG_PATH = 'api/answers/create'
 
 const MAX_TEXT = 4000
-const MAX_NAME = 120
 
 /**
  * POST — публичный приём ответа на открытый вопрос.
- * Тело: `{ questionId: string; text: string; authorName?: string }`.
+ * Тело: `{ questionId: string; text: string }`.
  *
  * Доступ анонимный: `requireAnyUser` гарантирует наличие пользователя (при
  * необходимости создаёт анонимного), реальную авторизацию не требует —
- * ответить может любой посетитель сайта. Ответ сохраняется в Heap-таблицу
- * `Answers` и привязывается к вопросу через `questionId`.
+ * ответить может любой посетитель сайта, без ввода имени. Ответ сохраняется
+ * в Heap-таблицу `Answers` и привязывается к вопросу через `questionId`.
  *
  * Возвращает `{ success, answer }` при успехе или `{ success: false, error }`.
  */
@@ -24,11 +23,10 @@ export const apiCreateAnswerRoute = app.post('/', async (ctx, req) => {
     const user = await requireAnyUser(ctx)
     const cur: any = user ?? ctx.user ?? {}
 
-    const body = (req.body ?? {}) as { questionId?: unknown; text?: unknown; authorName?: unknown }
+    const body = (req.body ?? {}) as { questionId?: unknown; text?: unknown }
 
     const questionId = typeof body.questionId === 'string' ? body.questionId.trim() : ''
     const rawText = typeof body.text === 'string' ? body.text.trim() : ''
-    const rawName = typeof body.authorName === 'string' ? body.authorName.trim() : ''
 
     if (!questionId || !ALL_QUESTION_IDS.includes(questionId)) {
       ctx.account.log(`[${LOG_PATH}] rejected: unknown question`, {
@@ -47,11 +45,10 @@ export const apiCreateAnswerRoute = app.post('/', async (ctx, req) => {
 
     const text = rawText.slice(0, MAX_TEXT)
 
-    // Имя: из формы, иначе от реального пользователя, иначе — «Гость».
-    let authorName = rawName.slice(0, MAX_NAME)
-    if (!authorName) {
-      authorName = cur.type === 'Real' && cur.displayName ? String(cur.displayName) : 'Гость'
-    }
+    // Имя не запрашивается формой: у реального пользователя берём displayName,
+    // иначе оставляем пустым — клиент отображает вместо него локализованный
+    // бейдж типа автора (гость/участник/бот), см. badge() в SitePage.vue.
+    const authorName = cur.type === 'Real' && cur.displayName ? String(cur.displayName) : ''
 
     const createdAtMs = Date.now()
 

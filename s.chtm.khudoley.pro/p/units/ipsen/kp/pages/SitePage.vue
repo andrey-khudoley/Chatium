@@ -1,19 +1,10 @@
 <script setup lang="ts">
 declare const ctx: any
 
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { apiCreateAnswerRoute } from '../api/answers/create'
-import {
-  META,
-  ARCH_INTRO,
-  ARCH_PLATFORM_NOTE,
-  ARCH_LAYERS,
-  KP_INTRO,
-  KP_SECTIONS,
-  QUESTIONS_INTRO,
-  QUESTION_BLOCKS,
-  ALL_QUESTION_IDS
-} from '../shared/content'
+import { CONTENT, LANGS, ALL_QUESTION_IDS, resolveLang } from '../shared/content'
+import type { Lang } from '../shared/content'
 
 interface AnswerVM {
   id: string
@@ -25,17 +16,24 @@ interface AnswerVM {
 
 const props = defineProps<{
   answersByQuestion: Record<string, AnswerVM[]>
-  userName: string
+  initialLang: string
 }>()
 
-const TABS = [
-  { id: 'arch', label: 'Архитектура' },
-  { id: 'kp', label: 'Коммерческое предложение' },
-  { id: 'questions', label: 'Открытые вопросы' }
-]
-const activeTab = ref('arch')
+// Текущий язык. Начальное значение — от сервера (ctx.lang, см. index.tsx).
+// Переключение мгновенное: весь контент — computed от lang, без перезагрузки.
+const lang = ref<Lang>(resolveLang(props.initialLang))
+const c = computed(() => CONTENT[lang.value])
+const ui = computed(() => c.value.ui)
+
+const TABS = computed(() => [
+  { id: 'kp', label: ui.value.tabKp },
+  { id: 'arch', label: ui.value.tabArch },
+  { id: 'questions', label: ui.value.tabQuestions }
+])
+const activeTab = ref('kp')
 
 // Локальная реактивная карта ответов по вопросам (стартует из SSR-пропсов).
+// Ключи — сквозные id вопросов, поэтому смена языка ответы не сбрасывает.
 const answersMap = reactive<Record<string, AnswerVM[]>>({})
 for (const qid of ALL_QUESTION_IDS) {
   const src = props.answersByQuestion ? props.answersByQuestion[qid] : undefined
@@ -46,28 +44,20 @@ for (const qid of ALL_QUESTION_IDS) {
 interface FormState {
   open: boolean
   text: string
-  name: string
   busy: boolean
   msg: string
   ok: boolean
 }
 const forms = reactive<Record<string, FormState>>({})
 for (const qid of ALL_QUESTION_IDS) {
-  forms[qid] = {
-    open: false,
-    text: '',
-    name: props.userName || '',
-    busy: false,
-    msg: '',
-    ok: false
-  }
+  forms[qid] = { open: false, text: '', busy: false, msg: '', ok: false }
 }
 
 /** Гарантированно возвращает состояние формы вопроса (создаёт при отсутствии). */
 function formOf(qid: string): FormState {
   let f = forms[qid]
   if (!f) {
-    f = { open: false, text: '', name: props.userName || '', busy: false, msg: '', ok: false }
+    f = { open: false, text: '', busy: false, msg: '', ok: false }
     forms[qid] = f
   }
   return f
@@ -110,9 +100,9 @@ function fmtDate(ms: number): string {
 }
 
 function badge(t: string): string {
-  if (t === 'Real') return 'участник'
-  if (t === 'Bot') return 'бот'
-  return 'гость'
+  if (t === 'Real') return ui.value.badgeReal
+  if (t === 'Bot') return ui.value.badgeBot
+  return ui.value.badgeGuest
 }
 
 async function submit(qid: string) {
@@ -120,7 +110,7 @@ async function submit(qid: string) {
   if (f.busy) return
   const text = (f.text || '').trim()
   if (!text) {
-    f.msg = 'Введите текст ответа.'
+    f.msg = ui.value.errEmptyText
     f.ok = false
     return
   }
@@ -129,21 +119,20 @@ async function submit(qid: string) {
   try {
     const res: any = await apiCreateAnswerRoute.run(ctx, {
       questionId: qid,
-      text,
-      authorName: (f.name || '').trim()
+      text
     })
     if (res && res.success && res.answer) {
       answersOf(qid).push(res.answer)
       f.text = ''
       f.ok = true
-      f.msg = 'Спасибо! Ответ добавлен.'
+      f.msg = ui.value.okAdded
     } else {
       f.ok = false
-      f.msg = (res && res.error) || 'Не удалось отправить. Попробуйте ещё раз.'
+      f.msg = (res && res.error) || ui.value.errSend
     }
   } catch (e) {
     f.ok = false
-    f.msg = 'Ошибка сети. Попробуйте ещё раз.'
+    f.msg = ui.value.errNetwork
   } finally {
     f.busy = false
   }
@@ -155,10 +144,7 @@ async function submit(qid: string) {
     <div class="kp-shell kp-header-in">
       <div class="kp-brand">
         <span class="kp-brand-dot"></span>
-        <span>
-          <span class="kp-brand-name">Ипсен · ИИ-агенты</span><br />
-          <span class="kp-brand-sub">коммерческое предложение</span>
-        </span>
+        <span class="kp-brand-name">ИП Худолей Андрей · Ipsen</span>
       </div>
       <nav class="kp-tabs">
         <button
@@ -171,33 +157,86 @@ async function submit(qid: string) {
           {{ t.label }}
         </button>
       </nav>
+      <div class="kp-langs">
+        <button
+          v-for="l in LANGS"
+          :key="l"
+          class="kp-lang"
+          :class="{ 'is-active': lang === l }"
+          @click="lang = l"
+        >
+          {{ l.toUpperCase() }}
+        </button>
+      </div>
     </div>
   </header>
 
   <section class="kp-hero">
     <div class="kp-shell">
-      <span class="kp-eyebrow">{{ META.stage }}</span>
-      <h1>{{ META.title }}</h1>
-      <p>{{ META.subtitle }}</p>
-      <div class="kp-meta">
-        <span class="kp-chip"><b>Клиент:</b> {{ META.client }}</span>
-        <span class="kp-chip"><b>Контакт:</b> {{ META.contact }}</span>
-        <span class="kp-chip"><b>Платформа:</b> {{ META.platform }}</span>
-      </div>
+      <span class="kp-eyebrow">{{ c.meta.stage }}</span>
+      <h1>{{ c.meta.title }}</h1>
     </div>
   </section>
 
-  <!-- ── АРХИТЕКТУРА ── -->
-  <main v-if="activeTab === 'arch'" class="kp-view">
+  <!-- ── КОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ ── -->
+  <main v-if="activeTab === 'kp'" class="kp-view">
     <div class="kp-shell">
       <div class="kp-section-head">
-        <h2>Архитектура: брокер + микросервисы</h2>
-      </div>
-      <div class="kp-lead">
-        <p v-for="(t, i) in ARCH_INTRO" :key="i">{{ t }}</p>
+        <h2>{{ ui.kpHeading }}</h2>
+        <p>{{ c.kpIntro }}</p>
       </div>
 
-      <div v-for="layer in ARCH_LAYERS" :key="layer.id" class="kp-layer">
+      <div v-for="s in c.kpSections" :key="s.n" class="kp-kpsec" :class="{ 'is-locked': s.locked }">
+        <div class="kp-kpsec-head">
+          <span class="kp-kpsec-n">{{ s.n }}</span>
+          <h3>{{ s.title }}</h3>
+          <svg
+            v-if="s.locked"
+            class="kp-kpsec-lock"
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="4" y="11" width="16" height="9" rx="2" />
+            <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+          </svg>
+        </div>
+        <p v-if="s.locked" class="kp-kpsec-locked-note">{{ ui.lockedNote }}</p>
+        <template v-else>
+          <template v-for="(b, bi) in s.blocks" :key="bi">
+            <p v-if="b.type === 'text'">{{ b.text }}</p>
+            <div v-else-if="b.type === 'note'" class="kp-kpnote">{{ b.text }}</div>
+            <ul v-else-if="b.type === 'included'" class="kp-ilist inc">
+              <li v-for="(it, ii) in b.items || []" :key="ii">{{ it }}</li>
+            </ul>
+            <ul v-else-if="b.type === 'excluded'" class="kp-ilist exc">
+              <li v-for="(it, ii) in b.items || []" :key="ii">{{ it }}</li>
+            </ul>
+            <ul v-else-if="b.type === 'list'" class="kp-ilist plain">
+              <li v-for="(it, ii) in b.items || []" :key="ii">{{ it }}</li>
+            </ul>
+          </template>
+        </template>
+      </div>
+    </div>
+  </main>
+
+  <!-- ── АРХИТЕКТУРА ── -->
+  <main v-else-if="activeTab === 'arch'" class="kp-view">
+    <div class="kp-shell">
+      <div class="kp-section-head">
+        <h2>{{ ui.archHeading }}</h2>
+      </div>
+      <div class="kp-lead">
+        <p v-for="(t, i) in c.archIntro" :key="i">{{ t }}</p>
+      </div>
+
+      <div v-for="layer in c.archLayers" :key="layer.id" class="kp-layer">
         <div class="kp-layer-top">
           <span class="kp-layer-idx">{{ layer.index }}</span>
           <h3>{{ layer.title }}</h3>
@@ -237,38 +276,6 @@ async function submit(qid: string) {
 
         <div v-if="layer.note" class="kp-note">{{ layer.note }}</div>
       </div>
-
-      <div class="kp-platform-note">{{ ARCH_PLATFORM_NOTE }}</div>
-    </div>
-  </main>
-
-  <!-- ── КОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ ── -->
-  <main v-else-if="activeTab === 'kp'" class="kp-view">
-    <div class="kp-shell">
-      <div class="kp-section-head">
-        <h2>Коммерческое предложение</h2>
-        <p>{{ KP_INTRO }}</p>
-      </div>
-
-      <div v-for="s in KP_SECTIONS" :key="s.n" class="kp-kpsec">
-        <div class="kp-kpsec-head">
-          <span class="kp-kpsec-n">{{ s.n }}</span>
-          <h3>{{ s.title }}</h3>
-        </div>
-        <template v-for="(b, bi) in s.blocks" :key="bi">
-          <p v-if="b.type === 'text'">{{ b.text }}</p>
-          <div v-else-if="b.type === 'note'" class="kp-kpnote">{{ b.text }}</div>
-          <ul v-else-if="b.type === 'included'" class="kp-ilist inc">
-            <li v-for="(it, ii) in b.items || []" :key="ii">{{ it }}</li>
-          </ul>
-          <ul v-else-if="b.type === 'excluded'" class="kp-ilist exc">
-            <li v-for="(it, ii) in b.items || []" :key="ii">{{ it }}</li>
-          </ul>
-          <ul v-else-if="b.type === 'list'" class="kp-ilist plain">
-            <li v-for="(it, ii) in b.items || []" :key="ii">{{ it }}</li>
-          </ul>
-        </template>
-      </div>
     </div>
   </main>
 
@@ -276,11 +283,10 @@ async function submit(qid: string) {
   <main v-else class="kp-view">
     <div class="kp-shell">
       <div class="kp-section-head">
-        <h2>Открытые вопросы</h2>
-        <p>{{ QUESTIONS_INTRO }}</p>
+        <h2>{{ ui.questionsHeading }}</h2>
       </div>
 
-      <div v-for="blk in QUESTION_BLOCKS" :key="blk.letter" class="kp-qblock">
+      <div v-for="blk in c.questionBlocks" :key="blk.letter" class="kp-qblock">
         <div class="kp-qblock-head">
           <span class="kp-qletter">{{ blk.letter }}</span>
           <h3>{{ blk.title }}</h3>
@@ -299,7 +305,7 @@ async function submit(qid: string) {
               <div class="kp-q-feeds">{{ q.feeds }}</div>
             </div>
             <span class="kp-q-count" :class="{ has: countFor(q.id) > 0 }">
-              {{ countFor(q.id) }} отв.
+              {{ countFor(q.id) }} {{ ui.answersSuffix }}
             </span>
             <span class="kp-caret">▸</span>
           </div>
@@ -308,34 +314,25 @@ async function submit(qid: string) {
             <div v-if="countFor(q.id) > 0" class="kp-answers">
               <div v-for="a in answersOf(q.id)" :key="a.id" class="kp-answer">
                 <div class="kp-answer-meta">
-                  <span class="kp-answer-name">{{ a.authorName }}</span>
+                  <span v-if="a.authorName" class="kp-answer-name">{{ a.authorName }}</span>
                   <span class="kp-answer-badge">{{ badge(a.authorType) }}</span>
                   <span class="kp-answer-date">{{ fmtDate(a.createdAtMs) }}</span>
                 </div>
                 <div class="kp-answer-text">{{ a.text }}</div>
               </div>
             </div>
-            <div v-else class="kp-empty">Ответов пока нет — станьте первым.</div>
+            <div v-else class="kp-empty">{{ ui.emptyAnswers }}</div>
 
             <form class="kp-form" @submit.prevent="submit(q.id)">
-              <div class="kp-form-row">
-                <input
-                  class="kp-input"
-                  v-model="formOf(q.id).name"
-                  type="text"
-                  placeholder="Ваше имя (необязательно)"
-                  maxlength="120"
-                />
-              </div>
               <textarea
                 class="kp-textarea"
                 v-model="formOf(q.id).text"
-                placeholder="Ваш ответ на этот вопрос…"
+                :placeholder="ui.textPlaceholder"
                 maxlength="4000"
               ></textarea>
               <div class="kp-form-foot">
                 <button class="kp-btn" type="submit" :disabled="formOf(q.id).busy">
-                  {{ formOf(q.id).busy ? 'Отправка…' : 'Отправить' }}
+                  {{ formOf(q.id).busy ? ui.submitting : ui.submit }}
                 </button>
                 <span
                   v-if="formOf(q.id).msg"
@@ -354,8 +351,8 @@ async function submit(qid: string) {
 
   <footer class="kp-footer">
     <div class="kp-shell">
-      <b>Ипсен · Инфраструктура ИИ-агентов.</b>
-      Рабочий материал стадии discovery. Ответы на вопросы собираются здесь и переносятся в КП.
+      <b>{{ ui.footerStrong }}</b>
+      {{ ui.footerRest }}
     </div>
   </footer>
 </template>
