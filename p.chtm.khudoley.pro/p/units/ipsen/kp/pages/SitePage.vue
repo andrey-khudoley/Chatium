@@ -25,10 +25,12 @@ const lang = ref<Lang>(resolveLang(props.initialLang))
 const c = computed(() => CONTENT[lang.value])
 const ui = computed(() => c.value.ui)
 
+// В кнопке рендерятся обе подписи, нужную показывает CSS по ширине экрана:
+// так не нужен JS-детект брейкпоинта и нет рассинхрона при ресайзе.
 const TABS = computed(() => [
-  { id: 'kp', label: ui.value.tabKp },
-  { id: 'arch', label: ui.value.tabArch },
-  { id: 'questions', label: ui.value.tabQuestions }
+  { id: 'kp', label: ui.value.tabKp, short: ui.value.tabKpShort },
+  { id: 'arch', label: ui.value.tabArch, short: ui.value.tabArchShort },
+  { id: 'questions', label: ui.value.tabQuestions, short: ui.value.tabQuestionsShort }
 ])
 const activeTab = ref('kp')
 
@@ -154,7 +156,8 @@ async function submit(qid: string) {
           :class="{ 'is-active': activeTab === t.id }"
           @click="activeTab = t.id"
         >
-          {{ t.label }}
+          <span class="kp-tab-full">{{ t.label }}</span>
+          <span class="kp-tab-short">{{ t.short }}</span>
         </button>
       </nav>
       <div class="kp-langs">

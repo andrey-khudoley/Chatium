@@ -74,6 +74,11 @@ export interface UiStrings {
   tabKp: string
   tabArch: string
   tabQuestions: string
+  /* Короткие подписи вкладок для мобильных: полные втрое шире экрана
+     и уводят один пункт под горизонтальный скролл. */
+  tabKpShort: string
+  tabArchShort: string
+  tabQuestionsShort: string
   archHeading: string
   kpHeading: string
   questionsHeading: string
@@ -529,6 +534,9 @@ const RU: SiteContent = {
     tabKp: 'Коммерческое предложение',
     tabArch: 'Архитектура',
     tabQuestions: 'Открытые вопросы',
+    tabKpShort: 'Предложение',
+    tabArchShort: 'Архитектура',
+    tabQuestionsShort: 'Вопросы',
     archHeading: 'Архитектура: брокер + микросервисы',
     kpHeading: 'Коммерческое предложение',
     questionsHeading: 'Открытые вопросы',
@@ -977,6 +985,9 @@ const EN: SiteContent = {
     tabKp: 'Commercial proposal',
     tabArch: 'Architecture',
     tabQuestions: 'Open questions',
+    tabKpShort: 'Proposal',
+    tabArchShort: 'Architecture',
+    tabQuestionsShort: 'Questions',
     archHeading: 'Architecture: broker + microservices',
     kpHeading: 'Commercial proposal',
     questionsHeading: 'Open questions',
@@ -1425,6 +1436,9 @@ const FR: SiteContent = {
     tabKp: 'Proposition commerciale',
     tabArch: 'Architecture',
     tabQuestions: 'Questions ouvertes',
+    tabKpShort: 'Proposition',
+    tabArchShort: 'Architecture',
+    tabQuestionsShort: 'Questions',
     archHeading: 'Architecture : courtier + microservices',
     kpHeading: 'Proposition commerciale',
     questionsHeading: 'Questions ouvertes',
