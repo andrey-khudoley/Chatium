@@ -65,6 +65,8 @@ a { color: var(--accent-ink); text-decoration: none; }
 }
 @media (hover: hover) { .kp-tab:hover { background: var(--surface); color: var(--ink); } }
 .kp-tab.is-active { background: var(--ink); color: #fff; }
+/* На десктопе — полная подпись, короткая включается в мобильной секции. */
+.kp-tab-short { display: none; }
 
 /* ── language switcher ── */
 .kp-langs { display: flex; align-items: center; gap: 2px; margin-left: 14px; padding-left: 14px; border-left: 1px solid var(--line-strong); }
@@ -211,6 +213,15 @@ a { color: var(--accent-ink); text-decoration: none; }
   }
 }
 
+/* Если лента всё же скроллится (очень узкие экраны) — подписи у краёв уходят
+   в прозрачность. Без этого обрезанное на полуслове слово читается как баг. */
+@media (max-width: 720px) {
+  .kp-tabs {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+  }
+}
+
 /* ═══════════════  МОБИЛЬНЫЕ  ═══════════════ */
 @media (max-width: 720px) {
   :root { --shell-pad: 16px; }
@@ -219,6 +230,9 @@ a { color: var(--accent-ink); text-decoration: none; }
   .kp-brand-name { font-size: 13.5px; }
   .kp-lang { padding: 8px; font-size: 11.5px; }
   .kp-tab { padding: 9px 13px; font-size: 13px; }
+  /* Короткие подписи: полные (RU ~480px) втрое шире экрана. */
+  .kp-tab-full { display: none; }
+  .kp-tab-short { display: inline; }
 
   /* Hero */
   .kp-hero { padding: 30px 0 24px; }
