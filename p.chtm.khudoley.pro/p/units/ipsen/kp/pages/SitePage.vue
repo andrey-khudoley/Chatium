@@ -107,6 +107,18 @@ function badge(t: string): string {
   return ui.value.badgeGuest
 }
 
+/**
+ * Автор последнего ответа: имя, если оно есть, иначе — локализованный статус
+ * («гость» / «участник» / «бот»). Ответы уже отсортированы по createdAtMs asc
+ * (см. index.tsx), новые добавляются в конец — последний элемент и есть свежий.
+ */
+function lastAuthorLabel(qid: string): string {
+  const list = answersOf(qid)
+  const last = list[list.length - 1]
+  if (!last) return ''
+  return last.authorName || badge(last.authorType)
+}
+
 async function submit(qid: string) {
   const f = formOf(qid)
   if (f.busy) return
@@ -307,8 +319,13 @@ async function submit(qid: string) {
               <div class="kp-q-body">{{ q.text }}</div>
               <div class="kp-q-feeds">{{ q.feeds }}</div>
             </div>
-            <span class="kp-q-count" :class="{ has: countFor(q.id) > 0 }">
-              {{ countFor(q.id) }} {{ ui.answersSuffix }}
+            <span class="kp-q-badges">
+              <span class="kp-q-count" :class="{ has: countFor(q.id) > 0 }">
+                {{ countFor(q.id) }} {{ ui.answersSuffix }}
+              </span>
+              <span v-if="countFor(q.id) > 0" class="kp-q-last" :title="lastAuthorLabel(q.id)">
+                {{ lastAuthorLabel(q.id) }}
+              </span>
             </span>
             <span class="kp-caret">▸</span>
           </div>

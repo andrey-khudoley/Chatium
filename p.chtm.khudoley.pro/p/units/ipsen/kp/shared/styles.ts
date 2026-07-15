@@ -145,8 +145,17 @@ a { color: var(--accent-ink); text-decoration: none; }
 .kp-q-body { font-size: 15px; color: var(--ink); margin-top: 3px; }
 .kp-q-feeds { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: var(--muted); }
 .kp-q-feeds::before { content: '→'; color: var(--accent); font-weight: 700; }
+.kp-q-badges { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; flex-shrink: 0; max-width: 45%; }
 .kp-q-count { font-size: 12px; font-weight: 700; color: var(--ink-soft); background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
 .kp-q-count.has { color: var(--accent-ink); background: var(--accent-wash); border-color: var(--accent-soft); }
+/* Автор последнего ответа. Может быть длинным именем — режем многоточием,
+   иначе бейдж распирает строку и давит текст вопроса. */
+.kp-q-last {
+  font-size: 12px; font-weight: 600; color: var(--muted);
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: 999px; padding: 3px 10px;
+  max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .kp-caret { color: var(--muted); transition: transform .2s ease; margin-top: 2px; }
 .kp-q.open .kp-caret { transform: rotate(90deg); }
 .kp-q-panel { border-top: 1px solid var(--line); padding: 18px 20px; background: var(--surface-2); }
@@ -272,6 +281,13 @@ a { color: var(--accent-ink); text-decoration: none; }
   .kp-q-top { padding: 14px; gap: 10px; }
   .kp-q-body { font-size: 14.5px; }
   .kp-q-count { font-size: 11px; padding: 2px 8px; }
+  /* Бейджи уходят в свой ряд под текстом: иначе длинное имя автора съедает
+     до 42% ширины и текст вопроса сжимается в узкую колонку. */
+  .kp-q-top { flex-wrap: wrap; }
+  .kp-q-text { flex: 1 1 100%; }
+  .kp-q-badges { flex: 1 1 auto; max-width: none; gap: 5px; }
+  .kp-q-last { font-size: 11px; padding: 2px 8px; max-width: 60vw; }
+  .kp-caret { margin-top: 0; align-self: center; }
   .kp-q-panel { padding: 14px; }
   .kp-answer-meta { flex-wrap: wrap; gap: 6px; }
   .kp-answer-date { margin-left: 0; }
