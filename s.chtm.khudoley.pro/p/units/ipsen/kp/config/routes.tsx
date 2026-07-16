@@ -18,5 +18,6 @@ export const PROJECT_ROOT = 'p/units/ipsen/kp'
 // Пути роутов от корня проекта (справочно; хардкод URL в коде не допускается).
 export const ROUTES = {
   index: '/',
-  createAnswer: '/api/answers/create'
+  createAnswer: '/api/answers/create',
+  allAnswers: '/api/answers/all'
 } as const
