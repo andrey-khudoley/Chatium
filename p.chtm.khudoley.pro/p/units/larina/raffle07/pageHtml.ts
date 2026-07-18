@@ -38,6 +38,12 @@ export const PAGE_HTML = `<!DOCTYPE html>
   @keyframes ringPulse{0%,100%{box-shadow:0 0 0 0 rgba(231,192,102,.5)}50%{box-shadow:0 0 0 14px rgba(231,192,102,0)}}
   @keyframes floatGlow{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
   @keyframes slotIn{0%{opacity:0;transform:scale(.9)}100%{opacity:1;transform:scale(1)}}
+  @keyframes idleIn{0%{opacity:0}100%{opacity:1}}
+  @keyframes idleCardIn{0%{opacity:0;transform:translateY(24px) scale(.96)}100%{opacity:1;transform:translateY(0) scale(1)}}
+  @keyframes idleOut{0%{opacity:1}100%{opacity:0;visibility:hidden}}
+  @keyframes btnSheen{0%{transform:translateX(-120%) skewX(-18deg)}100%{transform:translateX(320%) skewX(-18deg)}}
+  .rz-start-btn:hover{transform:translateY(-2px)!important;box-shadow:0 22px 56px rgba(231,192,102,.5)!important;filter:brightness(1.05)!important}
+  .rz-start-btn:active{transform:translateY(0) scale(.98)!important}
   /* Сетка участников всегда 3 столбца — анимация идёт параллельно по трём столбцам */
   @media (max-width:900px){
     .rz-root{padding:22px 16px 30px!important}
@@ -171,7 +177,7 @@ export const PAGE_HTML = `<!DOCTYPE html>
   }
 
   // === Состояние ===
-  var state = { phase: 'intro', highlight: null, drawIndex: 0, captured: [], reveal: null, finalists: [], finalRound: false, colHi: [null, null, null] };
+  var state = { phase: 'idle', starting: false, highlight: null, drawIndex: 0, captured: [], reveal: null, finalists: [], finalRound: false, colHi: [null, null, null] };
   var wonSet = {};
 
   // === Ссылки на DOM ===
@@ -260,6 +266,49 @@ export const PAGE_HTML = `<!DOCTYPE html>
   resultsEl.style.cssText = 'position:fixed;inset:0;z-index:60;display:none;flex-direction:column;align-items:center;justify-content:center;gap:40px;padding:40px;background:radial-gradient(900px 620px at 50% 30%,rgba(231,192,102,.12),transparent 65%),rgba(8,6,3,.9);backdrop-filter:blur(8px);animation:spotBg .5s ease both;';
   root.appendChild(resultsEl);
 
+  // === Idle-оверлей (стартовый экран с кнопкой) ===
+  var idleEl = document.createElement('div');
+  root.appendChild(idleEl);
+  function idleOverlayCss(starting){
+    return 'position:fixed;inset:0;z-index:80;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;background:radial-gradient(820px 560px at 50% 34%,rgba(231,192,102,.16),transparent 62%),rgba(9,7,3,.82);backdrop-filter:blur(9px);' +
+      (starting ? 'animation:idleOut .45s ease forwards;pointer-events:none;' : 'animation:idleIn .5s ease both;');
+  }
+  function buildIdleOverlay(){
+    var total = USERS.length + ' ' + plural(USERS.length, ['человек', 'человека', 'человек']);
+    var chips = PRIZES.map(function(p, i){
+      return '<div style="animation-delay:' + (0.12 + i * 0.09) + 's;display:flex;flex-direction:column;gap:3px;align-items:flex-start;text-align:left;padding:12px 18px;border-radius:14px;background:rgba(231,192,102,.06);border:1px solid rgba(231,192,102,.24);animation:idleCardIn .7s cubic-bezier(.2,.8,.2,1) both;">' +
+        '<span style="font-family:\\'Oswald\\',sans-serif;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#E7C066;">' + esc(p.place) + '</span>' +
+        '<span style="font-size:14px;font-weight:700;color:#EDE6D6;">' + esc(p.title) + '</span>' +
+      '</div>';
+    }).join('');
+    idleEl.innerHTML =
+      '<div style="display:flex;flex-direction:column;align-items:center;gap:28px;max-width:720px;animation:idleCardIn .7s cubic-bezier(.2,.8,.2,1) both;">' +
+        '<div style="display:flex;align-items:center;gap:12px;">' +
+          '<span style="width:34px;height:1px;background:linear-gradient(90deg,transparent,#E7C066);"></span>' +
+          '<span style="font-family:\\'Oswald\\',sans-serif;font-size:14px;letter-spacing:.34em;text-transform:uppercase;color:#E7C066;">Готовы?</span>' +
+          '<span style="width:34px;height:1px;background:linear-gradient(90deg,#E7C066,transparent);"></span>' +
+        '</div>' +
+        '<div style="font-family:\\'Oswald\\',sans-serif;font-weight:700;font-size:clamp(34px,4.6vw,62px);line-height:1.02;letter-spacing:.06em;text-transform:uppercase;background:linear-gradient(100deg,#C99A3B,#F6DE9A,#FBEEC8,#F6DE9A,#C99A3B);background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 5s linear infinite;">Розыгрыш призов</div>' +
+        '<div style="font-size:16px;line-height:1.5;color:#c9bd97;max-width:520px;text-wrap:pretty;">В розыгрыше участвует <b style="color:#F6DE9A;">' + esc(total) + '</b>. Победители определяются случайным образом. Нажмите кнопку, чтобы запустить розыгрыш.</div>' +
+        '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">' + chips + '</div>' +
+        '<button type="button" class="rz-start-btn" style="position:relative;overflow:hidden;margin-top:6px;font-family:\\'Oswald\\',sans-serif;font-weight:700;font-size:20px;letter-spacing:.16em;text-transform:uppercase;color:#2a1f06;background:linear-gradient(100deg,#FBEEC8,#E7C066);border:none;padding:18px 52px;border-radius:48px;cursor:pointer;box-shadow:0 16px 44px rgba(231,192,102,.42);transition:transform .18s ease,box-shadow .18s ease,filter .18s ease;">' +
+          '<span style="position:absolute;top:0;left:0;width:40%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:btnSheen 2.6s ease-in-out infinite;"></span>' +
+          '<span style="position:relative;">Запустить розыгрыш</span>' +
+        '</button>';
+    idleEl.querySelector('.rz-start-btn').addEventListener('click', start);
+  }
+  function start(){
+    if (state.phase !== 'idle' || state.starting) return;
+    state.starting = true;
+    idleEl.style.cssText = idleOverlayCss(true);
+    setTimeout(function(){
+      state.starting = false;
+      idleEl.style.display = 'none';
+      setPhase('intro');
+      setTimeout(function(){ runDraw(0); }, 700);
+    }, 460);
+  }
+
   function showRevealOverlay(item){
     revealEl.innerHTML =
       '<div class="rz-reveal-card" style="position:relative;text-align:center;padding:48px 64px;border-radius:26px;background:linear-gradient(180deg,rgba(28,23,12,.96),rgba(18,14,7,.96));border:1px solid rgba(231,192,102,.4);box-shadow:0 30px 90px rgba(0,0,0,.6),0 0 0 1px rgba(231,192,102,.12) inset;animation:spotIn .7s cubic-bezier(.2,.8,.2,1) both;max-width:640px;">' +
@@ -305,7 +354,8 @@ export const PAGE_HTML = `<!DOCTYPE html>
   // === Статус / фаза ===
   function updateStatus(){
     var s = 'Приготовьтесь к розыгрышу…';
-    if (state.phase === 'draw') s = state.finalRound
+    if (state.phase === 'idle') s = 'Всё готово — нажмите кнопку, чтобы начать';
+    else if (state.phase === 'draw') s = state.finalRound
       ? 'Финал: определяем победителя из трёх финалистов'
       : 'Разыгрываем: ' + PRIZES[state.drawIndex].title + ' — отбор финалистов';
     else if (state.phase === 'reveal') s = 'Есть победитель!';
@@ -507,8 +557,10 @@ export const PAGE_HTML = `<!DOCTYPE html>
     totalEl.textContent = USERS.length + ' ' + plural(USERS.length, ['человек', 'человека', 'человек']);
     renderSlot(0);
     renderSlot(1);
-    setPhase('intro');
-    setTimeout(function(){ runDraw(0); }, 1500);
+    buildIdleOverlay();
+    idleEl.style.cssText = idleOverlayCss(false);
+    setPhase('idle');
+    // Розыгрыш запускается по кнопке на idle-экране (см. start()).
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
