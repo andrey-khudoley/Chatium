@@ -20,6 +20,7 @@ ipsen/kp/
 ├─ index.tsx               # app.html('/') — SSR: читает ответы из Heap, определяет initialLang, рендерит SitePage
 ├─ pages/SitePage.vue      # весь сайт: вкладки КП / Архитектура / Вопросы, переключатель RU/EN/FR, формы ответов
 ├─ api/answers/create.ts   # POST // @shared-route: приём ответа (requireAnyUser — аноним ok, без имени)
+├─ api/answers/all.ts      # GET: публичная выгрузка всех вопросов+ответов одним JSON (без authorUserId)
 ├─ tables/answers.table.ts # Heap-таблица ответов (комментарии), привязка по questionId
 ├─ shared/content.ts       # весь контент на 3 языках (CONTENT[Lang]), resolveLang(), LANGS  // @shared
 ├─ shared/styles.ts        # дизайн-CSS (светлая тема, красный акцент как в КП)
@@ -71,6 +72,13 @@ node scripts/check-style.mjs p/units/ipsen/kp   # prettier
 
 ## Changelog
 
+- **2026-07-16** — добавлен GET-роут `api/answers/all.ts`: отдаёт все открытые
+  вопросы вместе с ответами одним JSON. Структура вопросов берётся из
+  `shared/content.ts` (id сквозные, тексты по всем трём языкам), ответы читаются
+  из Heap постранично (лимит `findAll` — 1000/запрос) и группируются по
+  `questionId`. Доступ открытый, без авторизации — те же ответы уже публичны на
+  странице; внутренний `authorUserId` в выдачу не попадает. Реестр `ROUTES`
+  дополнен ключом `allAnswers`.
 - **2026-07-14** — ревью на соответствие документации Chatium и референсу
   `inner/samples/new_project`. Критичных нарушений не найдено. Правки:
   - `config/routes.tsx` — убраны неиспользуемые хелперы ссылок
