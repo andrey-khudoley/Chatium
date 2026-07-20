@@ -49,4 +49,4 @@
 - гонка claim при совпадении push-триггера и планового pull — закрывается идемпотентностью и `runWithExclusiveLock` на пулл модуля;
 - растёт таблица доставок (fan-out), но чистится retention (§3.5) — write-амплификация принята сознательно.
 
-Связано: снимок события в доставке — [ADR-0006](0006-fat-delivery-payload-snapshot.md); хранение событий — [ADR-0005](0005-three-tier-event-storage.md).
+Связано: снимок события в доставке — [ADR-0006](0006-fat-delivery-payload-snapshot.md); хранение событий — [ADR-0005](0005-two-tier-event-storage.md).
