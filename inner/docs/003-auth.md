@@ -55,11 +55,19 @@ import { requireAccountRole, requireRealUser, requireAnyUser } from '@app/auth'
 
 Требует определённую роль аккаунта. Выбрасывает ошибку если роль не соответствует.
 
-**Сигнатура**:
+**Сигнатура** (сверено с `@app/auth/index.d.ts`, 2026-07-20):
 
 ```typescript
-requireAccountRole(ctx: app.Ctx, atLeastAccountRole: 'Admin' | 'Staff' | 'User'): void
+requireAccountRole(ctx: RichUgcCtx, atLeastAccountRole: Exclude<AccountRole, 'None'>): void
+
+type AccountRole = 'None' | 'Staff' | 'Admin' | 'Developer' | 'Owner'
 ```
+
+**⚠️ Роли `'User'` не существует.** Допустимые значения параметра — `'Staff' | 'Admin' | 'Developer' | 'Owner'` (`'None'` исключена типом). Ролей пять, а не три; `'Developer'` и `'Owner'` выше `'Admin'`.
+
+Параметр — union строковых литералов, поэтому опечатка в регистре (`'admin'`) **ловится типчеком** (TS2345) и до рантайма не доходит. Если её всё же протащить через `as any`, доступ будет закрыт: сравнение строгое, незнакомое значение никого не пропускает. То есть ошибка в значении роли безопасна — она закрывает функционал, а не открывает его.
+
+При недостаточной роли выбрасывается `AccessDeniedError` (`statusCode = 403`); если пользователя нет вовсе — `AuthRequiredError` (401), эта проверка идёт первой.
 
 **Использование**:
 
@@ -89,11 +97,12 @@ export const staffAreaRoute = app.get('/', async (ctx) => {
   return { message: 'Staff area' }
 })
 
-// Все авторизованные пользователи
+// ❌ НЕПРАВИЛЬНО - роли 'User' не существует, это ошибка типизации
 export const userAreaRoute = app.get('/', async (ctx) => {
-  requireAccountRole(ctx, 'User') // Staff и Admin тоже пройдут
+  requireAccountRole(ctx, 'User')
   return { message: 'User area' }
 })
+// Для «любого авторизованного» используйте requireRealUser(ctx), а не роль
 ```
 
 ### requireRealUser - только реальные пользователи
@@ -186,7 +195,7 @@ ctx.user.hasPassword // Есть ли пароль
 ctx.user.imageUrl // URL аватара
 ctx.user.hasImage // Есть ли аватар
 ctx.user.imageThumbnailUrl // URL thumbnail аватара
-ctx.user.accountRole // 'Admin' | 'Staff' | 'User'
+ctx.user.accountRole // 'None' | 'Staff' | 'Admin' | 'Developer' | 'Owner'
 ctx.user.type // 'Real' | 'Bot' | 'Anonymous'
 ctx.user.lang // Язык пользователя ('ru', 'en', etc.)
 ```
@@ -197,7 +206,7 @@ ctx.user.lang // Язык пользователя ('ru', 'en', etc.)
 // Проверка роли
 ctx.user.is('Admin') // true если админ
 ctx.user.is('Staff') // true если Staff или Admin
-ctx.user.is('User') // true если User, Staff или Admin
+ctx.user.is('User') // ⚠️ допустимость 'User' здесь не проверена — в AccountRole такой роли нет
 
 // Получение thumbnail с кастомным размером
 ctx.user.getImageThumbnailUrl(200) // 200x200
@@ -249,7 +258,7 @@ export const dashboardRoute = app.get('/', async (ctx) => {
 
 - Базовые права
 - Доступны всем авторизованным
-- `requireAccountRole(ctx, 'User')`
+- ⚠️ Роли `'User'` в типе `AccountRole` **нет** — `requireAccountRole(ctx, 'User')` не скомпилируется. Для «любого авторизованного» используйте `requireRealUser(ctx)`
 
 **Иерархия ролей**:
 
