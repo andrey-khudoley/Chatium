@@ -64,6 +64,7 @@
 | **046-isolated-eval.md**                | Модуль @app/isolated-eval        | isolatedEval, безопасное выполнение кода                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | **047-base64.md**                       | Base64 UTF-8 в UGC               | самописный `utf8StringToBase64` / `base64ToUtf8String` (образец liveahalf); **не** `base64Encode`/`base64Decode`; без `Buffer`/`btoa`/`atob`; GetCourse Legacy `params`                                                                                                                                                                                                                                                                                                        |
 | **048-chatium-http-response-probes.md** | ⚠️ Фактические HTTP-ответы UGC   | HTTP 200 при ctx.resp.json 4xx, редирект JSON body, rawHttpBody статусы, интеграционные тесты, temp пробы, fetch response.ok                                                                                                                                                                                                                                                                                                                                                   |
+| **049-clickhouse.md**                   | 🗄️ ClickHouse (аналитическая БД, runtime-верифиц.) | ClickHouse, chatium_ai.access_log, behaviour2_log, traffic_source_statistics, account_logs, writeMetricEvent, writeWorkspaceEvent, captureCustomerEvent (@crm/sdk/v2), ctx.account.log, queryAi, MetricEventData (type-only), сквозная аналитика, CAC/ROAS, matched_traffic_source_ids, getAccountEvents, getWorkspaceEvents, payloadMapping, ContactType, частые ошибки, ⚠️ queryAccountLogs/listAccountLogs НЕ работают в runtime (чтение account_logs — через queryAi)                     |
 
 ---
 
@@ -339,6 +340,20 @@
 - processAttributionJob — автоматическая обработка
 - API: POST /api/attribution
 
+### 🗄️ ClickHouse — аналитическая база данных
+
+**Файл**: `049-clickhouse.md`
+
+- Архитектура ClickHouse в Chatium (platform-managed, только SELECT, нет DDL)
+- Таблицы: `chatium_ai.access_log`, `behaviour2_log`, `traffic_source_statistics`, `account_logs`, `sender_app.messages_log`
+- Запись: `writeMetricEvent` (@app/metric), `writeWorkspaceEvent` (@start/sdk), `captureCustomerEvent` (**@crm/sdk/v2**), `ctx.account.log`
+- Чтение: `queryAi` (@traffic/sdk), полная структура `access_log` (сверена с `MetricEventRecord`)
+- Сквозная аналитика: `matched_traffic_source_ids`, CAC/ROAS, fallback по UTM, readable label источника
+- Декларация событий: `getAccountEvents` (поле `type` объявлено, но в runtime `undefined`) / `getWorkspaceEvents` (EventDeclaration), `payloadMapping`
+- ⚠️ Чтение логов приложения: только через `queryAi` (SQL к `chatium_ai.account_logs`); `queryAccountLogs`/`listAccountLogs` из `@app/ugc` объявлены, но НЕ работают в runtime
+- Частые ошибки + чек-лист + раздел «Результаты runtime-верификации»
+- ⚠️ Раздел «Сверка с тайпингами» — исправленные расхождения исходника (импорты, `ctx.account.log`, contact-типы)
+
 ### ⚠️ Подписка на события GetCourse
 
 **Файл**: `021-getcourse-events.md`
@@ -519,6 +534,14 @@
 2. Изучите `016-analytics-traffic.md` → "Типы событий трафика"
 3. Изучите `016-analytics-traffic.md` → "SQL примеры запросов"
 
+### Работать с ClickHouse (аналитическая БД)
+
+1. Изучите `049-clickhouse.md` → "Основные концепции" и "Доступные таблицы"
+2. Изучите `049-clickhouse.md` → "Запись событий" (writeMetricEvent / writeWorkspaceEvent / captureCustomerEvent)
+3. Изучите `049-clickhouse.md` → "Структура access_log" и другие таблицы
+4. Изучите `049-clickhouse.md` → "Расходы на рекламу и сквозная аналитика" (CAC/ROAS)
+5. ⚠️ Изучите `049-clickhouse.md` → "Частые ошибки" и "Чек-лист при добавлении аналитического события"
+
 ### Анализировать GetCourse
 
 1. Изучите `016-analytics-getcourse.md` → "Выполнение запросов gcQueryAi"
@@ -592,7 +615,7 @@
 
 ### База данных
 
-`Heap.Table`, `create`, `findAll`, `findById`, `update`, `delete`, `createOrUpdateBy`, `countBy`, `searchBy`, `Money`, `RefLink`, `where`, `order`, `Heap.String`, `Heap.Number`, `Heap.Boolean`, `Heap.DateTime`, `Heap.Optional`, `Heap.Any`, `customMeta`, `searchable`, `embeddings`, `defaultValue`, `типизация`, `TypeScript таблицы`, `runWithExclusiveLock`, `race condition`, `блокировка`, `параллельные запросы`, `атомарность`
+`Heap.Table`, `create`, `findAll`, `findById`, `update`, `updateAll`, `delete`, `deleteAll`, `createOrUpdateBy`, `countBy`, `searchBy`, `Money`, `RefLink`, `where`, `order`, `CAS`, `оптимистичная блокировка`, `mass-delete protection`, `limit`, `формат id`, `Heap.String`, `Heap.Number`, `Heap.Boolean`, `Heap.DateTime`, `Heap.Optional`, `Heap.Any`, `customMeta`, `searchable`, `embeddings`, `defaultValue`, `типизация`, `TypeScript таблицы`, `runWithExclusiveLock`, `race condition`, `блокировка`, `параллельные запросы`, `атомарность`
 
 ### Файлы
 
@@ -609,6 +632,10 @@
 ### Traffic Аналитика
 
 `queryAi`, `@traffic/sdk`, `pageview`, `button_click`, `video_play`, `scroll`, `add_to_cart`, `purchase`, `DAU`, `MAU`, `bounce rate`, `21 тип`
+
+### ClickHouse (аналитическая БД)
+
+`ClickHouse`, `chatium_ai.access_log`, `behaviour2_log`, `traffic_source_statistics`, `account_logs`, `writeMetricEvent`, `MetricEventData`, `writeWorkspaceEvent`, `captureCustomerEvent`, `@crm/sdk/v2`, `CaptureCustomerEventInput`, `getCustomerEventUrl`, `ctx.account.log`, `LogParams`, `queryAi`, `queryAccountLogs`, `listAccountLogs`, `UgcAccountLogRow`, `getAccountEvents`, `getWorkspaceEvents`, `EventDeclaration`, `payloadMapping`, `matched_traffic_source_ids`, `CAC`, `ROAS`, `сквозная аналитика`, `action_param8_float`, `ContactType`, `resolved_user_id`, `нет DDL`, `нет INSERT`
 
 ### Подписки на события
 
@@ -781,6 +808,6 @@
 
 ---
 
-**Версия**: 3.4  
-**Дата**: 2026-03-25  
-**Последнее обновление**: В 007-vue.md и навигаторе — явное правило: inline-выражения шаблона не поддерживают TypeScript (`as`, `satisfies`); см. раздел «Критично: inline-выражения шаблона не являются полным TypeScript»
+**Версия**: 3.6  
+**Дата**: 2026-07-18  
+**Последнее обновление**: Runtime-верификация из `qna1807/*-corrected.md` — обновлены `049-clickhouse.md`, `038-metric.md`, `016-analytics-traffic/workspace/subscriptions.md`. Ключевые runtime-факты: `queryAccountLogs`/`listAccountLogs` (`@app/ugc`) НЕ работают (чтение account_logs — через `queryAi`); хук `@start/after-event-write` не системный (не вызывается автоматически); `writeEventLog`/`writeAppHostEventLog` — deprecated noop; `getAccountEvents.type` в runtime `undefined`; типы метрик — type-only

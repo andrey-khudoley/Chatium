@@ -4,6 +4,10 @@
 
 Руководство по работе с событиями трафика через ClickHouse: просмотры страниц, клики, видео и другие действия пользователей.
 
+> **Статус:** runtime-верифицировано `2026-07-18` (на `s.chtm.aley.pro`). Все SDK-вызовы, имена колонок `access_log` и SQL-фильтры проверены прямым запуском в runtime.
+>
+> **Ключевое исправление:** обычные HTTP-загрузки страниц имеют `action = NULL`, а **НЕ** `action = 'pageview'`. Фильтруйте страницы по `startsWith(urlPath, 'https')`, а не по `action = 'pageview'`. Значение `action` заполняется только при явной передаче через `writeWorkspaceEvent` / `writeMetricEvent` / клиентский трекинг.
+
 ## Содержание
 
 - [Основы Traffic Analytics](#основы-traffic-analytics)
@@ -14,8 +18,10 @@
 - [SQL примеры запросов](#sql-примеры-запросов)
 - [TypeScript примеры](#typescript-примеры)
 - [Лучшие практики](#лучшие-практики)
-- [Пагинация событий](#пагинация-событий) ⭐ NEW
-- [Дедупликация событий](#дедупликация-событий) ⭐ NEW
+- [Пагинация событий](#пагинация-событий)
+- [Дедупликация событий](#дедупликация-событий)
+- [Расхождения с предыдущей версией документа](#расхождения-с-предыдущей-версией-документа)
+- [Зависимости (проверенные модули)](#зависимости-проверенные-модули)
 
 ---
 
@@ -28,16 +34,27 @@
 ```
 Браузер пользователя
      ↓
-window.clrtTrack() / автоматические события
-     ↓
-Chatium Analytics
+window.clrtTrack() / writeWorkspaceEvent (клиент/сервер)
      ↓
 ClickHouse (chatium_ai.access_log)
      ↓
-gcQueryAi() / queryAi() - SQL запросы
+queryAi(ctx, sql)   — чтение строк из аккаунта разработчика (@traffic/sdk)
+gcQueryAi(ctx, sql) — выполнение SQL в контексте настроенного GetCourse-клиента, SaaS; возвращает { success, error? }, строк НЕ отдаёт (@gc-mcp-server/sdk)
      ↓
 Ваше приложение
 ```
+
+### urlPath — формат записи событий
+
+| Тип события | Формат `urlPath` | Пример |
+|---|---|---|
+| **HTTP страница** | `https://{domain}{path}` | `https://s.chtm.aley.pro/page` |
+| **Workspace event (`writeWorkspaceEvent`)** | `event://account/{workspacePath}/{eventName}` | `event://account/temp/myapp/form_submitted` |
+| **Customer event (`captureCustomerEvent`)** | `event://crm/customer/event/{eventName}` | `event://crm/customer/event/order_created` |
+| GetCourse | `event://getcourse/...` | — |
+| ReFunnels | `event://refunnels/...` | — |
+
+> **Важно (runtime):** регулярные HTTP-загрузки страниц НЕ имеют `action = 'pageview'` — поле `action` = `NULL`. `action` заполняется только при явной передаче через `writeWorkspaceEvent`, `writeMetricEvent` или клиентский трекинг. Прежнее утверждение «страницы фильтруются по `action = 'pageview'`» было неверным.
 
 ---
 
@@ -45,17 +62,19 @@ gcQueryAi() / queryAi() - SQL запросы
 
 ### 1. Настраиваемый GetCourse MCP Client (для клиентских приложений)
 
-**Использование**: События трафика из настроенного пользователем GetCourse аккаунта.
+**Использование**: Выполнение SQL в контексте настроенного пользователем GetCourse аккаунта.
 
 ```typescript
 import { gcQueryAi, integrationIsEnabled } from '@gc-mcp-server/sdk'
 
-// Проверка настройки
+// ✅ Runtime-подтверждено: gcQueryAi и integrationIsEnabled существуют и работают
 const isConfigured = await integrationIsEnabled(ctx)
 
-// Выполнение запросов к настроенному аккаунту
-const result = await gcQueryAi(ctx, query)
+// Выполнение запроса в контексте настроенного аккаунта
+const result = await gcQueryAi(ctx, query) // result = { success, error? } — строк не возвращает
 ```
+
+> ⚠️ **`gcQueryAi` НЕ возвращает строки данных (runtime-подтверждено `2026-07-18`).** Функция возвращает `Promise<{ success: boolean; error?: string }>`: `result.rows === undefined`. Она лишь выполняет SQL в контексте GetCourse-клиента и сообщает успех/ошибку — полезна для мультиаккаунтных SaaS-сценариев, но **не** для получения строк. **Для чтения строк используйте `queryAi` из `@traffic/sdk`** (возвращает `{ rows }`).
 
 **Преимущества**:
 
@@ -76,8 +95,9 @@ const result = await gcQueryAi(ctx, query)
 ```typescript
 import { queryAi } from '@traffic/sdk'
 
-// Выполнение запросов к аккаунту разработчика
-const result = await queryAi(ctx, query)
+// ✅ Runtime-подтверждено: queryAi существует и работает.
+// Локальных типов у @traffic/sdk нет (нужен // @ts-ignore на импорте), но в runtime функция работает.
+const result = await queryAi(ctx, query) // result.rows — массив строк
 ```
 
 **Преимущества**:
@@ -98,13 +118,14 @@ const result = await queryAi(ctx, query)
 
 ### Сравнительная таблица
 
-| Аспект              | gcQueryAi (MCP Client)            | queryAi (Traffic SDK)  |
-| ------------------- | --------------------------------- | ---------------------- |
-| **Источник данных** | Настроенный пользователем аккаунт | Аккаунт разработчика   |
-| **Импорт**          | `@gc-mcp-server/sdk`              | `@traffic/sdk`         |
-| **Настройка**       | Требуется установка плагина       | Не требуется           |
-| **Изоляция**        | Да (каждый видит свои данные)     | Нет (все видят одно)   |
-| **Применение**      | SaaS, клиентские приложения       | Внутренние инструменты |
+| Аспект              | gcQueryAi (MCP Client)                          | queryAi (Traffic SDK)               |
+| ------------------- | ----------------------------------------------- | ----------------------------------- |
+| **Возврат**         | `{ success, error? }` — **строк НЕ отдаёт**     | `{ rows: [...] }` — массив строк    |
+| **Чтение данных**   | ❌ Нет (rows недоступны)                        | ✅ Да (единственный способ читать)  |
+| **Роль**            | Выполнить SQL в контексте GetCourse-клиента      | Прочитать строки из ClickHouse      |
+| **Импорт**          | `@gc-mcp-server/sdk`                             | `@traffic/sdk`                      |
+| **Настройка**       | Требуется установка плагина                      | Не требуется                        |
+| **Применение**      | Мультиаккаунтные SaaS-сценарии (выполнение SQL)  | Чтение данных, внутренние инструменты |
 
 ### Ключевые компоненты
 
@@ -112,8 +133,8 @@ const result = await queryAi(ctx, query)
 | ----------------------- | ------------------------------------------- |
 | `@gc-mcp-server/sdk`    | SDK для настраиваемого GetCourse MCP Client |
 | `@traffic/sdk`          | SDK для аккаунта разработчика               |
-| `gcQueryAi(ctx, query)` | Запросы к настроенному аккаунту             |
-| `queryAi(ctx, query)`   | Запросы к аккаунту разработчика             |
+| `gcQueryAi(ctx, query)` | Выполнение SQL в контексте настроенного аккаунта (возвращает `{ success, error? }`, строк не отдаёт) |
+| `queryAi(ctx, query)`   | Чтение строк из аккаунта разработчика (`{ rows }`) |
 | `chatium_ai.access_log` | Таблица событий                             |
 | `window.clrtTrack()`    | Клиентская запись событий                   |
 | ClickHouse              | База данных                                 |
@@ -126,65 +147,168 @@ const result = await queryAi(ctx, query)
 
 События трафика хранятся в той же таблице, что и GetCourse.
 
-#### Ключевые колонки для трафика
+**✅ Runtime: 80+ колонок подтверждены, таблица доступна.**
+
+#### Ключевые колонки (полная схема)
 
 ```sql
--- Время
-ts DateTime              -- Время события UTC
+-- Время и дата
+ts DateTime64(3)         -- Время события с миллисекундами
 dt Date                  -- Дата события (партиция)
-ts64 DateTime64(3)       -- Высокоточное время
+ts64 DateTime64(3)       -- Высокоточное время (дублирует ts)
 
 -- Событие
-urlPath String           -- URL страницы или event://custom/...
-action String            -- Название действия (pageview, click, etc.)
+urlPath String           -- URL страницы или event://account/...
+action Nullable(String)  -- Название действия (NULL для обычных HTTP-запросов!)
+title Nullable(String)   -- Заголовок страницы
 
 -- Пользователь
-user_id String           -- ID пользователя
 uid String               -- ID сессии браузера (window.clrtUid)
+user_id Nullable(String) -- ID авторизованного пользователя
+user_type LowCardinality(String)   -- 'Real', 'Anonymous', 'Bot'
+user_account_role Nullable(String) -- 'Owner', 'Admin', 'Staff', 'User'
+user_roles Array(String)           -- Роли пользователя
+user_first_name, user_last_name, user_phone, user_email Nullable(String)
+
+-- Сессия
 session_id String        -- ID сессии
+sid Nullable(String)     -- ID сессии (устаревший/дополнительный)
+sid_duration Nullable(Int32)  -- Длительность сессии в секундах
+
+-- Источник
+referer Nullable(String)           -- URL источника перехода
+user_agent Nullable(String)        -- User Agent
+ip Nullable(String)                -- IP-адрес (колонка `ip`, НЕ `ip_address`)
+location_country Nullable(String)  -- Страна (колонка `location_country`, НЕ `country`)
+location_city Nullable(String)     -- Город (колонка `location_city`, НЕ `city`)
 
 -- Параметры события
-action_param1 String     -- Параметр 1
-action_param2 String     -- Параметр 2
-action_param3 String     -- Параметр 3
+action_param1 Nullable(String)
+action_param2 Nullable(String)
+action_param3 Nullable(String)
+action_param1_float Nullable(Float32)         -- Дробный параметр
+action_param2_float Nullable(Float32)
+action_param1_int Nullable(Int32)             -- Целочисленный параметр
+action_param1_mapstrstr Map(String, String)  -- Словарь
+action_param2_mapstrstr Map(String, String)
+action_param1_arrstr Array(String)            -- Массив строк
+action_param2_arrstr Array(String)
+action_param3_arrstr Array(String)
+action_param1_uint32arr Array(UInt32)         -- Массив целых чисел
 
--- Технические данные
-referer String           -- Источник перехода
-user_agent String        -- User Agent браузера
-ip_address String        -- IP адрес
-country String           -- Страна
-city String              -- Город
-
--- Заголовок
-title String             -- Заголовок страницы
+-- UTM-метки
+utm_source Nullable(String)
+utm_medium Nullable(String)
+utm_campaign Nullable(String)
+utm_content Nullable(String)
+utm_term Nullable(String)
 
 -- GetCourse
-gc_visit_id Int64        -- ID визита GetCourse
-gc_visitor_id Int64      -- ID посетителя GetCourse
-gc_session_id Int64      -- ID сессии GetCourse
+gc_visit_id Nullable(Int64)
+gc_visitor_id Nullable(Int64)
+gc_session_id Nullable(Int64)
+
+-- Технические
+matched_traffic_source_ids Array(String)  -- ID матчинга с расходами на рекламу
+resolved_user_id String                   -- Нормализованный user_id
+funnel Nullable(String)                   -- Воронка
+funnel_node Nullable(String)
+funnel_node_from Nullable(String)
+sign Int8                                 -- 1 = событие, -1 = удаление
+is_from_kafka Bool                        -- true = из Kafka
+keys Array(String), values Array(String)  -- KV-пары (устаревшие)
+
+-- Экран
+screen_height Nullable(Int16)
+screen_width Nullable(Int16)
+screen_pixel_ratio Nullable(Int8)
+
+-- UA-парсинг
+ua_client_type Nullable(String)   -- 'browser', 'mobile app'
+ua_client_name Nullable(String)   -- 'Chrome', 'Firefox'
+ua_device_type Nullable(String)   -- 'desktop', 'mobile'
+ua_os_name Nullable(String)       -- 'Windows', 'Mac', 'Android'
+
+-- Инференс
+inferred_uid Nullable(Bool)       -- uid был выведен автоматически
+inferred_sid Nullable(Bool)       -- sid был выведен автоматически
 ```
+
+**Особенности (runtime):**
+
+- Все колонки `Nullable(...)` возвращают `null` в JavaScript при отсутствии значения.
+- `Map(String, String)` колонки возвращают `Record<string, string>`.
+- `Array(String)` колонки возвращают `string[]`.
+- Для фильтрации непустых Map используйте `mapKeys(x) != []` — функции `mapSize()` в ClickHouse **нет**.
+- `action` для обычных HTTP-запросов = `NULL`. Проверка наличия action: `action IS NOT NULL AND action != ''`.
+
+### Таблица behaviour2_log
+
+**✅ Runtime: 22 колонки подтверждены, данные за сегодня есть.** Поведенческие метрики страницы (фокус, скролл, мышь, клики).
+
+```sql
+CREATE TABLE chatium_ai.behaviour2_log (
+    version_ts DateTime64(3),            -- Версия/время записи
+    ts64 DateTime64(3),                  -- Время события
+    dt Date,                             -- Дата
+    clrt_run_id UInt32,                  -- ID запуска трекера
+    browser_session_id String,           -- ID сессии браузера
+    browser_id_started_at DateTime64(3), -- Время начала сессии
+    url String,                          -- URL страницы
+    urlPath String,                      -- Путь URL
+    uid String,                          -- ID пользователя
+    sid String,                          -- ID сессии
+    user_id String,                      -- ID пользователя
+    user_type LowCardinality(String),    -- Real/Anonymous/Bot
+    gc_visit_id Int64,                   -- GetCourse visit
+    gc_visitor_id Int64,                 -- GetCourse visitor
+    gc_session_id Int64,                 -- GetCourse session
+    view_focused_duration UInt32,        -- Время фокуса (мс)
+    view_total_duration UInt32,          -- Общее время на странице (мс)
+    mouse_distance UInt32,               -- Расстояние мыши (пиксели)
+    scroll_distance UInt32,              -- Глубина скролла (пиксели)
+    click_counter UInt32,                -- Количество кликов
+    selection_length UInt32,             -- Длина выделения
+    resolved_user_id String              -- Нормализованный user_id
+)
+```
+
+### Таблица traffic_source_statistics (расходы на рекламу)
+
+**✅ Runtime: таблица существует** (в тестовом аккаунте данных за последние 90 дней нет).
+
+Ключевые колонки:
+
+- `dt` — дата статистики
+- `platform` — `YD`, `VK`, `Tg`, `Av`
+- `expense` — расход в рублях
+- `clicks`, `views`, `impressions`, `goals` — метрики
+- `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`
+- `traffic_source_id` — технический ID (для матчинга через `access_log.matched_traffic_source_ids`)
+- `is_deleted` — 0/1
+- `action_param1_mapstrstr` — метаданные (`campaign_name`, `ad_name`, ...)
 
 ### Отличие от GetCourse событий
 
-| Аспект       | Traffic                               | GetCourse               |
-| ------------ | ------------------------------------- | ----------------------- |
-| **urlPath**  | URL страницы или `event://custom/...` | `event://getcourse/...` |
-| **action**   | Название действия                     | Не используется         |
-| **Источник** | Браузер (window.clrtTrack)            | Сервер GetCourse        |
+| Аспект       | Traffic                                        | GetCourse               |
+| ------------ | ---------------------------------------------- | ----------------------- |
+| **urlPath**  | URL страницы или `event://account/{path}/...`  | `event://getcourse/...` |
+| **action**   | `NULL` для HTTP-страниц; значение — только при явном трекинге | Не используется |
+| **Источник** | Браузер (window.clrtTrack) / сервер (writeWorkspaceEvent) | Сервер GetCourse |
 
 ---
 
 ## Выполнение запросов
 
-### Способ 1: gcQueryAi - Настраиваемый аккаунт (для клиентов)
+### Способ 1: gcQueryAi - Выполнение SQL в контексте настроенного аккаунта (SaaS)
 
-**Рекомендуется для клиентских приложений** - каждый пользователь видит трафик своего сайта.
+**Для клиентских приложений** — `gcQueryAi` выполняет SQL в контексте настроенного пользователем GetCourse-клиента и сообщает успех/ошибку. **Строк он НЕ возвращает** (`result = { success, error? }`, `result.rows === undefined`), поэтому для чтения данных используйте `queryAi` из `@traffic/sdk` (см. Способ 2).
 
 ```typescript
 import { gcQueryAi, integrationIsEnabled } from '@gc-mcp-server/sdk'
-import { installSupportedApp } from '@store/sdk'
+import { queryAi } from '@traffic/sdk'
 
-// Проверка настройки
+// Проверка настройки интеграции
 export const indexRoute = app.html('/', async (ctx) => {
   const isConfigured = await integrationIsEnabled(ctx)
 
@@ -195,7 +319,6 @@ export const indexRoute = app.html('/', async (ctx) => {
   return <AnalyticsApp />
 })
 
-// Запросы к настроенному аккаунту
 export const apiGetPageviewsRoute = app.get('/pageviews', async (ctx, req) => {
   const { dateFrom = '2025-01-01', dateTo = '2025-01-31' } = req.query
 
@@ -205,12 +328,20 @@ export const apiGetPageviewsRoute = app.get('/pageviews', async (ctx, req) => {
       COUNT(DISTINCT uid) as unique_visitors,
       COUNT(DISTINCT session_id) as sessions
     FROM chatium_ai.access_log
-    WHERE action = 'pageview'
+    WHERE startsWith(urlPath, 'https')  -- HTTP-страницы (action = NULL)
       AND dt BETWEEN '${dateFrom}' AND '${dateTo}'
   `
 
   try {
-    const result = await gcQueryAi(ctx, query)
+    // gcQueryAi только выполняет SQL в контексте GetCourse-клиента и сообщает успех/ошибку.
+    // ⚠️ Строк он НЕ возвращает: { success, error? }.
+    const { success, error } = await gcQueryAi(ctx, query)
+    if (!success) {
+      return { success: false, error }
+    }
+
+    // Чтение строк — только через queryAi (@traffic/sdk)
+    const result = await queryAi(ctx, query)
     const stats = result.rows?.[0]
 
     return {
@@ -229,7 +360,7 @@ export const apiGetPageviewsRoute = app.get('/pageviews', async (ctx, req) => {
 })
 ```
 
-### Способ 2: queryAi - Аккаунт разработчика (для внутренних инструментов)
+### Способ 2: queryAi - Аккаунт разработчика (чтение строк)
 
 **Использование для внутренних дашбордов** - данные из фиксированного аккаунта разработчика.
 
@@ -244,7 +375,7 @@ export const apiGetPageviewsRoute = app.get('/pageviews', async (ctx, req) => {
       COUNT(*) as total_pageviews,
       COUNT(DISTINCT uid) as unique_visitors
     FROM chatium_ai.access_log
-    WHERE action = 'pageview'
+    WHERE startsWith(urlPath, 'https')  -- HTTP-страницы (action = NULL)
       AND dt BETWEEN '${dateFrom}' AND '${dateTo}'
   `
 
@@ -266,51 +397,71 @@ export const apiGetPageviewsRoute = app.get('/pageviews', async (ctx, req) => {
 
 **⚠️ Важно**: При использовании `queryAi` все пользователи видят данные трафика одного аккаунта (разработчика).
 
-### Формат ответа (одинаковый для обоих)
+### Формат ответа (разный у двух функций!)
+
+Формы возврата различаются — это критично:
 
 ```typescript
-interface QueryResult {
-  rows: Array<Record<string, any>> // Массив строк
+// queryAi (из @traffic/sdk) — возвращает строки
+interface QueryAiResult {
+  rows: Array<Record<string, any>> // Массив строк таблицы
 }
 
-// Использование
-const result = await gcQueryAi(ctx, query) // или queryAi(ctx, query)
+const result = await queryAi(ctx, query)
 const rows = result.rows || []
 const firstRow = result.rows?.[0]
+
+// gcQueryAi (из @gc-mcp-server/sdk) — строк НЕ возвращает
+interface GcQueryAiResult {
+  success: boolean // true = успех, false = ошибка
+  error?: string   // Сообщение об ошибке (только при success = false)
+}
+
+const { success, error } = await gcQueryAi(ctx, query)
+// ⚠️ result.rows === undefined — для чтения строк используйте queryAi
 ```
 
 ### Выбор подхода
 
 ```typescript
 // ✅ Используйте gcQueryAi для:
-// - SaaS приложений (каждый клиент видит свой трафик)
-// - Мультиаккаунтных решений
-// - Агентских инструментов
+// - Мультиаккаунтных SaaS-сценариев (выполнить SQL в контексте GetCourse-клиента)
+// - Проверки успеха выполнения запроса ({ success, error? })
+// ⚠️ gcQueryAi строк НЕ возвращает — читать rows им нельзя
 import { gcQueryAi } from '@gc-mcp-server/sdk'
-const result = await gcQueryAi(ctx, query)
+const { success, error } = await gcQueryAi(ctx, query)
 
-// ✅ Используйте queryAi для:
+// ✅ Используйте queryAi для ЧТЕНИЯ ДАННЫХ (единственный способ получить rows):
 // - Внутренних дашбордов компании
 // - Аналитики собственного сайта
 // - Быстрого прототипирования
 import { queryAi } from '@traffic/sdk'
 const result = await queryAi(ctx, query)
+const rows = result.rows || []
 ```
 
 ---
 
 ## Типы событий трафика (21)
 
+> **Как на самом деле работают события (runtime):**
+>
+> 1. **Обычный HTTP-запрос к странице** записывается автоматически: `urlPath` = полный URL, `action` = **NULL** (не заполняется). Фильтр страниц — `startsWith(urlPath, 'https')`.
+> 2. **Событие через `writeWorkspaceEvent`**: `urlPath` = `event://account/{workspacePath}/{eventName}`, `action` = переданный параметр (или NULL).
+> 3. **Событие через `writeMetricEvent`**: записывается с переданным `action`.
+>
+> Значения `action` из списка ниже (21 тип) используются **только когда вы явно передаёте их** через `writeWorkspaceEvent` / `writeMetricEvent` / клиентский трекинг. Они **НЕ** заполняются автоматически для обычных загрузок страниц.
+
 ### Навигация
 
 #### 1. pageview - Просмотр страницы
 
-**Описание**: Фиксирует каждое посещение страницы.
+**Описание**: обычные HTTP-загрузки страниц пишутся с `action = NULL`; значение `action = 'pageview'` появится только при явном клиентском/серверном трекинге.
 
-**Поля**:
+**Поля (HTTP-страница)**:
 
 ```
-action = 'pageview'
+action = NULL                          -- обычный HTTP-запрос НЕ имеет action
 urlPath = 'https://example.com/page'
 title = 'Заголовок страницы'
 referer = 'https://google.com'
@@ -318,7 +469,7 @@ user_agent = 'Mozilla/5.0...'
 uid = 'browser_session_id'
 ```
 
-**SQL пример**:
+**SQL пример** (страницы — фильтр по `urlPath`, а не по `action`):
 
 ```sql
 SELECT
@@ -327,7 +478,7 @@ SELECT
   COUNT(*) as views,
   COUNT(DISTINCT uid) as unique_visitors
 FROM chatium_ai.access_log
-WHERE action = 'pageview'
+WHERE startsWith(urlPath, 'https')  -- HTTP-страницы (action = NULL)
   AND dt BETWEEN '2025-01-01' AND '2025-01-31'
 GROUP BY urlPath, title
 ORDER BY views DESC
@@ -597,7 +748,7 @@ SELECT
   dt,
   COUNT(DISTINCT uid) as dau
 FROM chatium_ai.access_log
-WHERE action = 'pageview'
+WHERE startsWith(urlPath, 'https')  -- HTTP-страницы (action = NULL)
   AND dt >= today() - 30
 GROUP BY dt
 ORDER BY dt ASC
@@ -607,7 +758,7 @@ SELECT
   toStartOfMonth(dt) as month,
   COUNT(DISTINCT uid) as mau
 FROM chatium_ai.access_log
-WHERE action = 'pageview'
+WHERE startsWith(urlPath, 'https')  -- HTTP-страницы (action = NULL)
   AND dt >= subtractMonths(today(), 6)
 GROUP BY month
 ORDER BY month ASC
@@ -621,7 +772,7 @@ WITH sessions AS (
     session_id,
     COUNT(*) as pages_viewed
   FROM chatium_ai.access_log
-  WHERE action = 'pageview'
+  WHERE startsWith(urlPath, 'https')  -- HTTP-страницы (action = NULL)
     AND dt >= today() - 7
   GROUP BY session_id
 )
@@ -661,7 +812,7 @@ WHERE duration_seconds > 0
 WITH pageviews AS (
   SELECT COUNT(DISTINCT uid) as count
   FROM chatium_ai.access_log
-  WHERE action = 'pageview' AND dt >= today() - 7
+  WHERE startsWith(urlPath, 'https') AND dt >= today() - 7  -- HTTP-страницы (action = NULL)
 ),
 registrations AS (
   SELECT COUNT(DISTINCT uid) as count
@@ -707,7 +858,7 @@ WITH first_visit AS (
     uid,
     toStartOfMonth(MIN(dt)) as cohort_month
   FROM chatium_ai.access_log
-  WHERE action = 'pageview'
+  WHERE startsWith(urlPath, 'https')  -- HTTP-страницы (action = NULL)
   GROUP BY uid
 ),
 monthly_activity AS (
@@ -715,7 +866,7 @@ monthly_activity AS (
     uid,
     toStartOfMonth(dt) as activity_month
   FROM chatium_ai.access_log
-  WHERE action = 'pageview'
+  WHERE startsWith(urlPath, 'https')  -- HTTP-страницы (action = NULL)
   GROUP BY uid, activity_month
 )
 SELECT
@@ -736,10 +887,12 @@ ORDER BY fv.cohort_month, ma.activity_month
 
 ## TypeScript примеры
 
-### Получение статистики трафика (с gcQueryAi)
+### Получение расширенной статистики трафика (queryAi)
+
+> **Почему queryAi, а не gcQueryAi:** пример читает строки (`result.rows`), а `gcQueryAi` строк не возвращает (`{ success, error? }`). Для чтения rows подходит только `queryAi` из `@traffic/sdk`.
 
 ```typescript
-import { gcQueryAi } from '@gc-mcp-server/sdk'
+import { queryAi } from '@traffic/sdk'
 
 interface TrafficStats {
   total_pageviews: number
@@ -759,7 +912,7 @@ export const apiTrafficStatsRoute = app.get('/traffic-stats', async (ctx, req) =
         COUNT(DISTINCT uid) as unique_visitors,
         COUNT(DISTINCT session_id) as sessions
       FROM chatium_ai.access_log
-      WHERE action = 'pageview'
+      WHERE startsWith(urlPath, 'https')  -- HTTP-страницы (action = NULL)
         AND dt BETWEEN '${dateFrom}' AND '${dateTo}'
     ),
     sessions_duration AS (
@@ -775,7 +928,7 @@ export const apiTrafficStatsRoute = app.get('/traffic-stats', async (ctx, req) =
         session_id,
         COUNT(*) as page_count
       FROM chatium_ai.access_log
-      WHERE action = 'pageview'
+      WHERE startsWith(urlPath, 'https')  -- HTTP-страницы (action = NULL)
         AND dt BETWEEN '${dateFrom}' AND '${dateTo}'
       GROUP BY session_id
       HAVING page_count = 1
@@ -793,8 +946,8 @@ export const apiTrafficStatsRoute = app.get('/traffic-stats', async (ctx, req) =
   `
 
   try {
-    // Используем gcQueryAi для настроенного аккаунта
-    const result = await gcQueryAi(ctx, query)
+    // Читаем строки через queryAi (@traffic/sdk)
+    const result = await queryAi(ctx, query)
     const stats = result.rows?.[0] as TrafficStats
 
     return {
@@ -826,7 +979,7 @@ export const apiTrafficStatsRoute = app.get('/traffic-stats', async (ctx, req) =
       COUNT(*) as total_pageviews,
       COUNT(DISTINCT uid) as unique_visitors
     FROM chatium_ai.access_log
-    WHERE action = 'pageview'
+    WHERE startsWith(urlPath, 'https')  -- HTTP-страницы (action = NULL)
       AND dt BETWEEN '${dateFrom}' AND '${dateTo}'
   `
 
@@ -849,7 +1002,7 @@ export const apiTrafficStatsRoute = app.get('/traffic-stats', async (ctx, req) =
 ### Популярные страницы
 
 ```typescript
-import { gcQueryAi } from '@gc-mcp-server/sdk'
+import { queryAi } from '@traffic/sdk'
 
 export const apiTopPagesRoute = app.get('/top-pages', async (ctx, req) => {
   const { limit = 10 } = req.query
@@ -865,16 +1018,15 @@ export const apiTopPagesRoute = app.get('/top-pages', async (ctx, req) => {
         ELSE 0 
       END) as scroll_to_bottom_rate
     FROM chatium_ai.access_log
-    WHERE action IN ('pageview', 'scroll')
+    WHERE startsWith(urlPath, 'https')  -- HTTP-страницы (action = NULL); scroll_to_bottom_rate учтёт action='scroll', если он трекается
       AND dt >= subtractDays(today(), 30)
-      AND startsWith(urlPath, 'https')
     GROUP BY urlPath, title
     ORDER BY views DESC
     LIMIT ${Number(limit)}
   `
 
-  // Можно использовать как gcQueryAi, так и queryAi
-  const result = await gcQueryAi(ctx, query)
+  // Чтение строк — через queryAi (gcQueryAi rows не возвращает)
+  const result = await queryAi(ctx, query)
 
   return {
     success: true,
@@ -902,7 +1054,7 @@ export const apiTrafficSourcesRoute = app.get('/traffic-sources', async (ctx) =>
       COUNT(DISTINCT uid) as visitors,
       COUNT(*) as visits
     FROM chatium_ai.access_log
-    WHERE action = 'pageview'
+    WHERE startsWith(urlPath, 'https')  -- HTTP-страницы (action = NULL)
       AND dt >= subtractDays(today(), 7)
     GROUP BY source
     ORDER BY visitors DESC
@@ -918,6 +1070,92 @@ export const apiTrafficSourcesRoute = app.get('/traffic-sources', async (ctx) =>
 })
 ```
 
+### Запись workspace-события (writeWorkspaceEvent)
+
+```typescript
+import { writeWorkspaceEvent } from '@start/sdk'
+
+// ✅ Runtime: все поля записываются и читаются корректно.
+// urlPath записи будет: event://account/{workspacePath}/{eventName}
+// writeWorkspaceEvent НЕ требует // @shared на файле-роуте.
+await writeWorkspaceEvent(ctx, 'form_submitted', {
+  uid: userUid,                           // строка, ID сессии
+  action_param1: formData.name,           // строка
+  action_param1_float: amount,            // число (Float32)
+  action_param1_int: quantity,            // число (Int32)
+  action_param1_arrstr: ['tag1', 'tag2'], // массив строк
+  action_param1_mapstrstr: {              // Map(String, String)
+    key1: 'val1',
+    key2: 'val2',
+  },
+  utm_source: req.query.utm_source,
+  customer_contacts: [                    // контакты для CRM
+    { type: 'email', value: formData.email },
+  ],
+})
+```
+
+### Запись метрики (writeMetricEvent)
+
+```typescript
+import { writeMetricEvent } from '@app/metric'
+
+// ✅ Runtime: writeMetricEvent существует и работает.
+// Примечание: MetricEventData — type-only экспорт (import type).
+await writeMetricEvent(ctx, {
+  action: 'purchase',
+  action_param1: formData.name,
+  action_param1_float: 1500.0,
+  uid: userUid,
+})
+```
+
+### Запись customer-события (captureCustomerEvent)
+
+```typescript
+import { captureCustomerEvent, getCustomerEventUrl } from '@crm/sdk/v2'
+
+// ✅ Runtime: captureCustomerEvent работает. Канонический путь импорта — @crm/sdk/v2 (НЕ @crm/v2/sdk).
+// urlPath записи: event://crm/customer/event/{eventName}
+
+// Пример с контактами
+const result = await captureCustomerEvent(ctx, {
+  event: 'order_created',
+  name: 'Создан заказ',
+  contacts: [
+    { type: 'email', value: formData.email },
+    { type: 'phone', value: formData.phone },
+  ],
+  payload: { orderId: '12345', amount: 1500 },
+})
+// result = { success: true, customerIds: [...], contactIds: [...], recordIds: [...] }
+
+// Пример с appendUserContacts
+const result2 = await captureCustomerEvent(ctx, {
+  event: 'form_submitted',
+  appendUserContacts: ctx.user?.id,
+  payload: { source: 'landing' },
+})
+// ⚠️ appendUserContacts может вернуть 'no_contacts', если у пользователя нет
+//    подтверждённых контактов в системе.
+
+// getCustomerEventUrl — async, требует await
+const eventUrl = await getCustomerEventUrl(ctx, 'order_created')
+// Возвращает: "event://crm/customer/event/order_created"
+```
+
+### Список зарегистрированных событий (getAccountEvents)
+
+```typescript
+import { getAccountEvents } from '@start/sdk'
+
+// ✅ Runtime: возвращает массив событий.
+const events = await getAccountEvents(ctx)
+// Поля: name, description, url, icon, category, payloadMapping
+// ⚠️ Поле 'type' (customerEvent/workspaceEvent) объявлено в типах,
+//    но в runtime может быть undefined.
+```
+
 ---
 
 ## Лучшие практики
@@ -925,25 +1163,31 @@ export const apiTrafficSourcesRoute = app.get('/traffic-sources', async (ctx) =>
 ### 1. Используйте правильный фильтр
 
 ```sql
--- ✅ Для событий трафика
-WHERE action = 'pageview'
-
--- ✅ Для custom событий
-WHERE startsWith(urlPath, 'event://custom/')
-
--- ✅ Для страниц сайта
+-- ✅ HTTP-страницы (action = NULL) — фильтр по urlPath
 WHERE startsWith(urlPath, 'https')
+
+-- ✅ Workspace-события (writeWorkspaceEvent)
+WHERE startsWith(urlPath, 'event://account/')
+
+-- ✅ Customer-события (captureCustomerEvent)
+WHERE startsWith(urlPath, 'event://crm/')
+
+-- ✅ Оба типа event:// вместе
+WHERE startsWith(urlPath, 'event://')
+
+-- ✅ Явно оттрекованное действие (только если action передавался)
+WHERE action = 'form_submit'
 ```
 
 ### 2. Всегда фильтруйте по дате
 
 ```sql
 -- ✅ Правильно
-WHERE action = 'pageview'
+WHERE startsWith(urlPath, 'https')
   AND dt BETWEEN '2025-01-01' AND '2025-01-31'
 
 -- ❌ Неправильно
-WHERE action = 'pageview'
+WHERE startsWith(urlPath, 'https')
 -- Медленно без фильтра по дате!
 ```
 
@@ -957,7 +1201,15 @@ COUNT(DISTINCT uid) as unique_visitors
 COUNT(DISTINCT user_id) as logged_in_users
 ```
 
-### 4. Проверяйте наличие данных
+### 4. Map(String, String) — фильтрация непустых значений
+
+```sql
+-- ❌ mapSize() в ClickHouse НЕ существует
+-- ✅ Используйте mapKeys():
+WHERE mapKeys(action_param1_mapstrstr) != []
+```
+
+### 5. Проверяйте наличие данных
 
 ```typescript
 const result = await queryAi(ctx, query)
@@ -967,7 +1219,7 @@ if (!result.rows || result.rows.length === 0) {
 }
 ```
 
-### 5. Логируйте медленные запросы
+### 6. Логируйте медленные запросы
 
 ```typescript
 const startTime = Date.now()
@@ -986,24 +1238,29 @@ if (duration > 3000) {
 
 ## Полный список событий трафика
 
-### ⚠️ Важно: HTTP/HTTPS события
+### ⚠️ Важно: HTTP/HTTPS события и `action = NULL`
 
-**Все запросы к http:// и https:// URL группируются по полю `action`**, а не по конкретному URL.
+**Обычные HTTP-загрузки страниц пишутся с `action = NULL`** (runtime-подтверждено). Фильтровать их по `action = 'pageview'` нельзя — вернётся пусто. Страницы отбираются по `urlPath`.
 
 **Пример:**
 
 ```sql
--- ❌ НЕПРАВИЛЬНО: фильтровать по конкретным URL
-WHERE urlPath = 'https://example.com/page1'
-
--- ✅ ПРАВИЛЬНО: фильтровать по action
+-- ❌ НЕПРАВИЛЬНО: у обычных HTTP-страниц action = NULL, фильтр вернёт пусто
 WHERE action = 'pageview'
-  AND (startsWith(urlPath, 'http://') OR startsWith(urlPath, 'https://'))
+
+-- ✅ ПРАВИЛЬНО: фильтровать страницы по urlPath
+WHERE startsWith(urlPath, 'https')
+  AND dt >= today() - 7
+
+-- ✅ Отдельная страница — по точному urlPath (это допустимо)
+WHERE urlPath = 'https://example.com/page1'
 ```
 
 ### Базовые события HTTP трафика (8)
 
-Эти события определены в `shared/eventTypes.ts` и доступны для отслеживания:
+> **Важно:** перечисленные ниже значения `action` заполняются **только при явном трекинге** (клиентский `window.clrtTrack` / `writeWorkspaceEvent` / `writeMetricEvent`). Для обычных загрузок страниц `action = NULL`.
+
+Эти события можно определить в `shared/eventTypes.ts` приложения для отслеживания:
 
 | Action           | Описание                | Использование                    |
 | ---------------- | ----------------------- | -------------------------------- |
@@ -1059,7 +1316,7 @@ SELECT
   urlPath,
   action,
   CASE
-    WHEN action IN ('pageview', 'button_click', 'link_click') THEN 'traffic'
+    WHEN startsWith(urlPath, 'https') OR action IN ('button_click', 'link_click', 'form_submit') THEN 'traffic'
     WHEN urlPath LIKE 'event://getcourse/%' THEN 'getcourse'
     WHEN urlPath LIKE 'event://refunnels/%' THEN 'refunnels'
     ELSE 'other'
@@ -1070,8 +1327,9 @@ SELECT
   ts
 FROM chatium_ai.access_log
 WHERE (
-  -- Traffic события
-  action IN ('pageview', 'button_click', 'form_submit', 'video_play')
+  -- Traffic: HTTP-страницы (action = NULL) + явно оттрекованные действия
+  startsWith(urlPath, 'https')
+  OR action IN ('button_click', 'form_submit', 'video_play')
   -- GetCourse события (паттерн)
   OR urlPath LIKE 'event://getcourse/%'
   -- ReFunnels события
@@ -1163,7 +1421,8 @@ export const apiEventsRoute = app
       OFFSET ${offset}
     `
 
-      const result = await gcQueryAi(ctx, query)
+      // Чтение строк — через queryAi (@traffic/sdk); gcQueryAi rows не возвращает
+      const result = await queryAi(ctx, query)
 
       return {
         success: true,
@@ -1407,7 +1666,7 @@ const query = `
   OFFSET ${offset}
 `
 
-const result = await gcQueryAi(ctx, query)
+const result = await queryAi(ctx, query) // чтение строк — только через queryAi
 const allEvents = result.rows || []
 
 // Применяем дедупликацию
@@ -1446,7 +1705,7 @@ const query = `
   LIMIT 100
 `
 
-const result = await gcQueryAi(ctx, query)
+const result = await queryAi(ctx, query) // чтение строк — только через queryAi
 const deduplicatedEvents = deduplicateEvents(result.rows || [])
 
 // Отправляем через WebSocket
@@ -1545,6 +1804,17 @@ const startMonitoring = async () => {
 ```
 
 ### Джоба мониторинга
+
+> **⚠️ Импорт WebSocket-функций (runtime):** `genSocketId` и `sendDataToSocket` берутся из **`@app/socket`**, а НЕ из `@start/sdk` — в `@start/sdk` их нет (вернут `undefined`).
+>
+> ```typescript
+> // ✅ Правильно:
+> import { genSocketId, sendDataToSocket } from '@app/socket'
+> import { queryAi } from '@traffic/sdk'
+>
+> // ❌ Неправильно:
+> // import { genSocketId } from '@start/sdk'  — undefined
+> ```
 
 ```typescript
 export const monitorEventsJob = app.job(
@@ -1757,8 +2027,50 @@ case 'events_deduplication':
 
 ---
 
+## Расхождения с предыдущей версией документа
+
+Проверено прямым запуском в runtime `2026-07-18`. Ниже — что было исправлено относительно версии 3.0.
+
+| № | Утверждение в старой версии | Реальность (runtime) | Статус |
+|---|---|---|---|
+| 1 | `action = 'pageview'` для HTTP-страниц | `action = NULL`; страницы фильтруются по `startsWith(urlPath, 'https')` | ❌ Исправлено |
+| 2 | `genSocketId` / `sendDataToSocket` из `@start/sdk` | Из `@app/socket` | ❌ Исправлено |
+| 3 | URL-паттерн `event://custom/...` | Реальный паттерн `event://account/{workspacePath}/...` | ❌ Исправлено |
+| 4 | «HTTP/HTTPS события группируются по `action`» | Обычные загрузки страниц имеют `action = NULL`, группировка — по `urlPath` | ❌ Исправлено |
+| 5 | `getCustomerEventUrl` — синхронная | Async, требует `await` | ❌ Исправлено |
+| 6 | `appendUserContacts` гарантирует контакты | Может вернуть `no_contacts`, если нет подтверждённых контактов | ❌ Уточнено |
+| 7 | `mapSize()` доступен в ClickHouse | Функции нет; используйте `mapKeys() != []` | ❌ Исправлено |
+| 8 | Путь импорта CRM `@crm/v2/sdk` | Канонический путь: `@crm/sdk/v2` | ❌ Исправлено |
+| 9 | Список из 21 типа событий как авто-заполняемый | Существует, но `action` не заполняется автоматически | ⚠️ Уточнено |
+| 10 | Схема `access_log` (частичная, `action String`) | 80+ колонок, `action Nullable(String)`, полная схема приведена | ✅ Дополнено |
+| 11 | Таблицы `behaviour2_log`, `traffic_source_statistics` | ✅ Существуют, схемы добавлены | ✅ Дополнено |
+| 12 | `queryAi` (`@traffic/sdk`) | ✅ Работает (локальных типов нет, но в runtime работает) | ✅ OK |
+| 13 | `gcQueryAi` / `integrationIsEnabled` (`@gc-mcp-server/sdk`) | ✅ Работают. Но `gcQueryAi` **НЕ возвращает rows** — только `{ success, error? }` | ⚠️ Уточнено |
+| 13a | «`queryAi` и `gcQueryAi` дают одинаковый формат `{ rows }`» | `queryAi` → `{ rows }`; `gcQueryAi` → `{ success, error? }` (строк не даёт). Читать rows — только `queryAi` из `@traffic/sdk` | ❌ Исправлено |
+| 14 | `writeWorkspaceEvent`, `writeMetricEvent`, `captureCustomerEvent` | ✅ Работают, все поля читаются | ✅ OK |
+| 15 | Пагинация с `maxTimestamp` | ✅ Паттерн корректен | ✅ OK |
+| 16 | Дедупликация событий | ✅ Алгоритм корректен | ✅ OK |
+| 17 | `app.job` / `scheduleJobAfter` / `scheduleJobAsap` | ✅ Существуют и работают | ✅ OK |
+| 18 | `getWorkspaceEventUrl` / `getAccountEvents` | ✅ Существуют (async; `type` у события может быть `undefined` в runtime) | ⚠️ Уточнено |
+
+---
+
+## Зависимости (проверенные модули)
+
+| Модуль | Функции | Статус |
+|---|---|---|
+| `@traffic/sdk` | `queryAi(ctx, sql)` | ✅ Работает |
+| `@gc-mcp-server/sdk` | `gcQueryAi(ctx, sql)` (→ `{ success, error? }`), `integrationIsEnabled(ctx)` | ✅ Работает (gcQueryAi rows не возвращает) |
+| `@start/sdk` | `writeWorkspaceEvent(ctx, eventName, data)`, `getAccountEvents(ctx)`, `getWorkspaceEventUrl(ctx, eventName)` | ✅ Работает |
+| `@app/metric` | `writeMetricEvent(ctx, data)` (`MetricEventData` — type-only) | ✅ Работает |
+| `@crm/sdk/v2` | `captureCustomerEvent(ctx, input)`, `getCustomerEventUrl(ctx, event)` — async | ✅ Работает |
+| `@app/socket` | `genSocketId(ctx, id)`, `sendDataToSocket(ctx, id, data)` — **НЕ** из `@start/sdk` | ✅ Работает |
+
+---
+
 ## Связанные документы
 
+- **049-clickhouse.md** — ClickHouse целиком: структуры всех таблиц (access_log, behaviour2_log, traffic_source_statistics, account_logs), запись событий, сквозная аналитика, частые ошибки
 - **016-analytics-getcourse.md** — События GetCourse и ClickHouse запросы
 - **016-analytics-workspace.md** — События workspace (writeWorkspaceEvent)
 - **016-analytics-subscriptions.md** — Система подписок на события
@@ -1772,19 +2084,18 @@ case 'events_deduplication':
 
 ---
 
-**Версия**: 3.0  
+**Версия**: 3.2 (runtime-верифицировано 2026-07-18)  
 **Дата создания**: 2025-11-07  
-**Последнее обновление**: 2025-11-10  
+**Последнее обновление**: 2026-07-18 — runtime-верифицировано (на `s.chtm.aley.pro`)  
 **Статус**:
 
-- ✅ Добавлена исчерпывающая инструкция по **пагинации с фиксацией timestamp**
-- ✅ Добавлена полная инструкция по **последовательной дедупликации**
-- ✅ Описан полный flow работы: загрузка → мониторинг → пагинация
-- ✅ Примеры кода для бэкенда (API, джоба) и фронтенда (Vue)
-- ✅ Unit тесты и метрики логирования
-- ✅ Таблица применения дедупликации в разных местах
-- Добавлена информация о двух способах работы с трафиком: настраиваемый MCP Client и аккаунт разработчика
-- Актуализирован список событий (8 базовых + 13 расширенных = 21 тип)
-- Добавлено важное правило: HTTP/HTTPS события группируются по `action`, а не по URL
-- Добавлены примеры комбинированных запросов с GetCourse событиями
-- Добавлена функция `buildEventFilter()` для динамической фильтрации
+- ✅ **runtime-верифицировано 2026-07-18**: все SDK-вызовы, имена колонок `access_log` и SQL-фильтры проверены прямым запуском
+- ✅ Исправлено (v3.2): `gcQueryAi` (`@gc-mcp-server/sdk`) возвращает `{ success, error? }` и **строк НЕ отдаёт** (`result.rows === undefined`); для чтения строк — `queryAi` из `@traffic/sdk` (`{ rows }`)
+- ✅ Ключевое исправление: обычные HTTP-страницы имеют `action = NULL` — фильтр по `startsWith(urlPath, 'https')`, а не `action = 'pageview'`
+- ✅ Приведена полная схема `access_log` (80+ колонок), добавлены `behaviour2_log` и `traffic_source_statistics`
+- ✅ Исправлены импорты: `genSocketId`/`sendDataToSocket` из `@app/socket`; CRM — `@crm/sdk/v2`
+- ✅ Исправлен паттерн событий: `event://account/{workspacePath}/...` и `event://crm/customer/event/...` (не `event://custom/...`)
+- ✅ Уточнено: `getCustomerEventUrl` async; `mapSize()` не существует (используйте `mapKeys() != []`); список из 21 `action` заполняется только при явном трекинге
+- ✅ Добавлены примеры записи событий: `writeWorkspaceEvent`, `writeMetricEvent`, `captureCustomerEvent`, `getAccountEvents`
+- ✅ Добавлены таблицы «Расхождения с предыдущей версией» и «Зависимости (проверенные модули)»
+- ✅ Сохранены инструкции по **пагинации с фиксацией timestamp** и **последовательной дедупликации** (подтверждены runtime как корректные)
