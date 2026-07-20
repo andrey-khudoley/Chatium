@@ -33,7 +33,7 @@
 
 - **requireAnyUser(ctx)** — гарантирует наличие пользователя (любого, в т.ч. бота).
 - **requireRealUser(ctx)** — только реальный пользователь (не бот).
-- **requireAccountRole(ctx, role)** — проверка роли аккаунта (Admin, Staff, User).
+- **requireAccountRole(ctx, role)** — проверка роли аккаунта. Допустимые значения: `'Staff' | 'Admin' | 'Developer' | 'Owner'`. Роли `'User'` **не существует** (см. `003-auth.md`).
 - **findUserById(ctx, id)** / **findUsersByIds(ctx, ids)** — поиск по id, возвращают UgcSmartUser.
 - **createRealUser(ctx, info?)** / **createOrUpdateBotUser(ctx, ...)** — создание пользователей.
 - **updateAccountRole**, **updateUsername** — реэкспорт из UgcSmartUser.

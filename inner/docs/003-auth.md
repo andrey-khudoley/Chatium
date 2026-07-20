@@ -206,7 +206,7 @@ ctx.user.lang // Язык пользователя ('ru', 'en', etc.)
 // Проверка роли
 ctx.user.is('Admin') // true если админ
 ctx.user.is('Staff') // true если Staff или Admin
-ctx.user.is('User') // ⚠️ допустимость 'User' здесь не проверена — в AccountRole такой роли нет
+// ctx.user.is('User') — ❌ не скомпилируется: is(role: Exclude<AccountRole, 'None'>)
 
 // Получение thumbnail с кастомным размером
 ctx.user.getImageThumbnailUrl(200) // 200x200
@@ -260,13 +260,17 @@ export const dashboardRoute = app.get('/', async (ctx) => {
 - Доступны всем авторизованным
 - ⚠️ Роли `'User'` в типе `AccountRole` **нет** — `requireAccountRole(ctx, 'User')` не скомпилируется. Для «любого авторизованного» используйте `requireRealUser(ctx)`
 
-**Иерархия ролей**:
+**Иерархия ролей** (от высшей к низшей):
 
 ```
-Admin
-  └─ Staff
-      └─ User
+Owner
+  └─ Developer
+      └─ Admin
+          └─ Staff
+              └─ None
 ```
+
+`requireAccountRole(ctx, X)` пропускает X и всех выше. Например `requireAccountRole(ctx, 'Staff')` пропустит Staff, Admin, Developer и Owner.
 
 **Проверка**:
 
@@ -279,9 +283,8 @@ if (ctx.user.is('Staff')) {
   // Сотрудники и администраторы
 }
 
-if (ctx.user.is('User')) {
-  // Все авторизованные пользователи
-}
+// ❌ ctx.user.is('User') не скомпилируется — is(role: Exclude<AccountRole, 'None'>)
+// Для «любого авторизованного» — requireRealUser(ctx) или ctx.user без проверки роли
 ```
 
 ---
@@ -459,7 +462,7 @@ import { provideUser } from '@app/auth'
 const authMiddleware = app.use(
   provideUser({
     anonymous: false,
-    minRole: 'User'
+    minRole: 'Staff' // ❌ 'User' невалиден: minRole?: Exclude<AccountRole, 'None'>
   })
 )
 
@@ -1108,37 +1111,9 @@ export function isValidPhone(phone: string): boolean {
 
 ### API endpoint для хеша пароля
 
-**api/password.ts:**
-
-```typescript
-// @shared-route
-import { getPasswordHashWithSalt } from '@app/auth/provider'
-
-export const apiGetPasswordHashRoute = app.post('/password-hash', async (ctx, req) => {
-  try {
-    const { it, ik, pwd } = req.body
-
-    if (!it || !ik || !pwd) {
-      return ctx.text('Missing parameters', 400)
-    }
-
-    const hash = await getPasswordHashWithSalt(ctx, it, ik, pwd)
-    return ctx.text(hash)
-  } catch (error: any) {
-    ctx.account.log('Failed to get password hash', {
-      level: 'error',
-      json: { error: error.message }
-    })
-    return ctx.text('Error', 500)
-  }
-})
-```
-
-**Важно:**
-
-- Хеш пароля получается через `getPasswordHashWithSalt(ctx, type, identifier, password)`
-- Параметры: `it` (Identity Type), `ik` (Identity Key), `pwd` (Password)
-- Возвращает текстовый хеш, который передаётся в `/s/auth/password`
+> ⚠️ **Раздел снят (сверка 2026-07-20).** Здесь описывался эндпоинт на основе `getPasswordHashWithSalt` из `@app/auth/provider`. **Такой функции не существует** — её нет ни в `@app/auth`, ни в каком-либо другом модуле `@app/*`/`@users/*` (проверено поиском по `node_modules`). Пример не работал.
+>
+> Как получать хеш пароля для `/s/auth/password` — **не выяснено**. Если понадобится вход по паролю, механику нужно уточнить у платформы, а не воспроизводить прежний пример.
 
 ### API endpoint для Telegram OAuth
 
@@ -1746,11 +1721,7 @@ error.value = handleAuthError(result.error)
 ✅ const normalized = phone.replace(/[^0-9]/g, '')
 ```
 
-3. **Не храните пароли в открытом виде:**
-
-```typescript
-✅ const hash = await getPasswordHashWithSalt(ctx, type, identifier, password)
-```
+3. **Не храните пароли в открытом виде.** (Прежний пример с `getPasswordHashWithSalt` снят — такой функции не существует, см. раздел «API endpoint для хеша пароля».)
 
 ### Отладка провайдеров
 

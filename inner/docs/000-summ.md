@@ -595,7 +595,7 @@
 
 ### Авторизация
 
-`requireAccountRole`, `requireRealUser`, `requireAnyUser`, `ctx.user`, `Admin`, `Staff`, `User`, `роли`, `права`
+`requireAccountRole`, `requireRealUser`, `requireAnyUser`, `ctx.user`, `Owner`, `Developer`, `Admin`, `Staff`, `None`, `роли`, `права`, `иерархия ролей`
 
 ### HTTP клиент
 

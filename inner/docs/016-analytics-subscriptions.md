@@ -630,7 +630,7 @@ ORDER BY ts64 DESC
 import { requireRealUser, requireAccountRole, requireAnyUser } from '@app/auth'
 
 const user = requireRealUser(ctx) // синхронный, возвращает UgcSmartUser (не void!)
-requireAccountRole(ctx, 'Admin')  // Admin включает Staff и User
+requireAccountRole(ctx, 'Admin')  // пропускает Admin, Developer, Owner
 const anon = await requireAnyUser(ctx) // асинхронный — требует await
 ```
 
