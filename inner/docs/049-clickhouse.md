@@ -38,7 +38,7 @@ Workspace-код (TypeScript)
     ├── writeMetricEvent(ctx, data)          → @app/metric   → ClickHouse (chatium_ai.access_log)
     ├── writeWorkspaceEvent(ctx, name, data)  → @start/sdk    → ClickHouse (chatium_ai.access_log)
     ├── captureCustomerEvent(ctx, input)      → @crm/sdk/v2   → ClickHouse + CRM
-    └── ctx.account.log(msg, params)          → метод ctx     → ClickHouse (chatium_ai.account_logs)
+    └── ctx.account.log(msg, params)          → метод ctx     → ClickHouse (chatium_ai.account_logs) — см. 050-logging.md
 
 Чтение:
     ├── queryAi(ctx, sql)                     → @traffic/sdk  ← ClickHouse (SELECT) — единственный рабочий способ
@@ -189,72 +189,11 @@ const result = await captureCustomerEvent(ctx, {
 
 ---
 
-## Запись логов: ctx.account.log
+## Логи приложения → 050-logging.md
 
-Технические логи приложения → `chatium_ai.account_logs`. Единственный способ логирования, переживающий запрос (не `console.log`, не `ctx.console`).
+Технические логи (`ctx.account.log` → `chatium_ai.account_logs`) вынесены в отдельный документ: **[050-logging.md](050-logging.md)**. Там — чем логировать, чем это отличается от `ctx.console`, асинхронность записи, чтение через `queryAi`, фильтр по `workspace_path`, тип `ts64`, готовые запросы для страницы логов и частые ошибки.
 
-```typescript
-ctx.account.log('Пользователь выполнил действие', {
-  level: 'info',
-  json: { amount: 1500, orderId: '123' },      // произвольная структура (НЕ JSON.stringify)
-  kv: { source: 'payment', userId: ctx.user?.id ?? '' },
-})
-
-ctx.account.log('Текст сообщения')             // просто строка
-ctx.account.log(new Error('Ошибка'))            // Error
-ctx.account.log('Ошибка', new Error('msg'))     // строка + Error
-```
-
-**LogParams (runtime-подтверждён):**
-
-```typescript
-type LogParams = {
-  msg?: string | number
-  level?: LogLevel   // 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'unknown'
-  json?: unknown     // произвольная структура — сериализуется в колонку json_str
-  kv?: { [key: string]: string | number | undefined }   // хранится как "key=value key2=value2"
-  err?: Error
-}
-
-// Перегрузки:
-log(params: LogParams): void
-log(msg: string | number, params?: LogParamsNoMsg): void
-log(msg: string | number, err?: Error): void
-log(err: Error): void
-```
-
-> ⚠️ Полей `source`, `userId`, `extra_json` в `LogParams` **нет**. Плоские метки → `kv`, сложные структуры → `json`.
-
-### ⚠️ Запись асинхронна
-
-`ctx.account.log` возвращает `void` и **не ждёт подтверждения**. Запись доходит до ClickHouse через сотни миллисекунд — секунды.
-
-Практические следствия:
-
-- **в том же запросе, где вы залогировали, `queryAi` эту запись ещё не найдёт.** Тест вида «записали → сразу прочитали» не работает: нужен отдельный запрос или отложенный джоб;
-- отметка времени при этом **точна** — `ts64` соответствует моменту вызова, а не моменту, когда строка стала видна;
-- для админ-страницы это безразлично: следующий запрос пользователя увидит данные.
-
-### ctx.console — это НЕ логирование
-
-Рядом существует `ctx.console` (в некоторых контекстах доступен как `ctx.log`) — и его легко перепутать с логированием. Это **не** оно:
-
-```typescript
-ctx.console.log('отладка', someValue)   // → в консоль браузера РАЗРАБОТЧИКА
-ctx.console.warn(...)
-ctx.console.error(...)
-```
-
-Из типов платформы (`CtxConsole`): *«Debug API for UGC developers to write output to the developer's browser/client console from which the request is made»*.
-
-| | `ctx.account.log` | `ctx.console.log` |
-|---|---|---|
-| Куда | ClickHouse `account_logs` | консоль браузера разработчика |
-| Переживает запрос | да | нет |
-| Работает в проде | да | только при запросе из среды разработки |
-| Годится для диагностики постфактум | да | нет |
-
-Вывод сериализуется через `JSON.stringify` перед отправкой клиенту. Использовать `ctx.console` можно для отладки во время разработки, но **строить на нём логирование нельзя** — ничего не сохраняется.
+Здесь остаётся всё, что касается **событий** (`access_log`) и аналитики.
 
 ---
 
@@ -264,7 +203,7 @@ ctx.console.error(...)
 
 ### ⚠️ Импорт только динамический
 
-Модуля **нет** в `node_modules` и **нет** его декларации в `@app/types/modules.d.ts` — платформа внедряет его в рантайме. Поэтому статический импорт не резолвится, а типов нет и подавление обязательно:
+Модуля **нет** в `node_modules` и нет его декларации в `@app/types/modules.d.ts` — платформа внедряет его в рантайме. Статический импорт не резолвится, типов нет:
 
 ```typescript
 // @ts-ignore — @traffic/sdk внедряется платформой, локальных типов нет
@@ -281,7 +220,7 @@ const result = await queryAi(ctx, `
 return result.rows // Array<Record<string, any>>
 ```
 
-Проверено прогоном: модуль резолвится и отдаёт 19 экспортов — `queryAi`, `query`, `raw`, `filteredQueryAi`, `filterByDate`, `groupByDate`, `writeAccessLog` и другие. Только `SELECT`, никакого DDL.
+Проверено прогоном: модуль отдаёт 19 экспортов — `queryAi`, `query`, `raw`, `filteredQueryAi`, `filterByDate`, `groupByDate`, `writeAccessLog` и другие. Только `SELECT`, никакого DDL.
 
 **Подтверждённые таблицы** (проверены `queryAi`-запросами):
 
@@ -290,70 +229,9 @@ return result.rows // Array<Record<string, any>>
 | `chatium_ai.access_log` | 69 (в выборке `queryAi`; полная таблица шире — см. [038-metric.md](038-metric.md)) | Все задокументированные колонки существуют |
 | `chatium_ai.behaviour2_log` | 19 | VIEW поведенческой аналитики |
 | `chatium_ai.traffic_source_statistics` | ~25 | Расходы (может быть пуста) |
-| `chatium_ai.account_logs` | ~39 | Читается только через `queryAi` |
+| `chatium_ai.account_logs` | ~39 | Логи приложения — см. [050-logging.md](050-logging.md) |
 
-**Замеры** (прогон 2026-07-21): простой `SELECT` — ~120 мс; выборка страницы с отдельным `count()` — ~230 мс.
-
----
-
-## Чтение account_logs
-
-> ⚠️ **`queryAccountLogs` и `listAccountLogs` из `@app/ugc` НЕ РАБОТАЮТ в runtime**, хотя объявлены в `.d.ts`. Выбрасывают `Method not found (from sysCall 'ugc.queryAccountLogs')` / `'ugc.listAccountLogs'`. Подтверждено дважды, на разных прогонах.
-
-**Единственный рабочий способ — `queryAi`:**
-
-```typescript
-// @ts-ignore
-const { queryAi } = await import('@traffic/sdk')
-
-const logs = await queryAi(ctx, `
-  SELECT ts64, level, msg, kv, json_str
-  FROM chatium_ai.account_logs
-  WHERE workspace_path = 'p/units/myproject'
-    AND level IN ('error', 'warn')
-  ORDER BY ts64 DESC
-  LIMIT 50
-`)
-```
-
-### Отбор своих записей: workspace_path
-
-**Таблица общая на аккаунт** — туда пишут все приложения. Без фильтра вы увидите чужие логи.
-
-Значение `workspace_path` — **относительный путь проекта от корня аккаунта, без ведущего слеша**: `p/units/myproject`, `temp/qna2007`. Заметная доля строк имеет пустой `workspace_path` (системные записи платформы) — фильтр отсекает и их.
-
-Фильтр по `workspace_path` обязателен в любом запросе к `account_logs` из кода приложения.
-
-### Колонка ts64
-
-**Тип — `DateTime64(3, 'UTC')`** (миллисекунды, UTC). Проверено: `SELECT toTypeName(ts64)` возвращает именно это.
-
-В ответе `queryAi` приходит **отрендеренной строкой** `"2026-07-21 10:49:43.834"` — но это форма выдачи, а не тип колонки. Все временные операции работают средствами SQL и **должны делаться там**, а не разбором строк в коде:
-
-```sql
-ORDER BY ts64 DESC                              -- ✅
-WHERE ts64 >= now() - INTERVAL 1 HOUR           -- ✅
-WHERE ts64 BETWEEN '2026-07-21 00:00:00' AND '2026-07-21 23:59:59'  -- ✅
-WHERE ts64 >= '2026-07-21 00:00:00'             -- ✅ сравнение со строковым литералом
-```
-
-### Запросы для страницы логов
-
-Проверено прогоном, всё работает:
-
-| Задача | Запрос |
-|---|---|
-| Пагинация | `ORDER BY ts64 DESC LIMIT 50 OFFSET 100` |
-| Число страниц | `SELECT count() FROM … WHERE <те же условия>` |
-| Фильтр по уровню | `WHERE level IN ('error', 'warn')` |
-| Поиск по тексту | `WHERE msg LIKE '%текст%'` |
-| Поиск без учёта регистра | `WHERE msg ILIKE '%ТЕКСТ%'` |
-| Поиск по содержимому payload | `WHERE json_str LIKE '%значение%'` |
-| Извлечение поля из payload | `JSONExtractString(json_str, 'orderId')` |
-
-Хранение: `json` из `LogParams` попадает в `json_str` **сериализованной строкой**; `kv` — в одноимённую колонку строкой вида `"key=value key2=value2"`, поэтому фильтрация по меткам — текстовая.
-
-Альтернатива для разработки — платформенный dev-логгер `/s/dev/logs`.
+**Замеры:** простой `SELECT` — ~120 мс; выборка страницы с отдельным `count()` — ~230 мс.
 
 ---
 
@@ -556,7 +434,7 @@ CREATE VIEW chatium_ai.behaviour2_log
 
 ### account_logs
 
-Логи приложения. **Чтение только через `queryAi`**, обязательный фильтр по `workspace_path`, `ts64` — `DateTime64(3,'UTC')` (см. [Чтение account_logs](#чтение-account_logs)). Подтверждённые колонки: `ts64`, `dt`, `level`, `msg`, `kv`, `json_str`, `extra_json`, `user_id`, `source`, `workspace_path`, … — всего ~39 (тип `UgcAccountLogRow` в `@app/ugc`). Запись — `msg` (не `message`); `json` → `json_str`; `kv` → `"key=value ..."`.
+Логи приложения. Полное описание — **[050-logging.md](050-logging.md)**: раскладка колонок при записи, обязательный фильтр по `workspace_path`, тип `ts64` (`DateTime64(3,'UTC')`), готовые запросы, неработающие `queryAccountLogs`/`listAccountLogs`.
 
 ---
 

@@ -65,6 +65,7 @@
 | **047-base64.md**                       | Base64 UTF-8 в UGC               | самописный `utf8StringToBase64` / `base64ToUtf8String` (образец liveahalf); **не** `base64Encode`/`base64Decode`; без `Buffer`/`btoa`/`atob`; GetCourse Legacy `params`                                                                                                                                                                                                                                                                                                        |
 | **048-chatium-http-response-probes.md** | ⚠️ Фактические HTTP-ответы UGC   | HTTP 200 при ctx.resp.json 4xx, редирект JSON body, rawHttpBody статусы, интеграционные тесты, temp пробы, fetch response.ok                                                                                                                                                                                                                                                                                                                                                   |
 | **049-clickhouse.md**                   | 🗄️ ClickHouse (аналитическая БД, runtime-верифиц.) | ClickHouse, chatium_ai.access_log, behaviour2_log, traffic_source_statistics, account_logs, writeMetricEvent, writeWorkspaceEvent, captureCustomerEvent (@crm/sdk/v2), ctx.account.log, queryAi, MetricEventData (type-only), сквозная аналитика, CAC/ROAS, matched_traffic_source_ids, getAccountEvents, getWorkspaceEvents, payloadMapping, ContactType, частые ошибки, ⚠️ queryAccountLogs/listAccountLogs НЕ работают в runtime (чтение account_logs — через queryAi)                     |
+| **050-logging.md**                      | 📝 Логирование приложения        | логи, логирование, ctx.account.log, ctx.console, console.log, account_logs, queryAi, workspace_path, ts64, уровни логирования, log_level, writeServerLog, обёртка логирования, чтение логов, страница логов, вебхук логов, живой монитор, /s/dev/logs, queryAccountLogs не работает, асинхронность записи |
 
 ---
 
@@ -339,6 +340,20 @@
 - parseUrlParams() — парсинг utm-меток и промокодов
 - processAttributionJob — автоматическая обработка
 - API: POST /api/attribution
+
+### 📝 Логирование приложения
+
+**Файл**: `050-logging.md`
+
+- Два разных «log»: `ctx.account.log` (настоящее логирование) vs `ctx.console.log` (консоль браузера разработчика, ничего не сохраняет)
+- `LogParams`: `level`, `json` → `json_str`, `kv` → `"key=value ..."`; полей `source`/`userId`/`extra_json` нет
+- ⚠️ Запись **асинхронна** — в том же запросе прочитать нельзя
+- Чтение: `queryAi` из `@traffic/sdk`, **только динамический import** с `@ts-ignore`
+- Обязательный фильтр по `workspace_path`; `ts64` — `DateTime64(3,'UTC')`, фильтровать средствами SQL
+- Готовые запросы страницы логов: пагинация, `count()`, `LIKE`/`ILIKE`, `JSONExtractString`
+- ❌ `queryAccountLogs` / `listAccountLogs` объявлены, но падают в runtime
+- Модуль-обёртка: отсечка по уровню, payload только на Debug, дополнительные выходы, запрет рекурсии
+- Своя Heap-таблица логов не нужна — дубль `account_logs` под лимитом 1 млн строк
 
 ### 🗄️ ClickHouse — аналитическая база данных
 
