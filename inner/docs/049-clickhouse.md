@@ -42,6 +42,7 @@ Workspace-код (TypeScript)
 
 Чтение:
     ├── queryAi(ctx, sql)                     → @traffic/sdk  ← ClickHouse (SELECT) — единственный рабочий способ
+    │                                           (ТОЛЬКО динамический import — модуля нет в node_modules)
     ├── *queryAccountLogs(ctx, sql)            → @app/ugc      ⚠️ ДЕКЛАРИРОВАН, НО НЕ РАБОТАЕТ
     └── *listAccountLogs(ctx, opts)            → @app/ugc      ⚠️ ДЕКЛАРИРОВАН, НО НЕ РАБОТАЕТ
 ```
@@ -190,7 +191,7 @@ const result = await captureCustomerEvent(ctx, {
 
 ## Запись логов: ctx.account.log
 
-Технические логи приложения → `chatium_ai.account_logs`. Единственный разрешённый способ логирования (не `console.log`).
+Технические логи приложения → `chatium_ai.account_logs`. Единственный способ логирования, переживающий запрос (не `console.log`, не `ctx.console`).
 
 ```typescript
 ctx.account.log('Пользователь выполнил действие', {
@@ -224,14 +225,50 @@ log(err: Error): void
 
 > ⚠️ Полей `source`, `userId`, `extra_json` в `LogParams` **нет**. Плоские метки → `kv`, сложные структуры → `json`.
 
+### ⚠️ Запись асинхронна
+
+`ctx.account.log` возвращает `void` и **не ждёт подтверждения**. Запись доходит до ClickHouse через сотни миллисекунд — секунды.
+
+Практические следствия:
+
+- **в том же запросе, где вы залогировали, `queryAi` эту запись ещё не найдёт.** Тест вида «записали → сразу прочитали» не работает: нужен отдельный запрос или отложенный джоб;
+- отметка времени при этом **точна** — `ts64` соответствует моменту вызова, а не моменту, когда строка стала видна;
+- для админ-страницы это безразлично: следующий запрос пользователя увидит данные.
+
+### ctx.console — это НЕ логирование
+
+Рядом существует `ctx.console` (в некоторых контекстах доступен как `ctx.log`) — и его легко перепутать с логированием. Это **не** оно:
+
+```typescript
+ctx.console.log('отладка', someValue)   // → в консоль браузера РАЗРАБОТЧИКА
+ctx.console.warn(...)
+ctx.console.error(...)
+```
+
+Из типов платформы (`CtxConsole`): *«Debug API for UGC developers to write output to the developer's browser/client console from which the request is made»*.
+
+| | `ctx.account.log` | `ctx.console.log` |
+|---|---|---|
+| Куда | ClickHouse `account_logs` | консоль браузера разработчика |
+| Переживает запрос | да | нет |
+| Работает в проде | да | только при запросе из среды разработки |
+| Годится для диагностики постфактум | да | нет |
+
+Вывод сериализуется через `JSON.stringify` перед отправкой клиенту. Использовать `ctx.console` можно для отладки во время разработки, но **строить на нём логирование нельзя** — ничего не сохраняется.
+
 ---
 
 ## Чтение данных: queryAi
 
-`queryAi` из `@traffic/sdk` — **единственный рабочий способ чтения ClickHouse** из workspace-кода. Модуль задекларирован в `@app/types/modules.d.ts`, но без `.d.ts` (bare declaration) — типов нет, в runtime работает. Сравнение с `gcQueryAi` (мультиаккаунтные приложения) — [016-analytics-traffic.md](016-analytics-traffic.md).
+`queryAi` из `@traffic/sdk` — **единственный рабочий способ чтения ClickHouse** из workspace-кода. Сравнение с `gcQueryAi` (мультиаккаунтные приложения) — [016-analytics-traffic.md](016-analytics-traffic.md).
+
+### ⚠️ Импорт только динамический
+
+Модуля **нет** в `node_modules` и **нет** его декларации в `@app/types/modules.d.ts` — платформа внедряет его в рантайме. Поэтому статический импорт не резолвится, а типов нет и подавление обязательно:
 
 ```typescript
-import { queryAi } from '@traffic/sdk'
+// @ts-ignore — @traffic/sdk внедряется платформой, локальных типов нет
+const { queryAi } = await import('@traffic/sdk')
 
 const result = await queryAi(ctx, `
   SELECT toDate(dt) AS day, count() AS visits
@@ -244,6 +281,8 @@ const result = await queryAi(ctx, `
 return result.rows // Array<Record<string, any>>
 ```
 
+Проверено прогоном: модуль резолвится и отдаёт 19 экспортов — `queryAi`, `query`, `raw`, `filteredQueryAi`, `filterByDate`, `groupByDate`, `writeAccessLog` и другие. Только `SELECT`, никакого DDL.
+
 **Подтверждённые таблицы** (проверены `queryAi`-запросами):
 
 | Таблица | Кол-во колонок | Примечание |
@@ -253,27 +292,68 @@ return result.rows // Array<Record<string, any>>
 | `chatium_ai.traffic_source_statistics` | ~25 | Расходы (может быть пуста) |
 | `chatium_ai.account_logs` | ~39 | Читается только через `queryAi` |
 
+**Замеры** (прогон 2026-07-21): простой `SELECT` — ~120 мс; выборка страницы с отдельным `count()` — ~230 мс.
+
 ---
 
 ## Чтение account_logs
 
-> ⚠️ **`queryAccountLogs` и `listAccountLogs` из `@app/ugc` НЕ РАБОТАЮТ в runtime**, хотя объявлены в `.d.ts`. Выбрасывают `Method not found (from sysCall 'ugc.queryAccountLogs')`.
+> ⚠️ **`queryAccountLogs` и `listAccountLogs` из `@app/ugc` НЕ РАБОТАЮТ в runtime**, хотя объявлены в `.d.ts`. Выбрасывают `Method not found (from sysCall 'ugc.queryAccountLogs')` / `'ugc.listAccountLogs'`. Подтверждено дважды, на разных прогонах.
 
 **Единственный рабочий способ — `queryAi`:**
 
 ```typescript
-import { queryAi } from '@traffic/sdk'
+// @ts-ignore
+const { queryAi } = await import('@traffic/sdk')
 
 const logs = await queryAi(ctx, `
-  SELECT ts64, level, msg, kv, json_str, extra_json
+  SELECT ts64, level, msg, kv, json_str
   FROM chatium_ai.account_logs
-  WHERE level = 'error'
+  WHERE workspace_path = 'p/units/myproject'
+    AND level IN ('error', 'warn')
   ORDER BY ts64 DESC
-  LIMIT 100
+  LIMIT 50
 `)
 ```
 
-Проверено runtime: колонки `ts64`, `level`, `msg`, `kv`, `json_str`, `extra_json` существуют; `kv` хранится как `"key=value key2=value2"`; `json_str` — сериализованный объект из опции `json`; `extra_json` — read-side колонка. Альтернатива — платформенный dev-логгер `/s/dev/logs`.
+### Отбор своих записей: workspace_path
+
+**Таблица общая на аккаунт** — туда пишут все приложения. Без фильтра вы увидите чужие логи.
+
+Значение `workspace_path` — **относительный путь проекта от корня аккаунта, без ведущего слеша**: `p/units/myproject`, `temp/qna2007`. Заметная доля строк имеет пустой `workspace_path` (системные записи платформы) — фильтр отсекает и их.
+
+Фильтр по `workspace_path` обязателен в любом запросе к `account_logs` из кода приложения.
+
+### Колонка ts64
+
+**Тип — `DateTime64(3, 'UTC')`** (миллисекунды, UTC). Проверено: `SELECT toTypeName(ts64)` возвращает именно это.
+
+В ответе `queryAi` приходит **отрендеренной строкой** `"2026-07-21 10:49:43.834"` — но это форма выдачи, а не тип колонки. Все временные операции работают средствами SQL и **должны делаться там**, а не разбором строк в коде:
+
+```sql
+ORDER BY ts64 DESC                              -- ✅
+WHERE ts64 >= now() - INTERVAL 1 HOUR           -- ✅
+WHERE ts64 BETWEEN '2026-07-21 00:00:00' AND '2026-07-21 23:59:59'  -- ✅
+WHERE ts64 >= '2026-07-21 00:00:00'             -- ✅ сравнение со строковым литералом
+```
+
+### Запросы для страницы логов
+
+Проверено прогоном, всё работает:
+
+| Задача | Запрос |
+|---|---|
+| Пагинация | `ORDER BY ts64 DESC LIMIT 50 OFFSET 100` |
+| Число страниц | `SELECT count() FROM … WHERE <те же условия>` |
+| Фильтр по уровню | `WHERE level IN ('error', 'warn')` |
+| Поиск по тексту | `WHERE msg LIKE '%текст%'` |
+| Поиск без учёта регистра | `WHERE msg ILIKE '%ТЕКСТ%'` |
+| Поиск по содержимому payload | `WHERE json_str LIKE '%значение%'` |
+| Извлечение поля из payload | `JSONExtractString(json_str, 'orderId')` |
+
+Хранение: `json` из `LogParams` попадает в `json_str` **сериализованной строкой**; `kv` — в одноимённую колонку строкой вида `"key=value key2=value2"`, поэтому фильтрация по меткам — текстовая.
+
+Альтернатива для разработки — платформенный dev-логгер `/s/dev/logs`.
 
 ---
 
@@ -476,7 +556,7 @@ CREATE VIEW chatium_ai.behaviour2_log
 
 ### account_logs
 
-Логи приложения. **Чтение только через `queryAi`** (см. [Чтение account_logs](#чтение-account_logs)). Подтверждённые колонки: `ts64`, `dt`, `level`, `msg`, `kv`, `json_str`, `extra_json`, `user_id`, `source`, `workspace_path`, … — всего ~39 (тип `UgcAccountLogRow` в `@app/ugc`). Запись — `msg` (не `message`); `json` → `json_str`; `kv` → `"key=value ..."`.
+Логи приложения. **Чтение только через `queryAi`**, обязательный фильтр по `workspace_path`, `ts64` — `DateTime64(3,'UTC')` (см. [Чтение account_logs](#чтение-account_logs)). Подтверждённые колонки: `ts64`, `dt`, `level`, `msg`, `kv`, `json_str`, `extra_json`, `user_id`, `source`, `workspace_path`, … — всего ~39 (тип `UgcAccountLogRow` в `@app/ugc`). Запись — `msg` (не `message`); `json` → `json_str`; `kv` → `"key=value ..."`.
 
 ---
 
