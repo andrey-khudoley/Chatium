@@ -162,7 +162,7 @@ flowchart LR
   P -->|"да"| MP["message + payload"]
   M --> O
   MP --> O
-  O["выходы"] --> O1["ctx.log · stdout"]
+  O["выходы"] --> O1["ctx.log · консоль браузера разработчика<br/>(не stdout, ничего не хранит)"]
   O --> O2["ctx.account.log → ClickHouse account_logs"]
   O --> O3["WebSocket · живой монитор админки"]
   O --> O4["вебхук · fire-and-forget"]
@@ -173,7 +173,7 @@ flowchart LR
 - **Настройка `log_level`** (`Disable`/`Error`/`Warn`/`Info`/`Debug`, дефолт `Info`) отсекает **до** вызова платформы, а не на чтении.
 - **`payload` только на `Debug`** — на рабочем уровне видна карта вызовов, но содержимое событий в журнал не оседает.
 - **Рекурсия:** чтение настроек логгера логировать через `writeServerLog` нельзя.
-- **Чтение истории — `queryAi`** (проверено 21-07-2026): динамический `await import('@traffic/sdk')` с `@ts-ignore`, модуль внедряется платформой и в `node_modules` отсутствует. Ответ `{ rows: [] }`, `ts64` — строка, `kv` — `"key=value ..."`, задержка записи практически нулевая. Отбор своих записей — по `workspace_path`, таблица общая на аккаунт. `queryAccountLogs`/`listAccountLogs` из `@app/ugc` не использовать: `Method not found` в рантайме.
+- **Чтение истории — `queryAi`** (прототип 21-07-2026: `ts64` это `DateTime64(3,'UTC')`, работают `LIMIT/OFFSET`, `count()`, `LIKE`/`ILIKE`, `JSONExtractString`; запись ~5 мс, запрос ~120 мс): динамический `await import('@traffic/sdk')` с `@ts-ignore`, модуль внедряется платформой и в `node_modules` отсутствует. Ответ `{ rows: [] }`, `ts64` — строка, `kv` — `"key=value ..."`, задержка записи практически нулевая. Отбор своих записей — по `workspace_path`, таблица общая на аккаунт. `queryAccountLogs`/`listAccountLogs` из `@app/ugc` не использовать: `Method not found` в рантайме.
 
 ### §5.1 Хэширование токена
 
