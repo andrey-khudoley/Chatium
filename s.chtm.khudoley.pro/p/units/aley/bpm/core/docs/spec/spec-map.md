@@ -159,7 +159,7 @@ sequenceDiagram
   participant DB as BrokerModules (Heap)
 
   M->>G: registerModule(moduleKey, allowedPublish, allowedSubscribe)<br/>internal app.function / external POST /broker/register
-  Note over G: source по каналу запроса<br/>app.function → internal<br/>app.html / HTTP → external
+  Note over G: source по каналу запроса (канал неподделываем)<br/>app.function → internal<br/>внешний HTTP-роут (app.post) → external
   G->>G: валидация заявки<br/>(посегментный glob: сегмент = литерал или *)
   G->>G: случайный токен → hash = SHA-256(...)
   G->>DB: upsert(source, authTokenHash, status)
