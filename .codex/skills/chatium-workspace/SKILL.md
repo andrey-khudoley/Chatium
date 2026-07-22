@@ -1,6 +1,6 @@
 ---
 name: chatium-workspace
-description: Workspace-specific Chatium development workflows for the shared root containing stage `s.chtm.khudoley.pro` and prod `p.chtm.khudoley.pro`. Use when Codex works on Chatium tasks in this root, including task formalization, implementation planning, plan review, code review, standards/routing/runtime checks, technical verification, documentation updates, to-prod propagation, full to-sync delivery, or when the user invokes /check, /pipeline, /pp, /to-prod, /to-sync, or references migrated Claude agents/commands.
+description: Workspace-specific Chatium development workflows for the shared root of the single workspace `s.chtm.khudoley.pro` (environments as catalogs: `d/` dev, `p/` prod). Use when Codex works on Chatium tasks in this root, including task formalization, implementation planning, plan review, code review, standards/routing/runtime checks, technical verification, documentation updates, to-prod propagation, full to-sync delivery, or when the user invokes /check, /pipeline, /pp, /to-prod, /to-sync, or references migrated Claude agents/commands.
 ---
 
 # Chatium Workspace
@@ -11,11 +11,10 @@ This skill is the Codex-native entrypoint for the former `.claude/agents` and `.
 
 ## Workspace Layout
 
-- `s.chtm.khudoley.pro` is the stage/dev workspace. Implement code, docs, tests, checks, and commits there.
-- `p.chtm.khudoley.pro` is the prod workspace. Do not edit it directly.
-- Prod changes are allowed only through an explicit user request for `to-prod`, `/to-prod`, `/to-sync`, or equivalent delivery wording. The actual prod writes must be mechanical copy/delete operations derived from a selected diff/commit in `s.chtm.khudoley.pro`.
-- If the user asks to change prod without explicitly authorizing direct prod work, make the change in `s.chtm.khudoley.pro` and wait for explicit promotion instruction.
-- `s.chtm.khudoley.pro/p/` is a normal project directory inside stage; it is not the prod workspace.
+- `s.chtm.khudoley.pro` is the single workspace (one Chatium account). Implement code, docs, tests, checks, and commits there.
+- Environments are catalogs inside it: `d/` — dev/stage copies, `p/` — prod (live projects).
+- Prod copies of paired projects (those with a `d/` counterpart) are never edited directly. Prod changes are allowed only through an explicit user request for `to-prod`, `/to-prod`, `/to-sync`, or equivalent wording: a mechanical copy of the committed diff `d/<path>` → `p/<path>` with two deterministic transforms: `config/routes.tsx` (`PROJECT_ROOT`) and `tables/*.table.ts` (table-id segment `__stage_`→`__prod_`; an id may be declared in exactly one file of the account — `inner/docs/008-heap.md`/`006-arch.md`).
+- If the user asks to change prod without explicitly authorizing promotion, make the change in the `d/` copy and wait for explicit promotion instruction. Legacy projects without a `d/` copy are edited in place.
 
 ## Platform References
 

@@ -4,10 +4,9 @@ Migrated from `s.chtm.khudoley.pro/.cursor/rules/*.mdc` and adapted for Codex in
 
 ## Workspace Boundary
 
-- Implement and verify in `s.chtm.khudoley.pro`.
-- Do not edit `p.chtm.khudoley.pro` directly.
-- Promote to prod only when the user explicitly asks for `to-prod`, `/to-prod`, `/to-sync`, or equivalent wording.
-- Remember that `s.chtm.khudoley.pro/p/` is a stage project directory, not the prod workspace.
+- Implement and verify in `s.chtm.khudoley.pro` (the single workspace; environments as catalogs: `d/` dev, `p/` prod).
+- Do not edit prod copies (`p/<project>` of a paired project) directly.
+- Promote to prod only when the user explicitly asks for `to-prod`, `/to-prod`, `/to-sync`, or equivalent wording (mechanical copy `d/` → `p/`; transforms: `config/routes.tsx` + table-id segments in `tables/*.table.ts`).
 
 ## Core Chatium Constraints
 

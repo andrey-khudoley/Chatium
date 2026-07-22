@@ -1,14 +1,15 @@
 ---
 name: to-sync
-description: "Run the full Chatium delivery chain for this workspace: auto-commit current dev changes, promote the resulting committed diff from `s.chtm.khudoley.pro` to `p.chtm.khudoley.pro` through `to-prod`, then sync/publish prod with `chatium-sync-agent`. Use when the user invokes `/to-sync`, `$to-sync`, asks for \"auto-commit; to-prod; chatium-sync/chaium-sync\", or asks to commit, send s to p, and Chatium sync in one step."
+description: "Run the full Chatium delivery chain for the single workspace `s.chtm.khudoley.pro`: auto-commit current changes, promote the resulting committed diff from the dev catalog `d/` to the prod catalog `p/` through `to-prod` (mechanical copy; transforms: `config/routes.tsx` + table-id environment segments in `tables/*.table.ts`), then publish with `chatium-sync-agent`. Use when the user invokes `/to-sync`, `$to-sync`, asks for \"auto-commit; to-prod; chatium-sync\", or asks to commit, send d to p, and Chatium sync in one step."
 ---
 
 # To Sync
 
 ## Workflow
 
-Use this skill for the complete delivery chain from stage/dev to prod. The stage workspace
-is `s.chtm.khudoley.pro`; the prod workspace is `p.chtm.khudoley.pro`.
+Use this skill for the complete delivery chain from dev to prod. Both environments
+live in the single workspace `s.chtm.khudoley.pro`: dev copies in `d/`, prod in `p/`
+(environments pattern — `inner/docs/006-arch.md`).
 
 1. Run `.agents/skills/auto-commit/SKILL.md` first.
 2. Capture the commit or commits created by `auto-commit`.
@@ -27,10 +28,13 @@ Treat user-provided arguments as follows:
 
 ## Safety
 
-- Do not edit `p.chtm.khudoley.pro` directly.
-- Prod changes must be produced only by the `to-prod` mechanical copy/delete workflow.
-- If a requested prod change has not yet been made in `s.chtm.khudoley.pro`, make or request the stage change first; do not patch prod as a shortcut.
-- Stop if `auto-commit` fails, if the source commit cannot be determined, or if `to-prod` reports unrelated prod changes.
+- Do not hand-edit prod copies (`p/<project>` of a project that has a `d/` counterpart).
+- Prod changes must be produced only by the `to-prod` mechanical copy/delete workflow
+  (transforms: `config/routes.tsx` + table-id segments in `tables/*.table.ts`).
+- If a requested prod change has not yet been made in the `d/` copy, make or request
+  the dev change first; do not patch prod as a shortcut.
+- Stop if `auto-commit` fails, if the source commit cannot be determined, or if
+  `to-prod` reports unrelated prod changes.
 - Let `to-prod` perform its own dry-run, apply, and verification through `chatium-sync-agent`.
 
 ## Report
@@ -38,5 +42,5 @@ Treat user-provided arguments as follows:
 At the end, report:
 
 - created commit or source range;
-- copied/deleted prod paths from `to-prod`;
-- Chatium sync/publish verification status.
+- copied/deleted prod paths and the routes.tsx transform;
+- Chatium sync/publish verification status and the transfer commit hash.

@@ -1,9 +1,9 @@
 # chatium.chatium-sync — общий корень
 
-Рабочий корень для двух Chatium-воркспейсов. Делится на два слоя:
+Рабочий корень Chatium-воркспейса. Делится на два слоя:
 
 - **Общий корень (этот каталог)** — git, агентский тулинг, платформенные доки, архив, состояние синка.
-- **Воркспейсы** `s.chtm.khudoley.pro` (dev/stage) и `p.chtm.khudoley.pro` (prod) — собственно код Chatium-проектов.
+- **Воркспейс** `s.chtm.khudoley.pro` (один аккаунт Chatium) — собственно код проектов; окружения разделяются каталогами `d/` (dev/stage) и `p/` (prod).
 
 Правила для ассистентов: `CLAUDE.md` (Claude Code), `AGENTS.md` (Codex).
 
@@ -14,7 +14,7 @@ chatium.chatium-sync/
 ├─ CLAUDE.md             # инструкции Claude Code (наследуются субагентами)
 ├─ AGENTS.md             # инструкции Codex
 ├─ README.md             # этот файл — карта расположения
-├─ .gitignore            # общий, охватывает оба воркспейса
+├─ .gitignore            # общий
 │
 ├─ .claude/              # Claude Code: agents/, commands/ (/pp1…/pp10, /pipeline, /check…), skills/, settings
 ├─ .codex/               # Codex: agents/, skills/ (адаптации ролей и workflow из .claude)
@@ -29,8 +29,7 @@ chatium.chatium-sync/
 ├─ deprecated/           # архив выведенного из работы кода и проектов
 ├─ configs/              # состояние sync-агента по воркспейсам (gitignored, регенерируется)
 │
-├─ s.chtm.khudoley.pro/  # DEV/STAGE workspace — здесь весь код проектов
-└─ p.chtm.khudoley.pro/  # PROD workspace — только цель синхронизации
+└─ s.chtm.khudoley.pro/  # единственный workspace: d/ — dev/stage-копии, p/ — prod
 ```
 
 ## Оркестрация конвейера (pp)
@@ -43,9 +42,9 @@ Codex-эквиваленты — в `.codex/skills/chatium-workspace/references/
 
 ## Воркспейсы
 
-**`s.chtm.khudoley.pro`** — dev/stage. Вся разработка: проекты под `p/units/`, `p/saas/`, dev-скрипты `scripts/` (проверка типов/стиля, `codex-utf8.ps1`), `node_modules`, `tsconfig.json`. Проверки кода (`vue-tsc`, `tsc`, `node scripts/...`) запускаются **из этого каталога**.
+**`s.chtm.khudoley.pro`** — единственный воркспейс (один аккаунт Chatium). Вся разработка здесь: dev/stage-копии проектов в `d/`, боевые проекты в `p/` (`p/units/`, `p/saas/`, `p/system/`, `p/gateways/`), dev-скрипты `scripts/` (проверка типов/стиля, `codex-utf8.ps1`), `node_modules`, `tsconfig.json`. Проверки кода (`vue-tsc`, `tsc`, `node scripts/...`) запускаются **из этого каталога**.
 
-**`p.chtm.khudoley.pro`** — prod. Только цель публикации. **Напрямую не редактируется**: изменения делаются в `s`, переносятся через `/to-prod` / `/to-sync` (механические копии committed diff). Подробнее — `CLAUDE.md` §0.
+**Каталог `p/` — прод.** У проектов с парой окружений напрямую не редактируется: изменения в `d/`-копии, перенос — `/to-prod` / `/to-sync` (механическая копия committed diff `d/→p/` с двумя трансформациями: `config/routes.tsx` и сегмент id `__stage_`→`__prod_` в `tables/*.table.ts` — `inner/docs/006-arch.md`/`008-heap.md`). Подробнее — `CLAUDE.md` §0.
 
 ## Поиск по документации (MCP `docs-search`)
 

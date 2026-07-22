@@ -4,10 +4,9 @@ Codex adapter index for roles and workflows migrated from `.claude`. The stage `
 
 ## Workspace Layout
 
-- `s.chtm.khudoley.pro` - stage/dev workspace. Implement, test, document, and commit project changes there.
-- `p.chtm.khudoley.pro` - prod workspace. Do not edit it directly.
-- Promotion to prod is allowed only by explicit user request via `/to-prod`, `/to-sync`, or equivalent wording, and must use the mechanical `to-prod` copy/delete workflow.
-- `s.chtm.khudoley.pro/p/` is a stage project directory, not the prod workspace.
+- `s.chtm.khudoley.pro` - the single workspace (one Chatium account). Implement, test, document, and commit project changes there.
+- Environments are catalogs inside it: `d/` — dev/stage copies, `p/` — prod. Prod copies of paired projects are not edited directly.
+- Promotion to prod is allowed only by explicit user request via `/to-prod`, `/to-sync`, or equivalent wording: the mechanical `to-prod` copy `d/<path>` → `p/<path>` (transforms: `config/routes.tsx` + table-id segments in `tables/*.table.ts`).
 
 ## Roles
 
@@ -36,8 +35,8 @@ Codex adapter index for roles and workflows migrated from `.claude`. The stage `
 - Cursor `final-report` utility skill -> `references/workflows/final-report.md` - шаблон финального отчёта по задаче: что сделано, что проверено, что осталось открытым.
 - `/check` -> `references/workflows/check.md` - Технические проверки Chatium — строгая проверка типов (vue-tsc), стиль (Prettier), стандарты, роутинг, рантайм, тесты. Фрагмент или весь workspace.
 - `/commit` -> `.agents/skills/auto-commit/SKILL.md` - Разбивает текущие изменения на отдельные логические коммиты с русскими названиями в стиле репозитория (async Haiku-субагенты), коммитит, обновляет CodeGraph индекс и пушит.
-- `/to-sync` -> `.agents/skills/auto-commit/SKILL.md` then `.agents/skills/to-prod/SKILL.md` - Полная цепочка доставки: коммитит изменения в dev, переносит committed diff из `s.chtm.khudoley.pro` в `p.chtm.khudoley.pro`, затем синхронизирует prod через `chatium-sync-agent`.
-- `/to-prod` -> `.agents/skills/to-prod/SKILL.md` - Переносит выбранный committed diff из dev-workspace `s.chtm.khudoley.pro` в prod-workspace `p.chtm.khudoley.pro` механическим копированием и синхронизирует prod через `chatium-sync-agent`.
+- `/to-sync` -> `.agents/skills/auto-commit/SKILL.md` then `.agents/skills/to-prod/SKILL.md` - Полная цепочка доставки: коммитит изменения, переносит committed diff из `d/`-копии проекта в прод-каталог `p/` того же воркспейса, затем публикует через `chatium-sync-agent`.
+- `/to-prod` -> `.agents/skills/to-prod/SKILL.md` - Переносит выбранный committed diff из `d/`-копии проекта в прод-каталог `p/` (механическая копия; правится только `config/routes.tsx`) и публикует через `chatium-sync-agent`.
 - `/pipeline` -> `references/workflows/pipeline.md` - Авто-конвейер. Квалифицирует задачу, сам выбирает уровень глубины 1–10 и передаёт управление плейбуку pp-orchestrator на этом уровне. Для случая «не хочу выбирать /ppN сам».
 - `/pp1` ... `/pp10` -> `.agents/skills/source-command-ppN/SKILL.md` - pipeline levels from `.claude/commands/ppN.md`.
 - `/pp` -> `references/workflows/pp.md` - Codex workflow based on `.claude/agents/pp-orchestrator.md`; use `/pipeline` for automatic level selection or `/ppN` for a concrete level.

@@ -7,8 +7,8 @@ description: Chatium platform rules and subsystem references migrated from Curso
 
 ## Ground Rules
 
-- Work in `s.chtm.khudoley.pro` for implementation, checks, docs, and commits.
-- Do not edit `p.chtm.khudoley.pro` directly. Prod writes are allowed only through explicit `to-prod`/`to-sync` mechanical promotion from stage.
+- Work in `s.chtm.khudoley.pro` for implementation, checks, docs, and commits. Environments are catalogs inside it: `d/` — dev/stage copies, `p/` — prod.
+- Do not edit prod copies (`p/<project>` of a paired project) directly. Prod writes are allowed only through explicit `to-prod`/`to-sync` mechanical promotion from the `d/` copy.
 - Treat this skill as a quick navigation layer. The authoritative source is `inner/docs/`; the migrated Cursor topic files are helpers, not final truth.
 - Before implementing a platform-sensitive change, read the relevant `inner/docs` file and use CodeGraph (`codegraph_search` / `codegraph_explore`) to confirm live symbols, route patterns, and examples.
 
