@@ -1,10 +1,13 @@
 import { Heap } from '@app/heap'
-import { IS_PROD } from '../config/env'
 
 /*
   BrokerDeliveries — материализованные доставки, самая быстрорастущая таблица
   брокера (§3.3). Одна строка на пару (событие × подписчик); жизненный цикл
   pending → claimed → acked/dead ведёт сам подписчик через pull (§5.9).
+
+  Окружение — в сегменте id (`__stage_` здесь): id объявляется ровно в одном
+  файле аккаунта; перенос d/→p/ трансформирует сегмент в `__prod_`
+  (§3 «Окружения», подробности — modules.table.ts).
 */
 // Heap.Enum ожидает объектный enum (TEnumType), не массив-литерал — см. modules.table.ts.
 export const DELIVERY_STATUS_ENUM = {
@@ -52,20 +55,12 @@ const fields = {
   )
 }
 
-const BrokerDeliveriesStage = Heap.Table('t__broker__deliveries__stage_fk9ze2', fields, {
+export const BrokerDeliveries = Heap.Table('t__broker__deliveries__stage_fk9ze2', fields, {
   customMeta: {
     title: 'Broker Deliveries (stage)',
     description: 'Материализованные доставки брокера — §3.3'
   }
 })
-const BrokerDeliveriesProd = Heap.Table('t__broker__deliveries__prod_fk9ze2', fields, {
-  customMeta: {
-    title: 'Broker Deliveries (prod)',
-    description: 'Материализованные доставки брокера — §3.3'
-  }
-})
 
-export const BrokerDeliveries = IS_PROD ? BrokerDeliveriesProd : BrokerDeliveriesStage
-
-export type BrokerDeliveriesRow = typeof BrokerDeliveriesStage.T
-export type BrokerDeliveriesRowJson = typeof BrokerDeliveriesStage.JsonT
+export type BrokerDeliveriesRow = typeof BrokerDeliveries.T
+export type BrokerDeliveriesRowJson = typeof BrokerDeliveries.JsonT

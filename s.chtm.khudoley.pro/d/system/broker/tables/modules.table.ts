@@ -1,10 +1,13 @@
 import { Heap } from '@app/heap'
-import { IS_PROD } from '../config/env'
 
 /*
-  BrokerModules — реестр модулей-участников (§3.1). Объект полей объявляется один
-  раз на пару stage/prod; наружу экспортируется только выбранный селектором
-  репозиторий (§3 «Окружения») — пара наружу не выходит.
+  BrokerModules — реестр модулей-участников (§3.1).
+
+  Окружение — в сегменте id (`__stage_` в этой dev-копии): id таблицы объявляется
+  ровно в ОДНОМ файле аккаунта (повторное объявление — BuildError платформы
+  «Detected duplicate heap table name», прогон 22-07-2026), поэтому копия проекта
+  объявляет только таблицу своего окружения; перенос d/→p/ трансформирует сегмент
+  в `__prod_` (§3 «Окружения», 008-heap.md).
 */
 
 // Heap.Enum ожидает объектный enum (TEnumType) — паттерн, уже используемый в
@@ -55,21 +58,12 @@ const fields = {
   )
 }
 
-const BrokerModulesStage = Heap.Table('t__broker__modules__stage_wI7S9L', fields, {
+export const BrokerModules = Heap.Table('t__broker__modules__stage_wI7S9L', fields, {
   customMeta: {
     title: 'Broker Modules (stage)',
     description: 'Реестр модулей-участников брокера — §3.1'
   }
 })
-const BrokerModulesProd = Heap.Table('t__broker__modules__prod_wI7S9L', fields, {
-  customMeta: {
-    title: 'Broker Modules (prod)',
-    description: 'Реестр модулей-участников брокера — §3.1'
-  }
-})
 
-// Пара наружу не экспортируется — только выбранный селектором репозиторий (§3 «Окружения»)
-export const BrokerModules = IS_PROD ? BrokerModulesProd : BrokerModulesStage
-
-export type BrokerModulesRow = typeof BrokerModulesStage.T
-export type BrokerModulesRowJson = typeof BrokerModulesStage.JsonT
+export type BrokerModulesRow = typeof BrokerModules.T
+export type BrokerModulesRowJson = typeof BrokerModules.JsonT

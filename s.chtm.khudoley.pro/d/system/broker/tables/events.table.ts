@@ -1,10 +1,13 @@
 import { Heap } from '@app/heap'
-import { IS_PROD } from '../config/env'
 
 /*
   BrokerEvents — неизменяемый журнал опубликованных событий (§3.2). Append-only:
   фактическая часть строки после публикации не редактируется, меняется лишь
   служебный dispatchedAt (разовый переход null → timestamp, §5.8).
+
+  Окружение — в сегменте id (`__stage_` здесь): id объявляется ровно в одном
+  файле аккаунта; перенос d/→p/ трансформирует сегмент в `__prod_`
+  (§3 «Окружения», подробности — modules.table.ts).
 */
 const fields = {
   eventType: Heap.String({ customMeta: { title: 'Доменный тип события (glob-таргет при матче)' } }),
@@ -28,20 +31,12 @@ const fields = {
   )
 }
 
-const BrokerEventsStage = Heap.Table('t__broker__events__stage_BOnFpq', fields, {
+export const BrokerEvents = Heap.Table('t__broker__events__stage_BOnFpq', fields, {
   customMeta: {
     title: 'Broker Events (stage)',
     description: 'Журнал опубликованных событий брокера — §3.2'
   }
 })
-const BrokerEventsProd = Heap.Table('t__broker__events__prod_BOnFpq', fields, {
-  customMeta: {
-    title: 'Broker Events (prod)',
-    description: 'Журнал опубликованных событий брокера — §3.2'
-  }
-})
 
-export const BrokerEvents = IS_PROD ? BrokerEventsProd : BrokerEventsStage
-
-export type BrokerEventsRow = typeof BrokerEventsStage.T
-export type BrokerEventsRowJson = typeof BrokerEventsStage.JsonT
+export type BrokerEventsRow = typeof BrokerEvents.T
+export type BrokerEventsRowJson = typeof BrokerEvents.JsonT
