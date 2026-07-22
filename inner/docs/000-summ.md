@@ -136,6 +136,7 @@
 - Один файл — один роут
 - Shared файлы (// @shared)
 - Комментарии // @shared-route
+- Окружения stage/prod: два каталога проекта (`d/project` / `p/project`), привязка «каталог = окружение» через `config/env.ts` из `PROJECT_ROOT`, пары таблиц — см. 008-heap.md
 
 ### Vue компоненты и страницы
 
@@ -165,6 +166,7 @@
 - RefLink — связи между таблицами
 - Транзакции
 - ⚠️ **Race condition**: При работе с БД следите за возможностью race condition. Используйте `runWithExclusiveLock` из `@app/sync` для предотвращения проблем при параллельных запросах
+- Окружения stage/prod — пары таблиц + статический селектор (`008-heap.md` → «Окружения stage/prod: пары таблиц и селектор»). ⚠️ Динамические имена таблиц невозможны — id в `Heap.Table()` только литеральный; идентичность таблицы = строковый id, глобальный на аккаунт (одинаковый id в двух копиях проекта = одна таблица)
 
 **Файл**: `022-getcourse-heap.md` (TypeScript API)
 
@@ -622,7 +624,7 @@
 
 ### Архитектура
 
-`структура`, `/web/`, `/api/`, `/pages/`, `/tables/`, `/docs/`, `index.tsx`, `// @shared`, `// @shared-route`, `именование`, `один файл = один роут`
+`структура`, `/web/`, `/api/`, `/pages/`, `/tables/`, `/docs/`, `index.tsx`, `// @shared`, `// @shared-route`, `именование`, `один файл = один роут`, `окружения`, `stage/prod`, `два каталога проекта`, `config/env.ts`, `IS_PROD`, `каталог = окружение`
 
 ### Vue
 
@@ -630,7 +632,7 @@
 
 ### База данных
 
-`Heap.Table`, `create`, `findAll`, `findById`, `update`, `updateAll`, `delete`, `deleteAll`, `createOrUpdateBy`, `countBy`, `searchBy`, `Money`, `RefLink`, `where`, `order`, `CAS`, `оптимистичная блокировка`, `mass-delete protection`, `limit`, `формат id`, `индексы`, `индексация`, `плоские поля`, `корневые поля`, `скан`, `JSONB`, `Heap.String`, `Heap.Number`, `Heap.Boolean`, `Heap.DateTime`, `Heap.Optional`, `Heap.Any`, `customMeta`, `searchable`, `embeddings`, `defaultValue`, `типизация`, `TypeScript таблицы`, `runWithExclusiveLock`, `race condition`, `блокировка`, `параллельные запросы`, `атомарность`
+`Heap.Table`, `create`, `findAll`, `findById`, `update`, `updateAll`, `delete`, `deleteAll`, `createOrUpdateBy`, `countBy`, `searchBy`, `Money`, `RefLink`, `where`, `order`, `CAS`, `оптимистичная блокировка`, `mass-delete protection`, `limit`, `формат id`, `индексы`, `индексация`, `плоские поля`, `корневые поля`, `скан`, `JSONB`, `Heap.String`, `Heap.Number`, `Heap.Boolean`, `Heap.DateTime`, `Heap.Optional`, `Heap.Any`, `customMeta`, `searchable`, `embeddings`, `defaultValue`, `типизация`, `TypeScript таблицы`, `runWithExclusiveLock`, `race condition`, `блокировка`, `параллельные запросы`, `атомарность`, `окружения stage/prod`, `пары таблиц`, `статический селектор`, `динамические имена таблиц`, `id глобальный на аккаунт`, `общая таблица настроек`, `изоляция строками`
 
 ### Файлы
 
@@ -823,6 +825,6 @@
 
 ---
 
-**Версия**: 3.6  
-**Дата**: 2026-07-18  
-**Последнее обновление**: Runtime-верификация из `qna1807/*-corrected.md` — обновлены `049-clickhouse.md`, `038-metric.md`, `016-analytics-traffic/workspace/subscriptions.md`. Ключевые runtime-факты: `queryAccountLogs`/`listAccountLogs` (`@app/ugc`) НЕ работают (чтение account_logs — через `queryAi`); хук `@start/after-event-write` не системный (не вызывается автоматически); `writeEventLog`/`writeAppHostEventLog` — deprecated noop; `getAccountEvents.type` в runtime `undefined`; типы метрик — type-only
+**Версия**: 3.7  
+**Дата**: 2026-07-22  
+**Последнее обновление**: Паттерн окружений stage/prod — новые разделы в `008-heap.md` («Окружения stage/prod: пары таблиц и селектор») и `006-arch.md` («Окружения stage/prod: два каталога проекта»): динамические имена таблиц невозможны, вместо этого пары таблиц с общим объектом полей + статический селектор из `PROJECT_ROOT`; идентичность таблицы = строковый id, глобальный на аккаунт
