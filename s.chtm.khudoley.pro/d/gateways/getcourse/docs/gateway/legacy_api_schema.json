@@ -1,0 +1,249 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "GetCourse Legacy API (Import / Export)",
+    "description": "Машиночитаемое описание **старого** контура GetCourse: HTTPS, без OAuth; авторизация секретом школы параметром **`key`**. Импорт: `POST` с `application/x-www-form-urlencoded`, поля **`key`**, **`action`**, **`params`** (JSON действия в **base64**). Экспорт и опрос результата: **`GET`** с **`key`** в query. Человекочитаемая спецификация и примеры полей — https://getcourse.ru/help/api . Ограничение Export API (часто **100 запросов за 2 часа**) — в официальном help.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://{schoolHost}/pl/api",
+      "description": "База Legacy API для аккаунта школы",
+      "variables": {
+        "schoolHost": {
+          "default": "myschool.getcourse.ru",
+          "description": "Хост школы без схемы (поддомен getcourse.ru или подключённый домен)"
+        }
+      }
+    }
+  ],
+  "tags": [
+    { "name": "import", "description": "Импорт пользователей и заказов (платный тариф)" },
+    { "name": "export", "description": "Асинхронный экспорт и справочники" }
+  ],
+  "paths": {
+    "/users": {
+      "post": {
+        "tags": ["import"],
+        "summary": "Импорт пользователей",
+        "description": "См. раздел «Импорт пользователей» в help. Типичное действие: **`action=add`**. Структура объекта внутри **params** (после base64-декодирования) — в официальной документации.",
+        "operationId": "legacy-import-users",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": ["key", "action", "params"],
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "description": "Секретный API-ключ школы GetCourse"
+                  },
+                  "action": {
+                    "type": "string",
+                    "example": "add",
+                    "description": "Имя действия импорта (например add, update)"
+                  },
+                  "params": {
+                    "type": "string",
+                    "description": "Base64-кодировка JSON с телом операции согласно help"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ответ JSON с полями success, action, result — см. help «Формат ответа»"
+          }
+        }
+      }
+    },
+    "/deals": {
+      "post": {
+        "tags": ["import"],
+        "summary": "Импорт заказов (сделок)",
+        "description": "См. раздел «Импорт заказов» в help. Типичное действие: **`action=add`**.",
+        "operationId": "legacy-import-deals",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": ["key", "action", "params"],
+                "properties": {
+                  "key": { "type": "string", "description": "Секретный API-ключ школы" },
+                  "action": { "type": "string", "example": "add" },
+                  "params": {
+                    "type": "string",
+                    "description": "Base64(JSON) с блоками user, deal, system, session по help"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ответ JSON по формату help"
+          }
+        }
+      }
+    },
+    "/account/users": {
+      "get": {
+        "tags": ["export"],
+        "summary": "Экспорт пользователей аккаунта",
+        "description": "Запуск асинхронного экспорта; в ответе идентификатор задачи для опроса через `/account/exports/{exportId}`. Фильтры — см. help, раздел экспорта пользователей.",
+        "operationId": "legacy-export-account-users",
+        "security": [{ "schoolApiKeyQuery": [] }],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Секретный API-ключ школы"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ответ GC на старт экспорта (в т.ч. export_id — уточнять по актуальному help)"
+          }
+        }
+      }
+    },
+    "/account/groups/{groupId}/users": {
+      "get": {
+        "tags": ["export"],
+        "summary": "Экспорт пользователей группы",
+        "operationId": "legacy-export-group-users",
+        "security": [{ "schoolApiKeyQuery": [] }],
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Секретный API-ключ школы"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Старт экспорта"
+          }
+        }
+      }
+    },
+    "/account/deals": {
+      "get": {
+        "tags": ["export"],
+        "summary": "Экспорт заказов",
+        "operationId": "legacy-export-deals",
+        "security": [{ "schoolApiKeyQuery": [] }],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Старт экспорта"
+          }
+        }
+      }
+    },
+    "/account/payments": {
+      "get": {
+        "tags": ["export"],
+        "summary": "Экспорт платежей",
+        "operationId": "legacy-export-payments",
+        "security": [{ "schoolApiKeyQuery": [] }],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Старт экспорта"
+          }
+        }
+      }
+    },
+    "/account/fields": {
+      "get": {
+        "tags": ["export"],
+        "summary": "Кастомные поля аккаунта (справочник)",
+        "description": "В типичных клиентах запрос уходит как экспортный GET с ключом школы.",
+        "operationId": "legacy-account-custom-fields",
+        "security": [{ "schoolApiKeyQuery": [] }],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Список полей"
+          }
+        }
+      }
+    },
+    "/account/exports/{exportId}": {
+      "get": {
+        "tags": ["export"],
+        "summary": "Результат экспорта по идентификатору задачи",
+        "operationId": "legacy-export-result",
+        "security": [{ "schoolApiKeyQuery": [] }],
+        "parameters": [
+          {
+            "name": "exportId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "key",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Статус/данные экспорта"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "schoolApiKeyQuery": {
+        "type": "apiKey",
+        "in": "query",
+        "name": "key",
+        "description": "Секретный API-ключ школы (для GET; для POST импорта тот же параметр передаётся в теле формы)"
+      }
+    }
+  }
+}
