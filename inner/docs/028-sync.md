@@ -43,6 +43,8 @@ const result = await runWithExclusiveLock(ctx, 'my-resource-id', async (ctx, loc
 
 `lockId` — строка или массив строк (составной ключ). В опциях: `timeoutMs`, `maxDurationMs`.
 
+⚠️ **Пространство имён замков — общее на аккаунт.** Одинаковый `lockId` из разных проектов — или из stage/prod-копий одного проекта (`006-arch.md` → «Окружения stage/prod: два каталога проекта») — это **один** замок: копии молча вытесняют друг друга (особенно коварно с `tryRunWithExclusiveLock`, который при занятом замке просто выходит). Составной ключ поэтому несёт префикс назначения, а при паттерне окружений — ещё и сегмент окружения: `['broker', 'drainer']` в prod против `['broker-stage', 'drainer']` в stage.
+
 ---
 
 ## tryRunWithExclusiveLock
