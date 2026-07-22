@@ -1,0 +1,7 @@
+{
+  "name": "[INWORK] system/broker (stage)",
+  "params": {
+    "startWorkspaceAppearance": "ai",
+    "codeIsPublic": false
+  }
+}
