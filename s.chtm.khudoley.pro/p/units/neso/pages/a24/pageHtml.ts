@@ -2790,6 +2790,7 @@ body { overflow: hidden; }
    display rules into THIS stylesheet re-collapses the height chain on the next style recalc. */
 .css-hfr192 { container-type: inline-size !important; }
 [class*="animatable-on-load"] { opacity: 1 !important; transform: none !important; }
+.gml-heading.animate-has-animated .gml-heading__content, .gml-heading.animate-has-animated .gml-title__content { background-image: var(--heading-gradient, none) !important; }
 </style>
     <style id="gamma-mobile-css">
 /* ===== gamma mobile layer ===== */
@@ -3020,7 +3021,8 @@ body { overflow: hidden; }
   (function () {
     var OV =
       '.css-hfr192{container-type:inline-size !important;}' +
-      '[class*="animatable-on-load"]{opacity:1 !important;transform:none !important;}';
+      '[class*="animatable-on-load"]{opacity:1 !important;transform:none !important;}' +
+      '.gml-heading.animate-has-animated .gml-heading__content,.gml-heading.animate-has-animated .gml-title__content{background-image:var(--heading-gradient,none) !important;}';
     function ok() {
       var c = document.querySelector('.card-wrapper');
       return !!c && c.offsetHeight > 50;
