@@ -113,6 +113,17 @@ export function takePendingLogProbe(): LogProbeFired | null {
   return p
 }
 
+/**
+ * Не потребляющее чтение пробы (в отличие от takePendingLogProbe) — нужна
+ * тестам, которые НЕ должны съедать метку до log_two_phase (§9.5.2, конец
+ * integration-категории): admin_logs_search/admin_log_payload (api) и
+ * readlogs_history (functional) читают одну и ту же выстреленную пробу через
+ * peek, а потребляет её последней только log_two_phase через take.
+ */
+export function peekPendingLogProbe(): LogProbeFired | null {
+  return pendingLogProbe
+}
+
 export async function fireLogProbe(ctx: RichUgcCtx): Promise<LogProbeFired> {
   const mark = `logprobe-${makeUniq()}`
   const probeKey = `probe-${makeUniq()}`

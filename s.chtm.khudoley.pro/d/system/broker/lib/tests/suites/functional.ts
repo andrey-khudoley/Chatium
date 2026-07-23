@@ -1,12 +1,21 @@
 import { validatePatterns, matchesGlob, expandAncestors } from '../../broker/glob'
 import { hashModuleToken } from '../../broker/token'
 import { shouldLog, buildSocketEvent, type ServerLogEntry } from '../../log/logger'
+import { readLogs } from '../../log/read-logs'
 import { fetchDeliveriesCore } from '../../broker/pull'
 import { brokerDeadDeliveryFn } from '../../../api/broker/internal/dead'
 import { BrokerEvents } from '../../../tables/events.table'
 import { BrokerDeliveries } from '../../../tables/deliveries.table'
 import { LAST_ERROR_MAX } from '../../../config/constants'
-import { makeUniq, testModuleKey, registerTestModule, retryRead, assert } from '../helpers'
+import {
+  makeUniq,
+  testModuleKey,
+  registerTestModule,
+  retryRead,
+  assert,
+  peekPendingLogProbe,
+  fireLogProbe
+} from '../helpers'
 import type { TestImpl } from '../types'
 
 async function test_glob_validation(): Promise<string> {
@@ -172,6 +181,28 @@ async function test_last_error_truncate(ctx: RichUgcCtx): Promise<string> {
   return `lastError обрезается до ${LAST_ERROR_MAX} символов, вызов не отклоняется (О7); internal .run()`
 }
 
+async function test_readlogs_history(ctx: RichUgcCtx): Promise<string> {
+  // Peek (не take, §9.5.2.5, план шаг 13/14б) — метку ещё должен прочитать
+  // log_two_phase последним в integration-категории.
+  const probe = peekPendingLogProbe() ?? (await fireLogProbe(ctx), peekPendingLogProbe())
+  assert(probe, 'log-probe не выстрелила (ни в начале прогона, ни фоллбэком)')
+  assert(!probe.failure, probe.failure ?? '')
+  const mark = probe.mark
+
+  let rows: Array<{ ts: string; level: string; msg: string; kv: string }> = []
+  for (let i = 0; i < 80; i++) {
+    const result = await readLogs(ctx, { search: mark, limit: 10 })
+    rows = result.rows
+    if (rows.length > 0) break
+  }
+  assert(
+    rows.some((r) => r.msg.includes(`above ${mark}`)),
+    `readLogs с фильтром workspace_path не нашёл запись "above ${mark}" — возможно, не дождались CH visibility`
+  )
+
+  return 'readlogs_history: readLogs возвращает запись собственной пробы с фильтром workspace_path (§5.10.7)'
+}
+
 export const functionalTests: Record<string, TestImpl> = {
   glob_validation: test_glob_validation,
   glob_match_expand: test_glob_match_expand,
@@ -179,5 +210,6 @@ export const functionalTests: Record<string, TestImpl> = {
   log_level_cutoff: test_log_level_cutoff,
   socket_payload_debug_only: test_socket_payload_debug_only,
   fetch_limit_clamp: test_fetch_limit_clamp,
-  last_error_truncate: test_last_error_truncate
+  last_error_truncate: test_last_error_truncate,
+  readlogs_history: test_readlogs_history
 }

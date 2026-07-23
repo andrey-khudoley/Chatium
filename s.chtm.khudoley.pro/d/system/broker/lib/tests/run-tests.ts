@@ -4,6 +4,7 @@ import { sweep, fireLogProbe } from './helpers'
 import { databaseTests } from './suites/database'
 import { functionalTests } from './suites/functional'
 import { apiTests } from './suites/api'
+import { apiAdminTests } from './suites/api-admin'
 import { integrationTests } from './suites/integration'
 import { concurrencyTests } from './suites/concurrency'
 import { limitsTests } from './suites/limits'
@@ -15,12 +16,17 @@ export type { TestResult }
  * Реестр реализаций (ключ — category.name / test.name из TEST_CATEGORIES).
  * Разбит по файлам suites/* (фикс-раунда 1, п.7) — этот файл лишь собирает
  * реестр и раннер, сами тесты — в lib/tests/suites/{database,functional,api,
- * integration,concurrency,limits}.ts. Сигнатуры и структура реестра не менялись.
+ * api-admin,integration,concurrency,limits}.ts. Сигнатуры и структура реестра
+ * не менялись. api-admin.ts (фикс-цикл волны 2.5) — физическое разбиение
+ * распухшего suites/api.ts: 6 admin-тестов вынесены в отдельный файл, но
+ * остаются частью категории 'api' — apiTests и apiAdminTests сливаются в один
+ * объект. Порядок прогона задаёт TEST_CATEGORIES (registry, runAllTests ниже
+ * идёт по category.tests), не порядок ключей в TEST_IMPLS/apiTests/apiAdminTests.
  */
 const TEST_IMPLS: Record<string, Record<string, TestImpl>> = {
   database: databaseTests,
   functional: functionalTests,
-  api: apiTests,
+  api: { ...apiTests, ...apiAdminTests },
   integration: integrationTests,
   concurrency: concurrencyTests,
   limits: limitsTests
@@ -98,9 +104,15 @@ export async function runAllTests(
 
   // Фаза «запись» двухфазного лог-теста — в начале прогона (фикс RV 22-07-2026):
   // CH-видимость записи занимает секунды, поллинг внутри теста не успевал; выстрел
-  // здесь даёт записи всё время прогона на доезд до account_logs. Читает —
-  // log_two_phase (в конце integration-категории) через takePendingLogProbe().
-  if (categories.some((c) => c.name === 'integration')) {
+  // здесь даёт записи всё время прогона на доезд до account_logs. Читают пробу:
+  // readlogs_history/admin_logs_search/admin_log_payload — через peekPendingLogProbe()
+  // (functional/api, не потребляют), log_two_phase (конец integration) — через
+  // takePendingLogProbe() (план шаг 14б): условие расширено с одной 'integration'
+  // на любую из ['functional','api','integration'] — иначе изолированный
+  // ?category=functional/api не успевает выстрелить пробу заранее и лог-тесты
+  // остаются с нулевым окном CH-видимости.
+  const LOG_PROBE_CATEGORIES = ['functional', 'api', 'integration']
+  if (categories.some((c) => LOG_PROBE_CATEGORIES.includes(c.name))) {
     await fireLogProbe(ctx)
   }
 
