@@ -38,3 +38,15 @@ inner/docs/.obsidian-hybrid-search.db-shm
 # Runtime/debug логи
 *.log
 temp/
+
+# Статичные медиа-файлы (изображения)
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+*.bmp
+*.tiff
+*.tif
+*.avif
+*.ico
