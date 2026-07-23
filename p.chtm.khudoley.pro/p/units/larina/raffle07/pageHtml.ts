@@ -158,7 +158,7 @@ export const PAGE_HTML = `<!DOCTYPE html>
 
   var PRIZES = [
     { place: '1 место', title: 'Курс «Косметолог-эстетист по телу»' },
-    { place: '2 место', title: 'Курс «Косметолог-эстетист по лицу»' }
+    { place: '2 место', title: 'Курс «Массажи тела и SPA»' }
   ];
   var CONSOLATION = { place: 'Всем участникам', title: '2000 бонусных рублей' };
 
@@ -276,7 +276,7 @@ export const PAGE_HTML = `<!DOCTYPE html>
   function buildIdleOverlay(){
     var total = USERS.length + ' ' + plural(USERS.length, ['человек', 'человека', 'человек']);
     var chips = PRIZES.map(function(p, i){
-      return '<div style="animation-delay:' + (0.12 + i * 0.09) + 's;display:flex;flex-direction:column;gap:3px;align-items:flex-start;text-align:left;padding:12px 18px;border-radius:14px;background:rgba(231,192,102,.06);border:1px solid rgba(231,192,102,.24);animation:idleCardIn .7s cubic-bezier(.2,.8,.2,1) both;">' +
+      return '<div style="animation-delay:' + (0.12 + i * 0.09) + 's;display:flex;flex-direction:column;gap:3px;align-items:flex-start;text-align:left;padding:12px 18px;border-radius:14px;background:rgba(231,192,102,.06);border:1px solid rgba(231,192,102,.24);animation:idleCardIn .7s cubic-bezier(.2,.8,.2,1) both;flex:1 1 240px;min-width:240px;box-sizing:border-box;">' +
         '<span style="font-family:\\'Oswald\\',sans-serif;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#E7C066;">' + esc(p.place) + '</span>' +
         '<span style="font-size:14px;font-weight:700;color:#EDE6D6;">' + esc(p.title) + '</span>' +
       '</div>';
