@@ -19,3 +19,5 @@ node_modules/
 
 # Сгенерированный 1:1 клон страницы Gamma (не форматируем)
 p/units/neso/pages/a475/pageHtml.ts
+p/units/neso/pages/a473/pageHtml.ts
+p/units/neso/pages/a24/pageHtml.ts
