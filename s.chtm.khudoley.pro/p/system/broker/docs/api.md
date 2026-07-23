@@ -96,6 +96,26 @@ CAS-first: сразу пытается закрыть условным `updateAl
 | POST   | `/api/broker/admin/disable` | `api/broker/admin/disable.ts` | Admin | `{ moduleKey, reason? }` → `{ status: 'disabled' }`. Только из `status === 'active'`, иначе `invalid_status`. `pending*`-поля не трогает (§5.6). |
 | POST   | `/api/broker/admin/enable`  | `api/broker/admin/enable.ts`  | Admin | `{ moduleKey }` → `{ status: 'active' }`. Только из `status === 'disabled'`, иначе `invalid_status`. Без ре-модерации.                           |
 
+## Admin-операции наблюдаемости (§5.11, волна 2.5)
+
+Внутренние поверхности для `pages/admin/*.vue` — не часть модульного API, без токена модуля. Все 7 admin-роутов (5 ниже + `disable`/`enable` выше) — `POST '/'`, `// @shared-route` (вызываются `.run()` с клиента страницы админки), `requireAccountRole(ctx, 'Admin')` первой строкой обработчика. Гейт роли подтверждён Runtime Verification: анонимный HTTP-запрос на любую из 7 admin-поверхностей получает отказ (тест `admin_role_gate`).
+
+| Method | Path                            | File                              | Auth  | Назначение                                                                      |
+| ------ | ------------------------------- | --------------------------------- | ----- | ------------------------------------------------------------------------------- |
+| POST   | `/api/broker/admin/status`      | `api/broker/admin/status.ts`      | Admin | Сводка состояния брокера — backlog, доставки по статусам, список модулей.       |
+| POST   | `/api/broker/admin/metrics`     | `api/broker/admin/metrics.ts`     | Admin | Метрики за 24ч — события, типы событий, доля мёртвых доставок, активные модули. |
+| POST   | `/api/broker/admin/logs`        | `api/broker/admin/logs.ts`        | Admin | Постраничная выборка серверных логов брокера с фильтрами.                       |
+| POST   | `/api/broker/admin/log-payload` | `api/broker/admin/log-payload.ts` | Admin | Полный JSON payload одной строки лога (в списке `logs` payload не отдаётся).    |
+| POST   | `/api/broker/admin/log-level`   | `api/broker/admin/log-level.ts`   | Admin | Чтение/переключение уровня логирования брокера.                                 |
+
+Формы ответов:
+
+- **status** — тело не требуется. Возврат: `{ success, fanoutBacklog, deliveriesByStatus: { pending, claimed, acked, dead }, oldestPendingAgeMs: number | null, modules: [...], modulesTotal, logLevel }`. Записи `modules[]` — без `authTokenHash`/`metadata`.
+- **metrics** — тело не требуется. Возврат: `{ success, eventsTotal, events24h, eventsByType24h: [{ eventType, count }], deliveriesByStatus, deadRatio, activeModulesCount }`. `eventsByType24h` — топ-20 типов за последние 24ч.
+- **logs** — тело: `{ levels?, search?, from?, to?, limit?, offset? }`. Валидация входа без исключений — невалидные `levels`/`from`/`to` дают `{ success: false, ... }`, не 4xx/5xx. `limit` клэмпится в диапазон 1..200, `offset >= 0`. Возврат: `{ success, rows: [{ ts, level, msg, kv }], total }`. `rows[]` — без `payload` (см. `log-payload`).
+- **log-payload** — тело: `{ ts, msg, kv }` (составной ключ строки лога — уникального id у строки нет). Возврат: `{ success, found, jsonStr: string | null }`. Отсутствующая запись → `found: false` без исключения. Ограничение: коллизия `ts`(мс)+`msg`+`kv` возможна в пределах одного миллисекундного тика — тогда `LIMIT 1` возвращает произвольную из совпавших строк.
+- **log-level** — тело: `{ level? }`. Без `level` — только чтение текущего значения. С `level` — валидация по 5 допустимым значениям (`VALID_LEVELS`), невалидный → `{ success: false, ... }`; при успешной смене пишется серверный лог о переключении. Возврат: `{ success, level }`.
+
 ## Тестовые поверхности (§9)
 
 Не часть контракта гейтвея — служебные роуты для проверки самого брокера.

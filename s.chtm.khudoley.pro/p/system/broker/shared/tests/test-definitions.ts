@@ -62,6 +62,11 @@ export const TEST_CATEGORIES: TestCategory[] = [
       {
         name: 'last_error_truncate',
         description: 'lastError обрезается до LAST_ERROR_MAX, вызов не отклоняется (О7)'
+      },
+      {
+        name: 'readlogs_history',
+        description:
+          'readLogs возвращает запись собственной пробы с фильтром workspace_path (§9.5.2.5)'
       }
     ]
   },
@@ -104,6 +109,35 @@ export const TEST_CATEGORIES: TestCategory[] = [
       {
         name: 'source_not_overridable',
         description: 'внешний канал регистрации не подделывается полем source в теле'
+      },
+      {
+        name: 'admin_status',
+        description: 'admin_status-роут отдаёт счётчики, согласованные с прямыми countBy (§5.11)'
+      },
+      {
+        name: 'admin_metrics',
+        description:
+          'admin_metrics-роут отражает фикстуру в eventsTotal/events24h/dead/activeModulesCount'
+      },
+      {
+        name: 'admin_log_level',
+        description:
+          'переключение уровня через admin_log_level реально меняет отсечку (чтение после записи)'
+      },
+      {
+        name: 'admin_role_gate',
+        description:
+          'все 7 admin-поверхностей (5 новых + disable/enable) отклоняют неаутентифицированный доступ'
+      },
+      {
+        name: 'admin_logs_search',
+        description:
+          'admin_logs (список) находит собственную пробу по search, без payload/jsonStr в строках'
+      },
+      {
+        name: 'admin_log_payload',
+        description:
+          'admin_log_payload раскрывает payload по точным ts/msg/kv; отсутствующая запись — found:false'
       }
     ]
   },

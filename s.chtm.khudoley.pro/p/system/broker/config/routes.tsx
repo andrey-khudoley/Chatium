@@ -15,14 +15,16 @@ const BASE_PATH = `/${PROJECT_ROOT}`
 export const ROUTES = {
   index: './',
   tests: './web/tests',
-  testsAi: './web/tests/ai'
+  testsAi: './web/tests/ai',
+  admin: './web/admin'
 } as const
 
 /** Абсолютные (от корня проекта) пути — для справки/консистентности с шаблоном. */
 export const ROUTE_PATHS = {
   index: '/',
   tests: '/web/tests',
-  testsAi: '/web/tests/ai'
+  testsAi: '/web/tests/ai',
+  admin: '/web/admin'
 } as const
 
 /**

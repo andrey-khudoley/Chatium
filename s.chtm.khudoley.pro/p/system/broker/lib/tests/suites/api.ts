@@ -367,4 +367,10 @@ export const apiTests: Record<string, TestImpl> = {
   update_types_external_pending: test_update_types_external_pending,
   admin_disable_enable: test_admin_disable_enable,
   source_not_overridable: test_source_not_overridable
+  // 6 admin-тестов (admin_status/admin_metrics/admin_log_level/admin_role_gate/
+  // admin_logs_search/admin_log_payload) вынесены в suites/api-admin.ts (фикс-цикл
+  // волны 2.5, standards — лимит 300-400 строк). Реестр test-definitions.ts не
+  // менялся — категория 'api' остаётся единой; TEST_IMPLS.api в run-tests.ts
+  // собирает apiTests + apiAdminTests в один объект, порядок прогона задаёт
+  // TEST_CATEGORIES (registry), не порядок объектов TEST_IMPLS.
 }

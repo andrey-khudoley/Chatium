@@ -694,7 +694,7 @@ async function test_log_two_phase(ctx: RichUgcCtx): Promise<string> {
   const mark = fired.mark
 
   let found: Awaited<ReturnType<typeof readLogsByMark>> = []
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 80; i++) {
     found = await readLogsByMark(ctx, `above ${mark}`, { withPathFilter: false })
     if (found.length > 0) break
   }
@@ -727,7 +727,7 @@ async function test_no_log_recursion(ctx: RichUgcCtx): Promise<string> {
   // проверка: серия вызовов не должна падать (RangeError на рекурсии стека).
   // setLogLevel в цикле инвалидирует TTL-кэш (фикс-раунда 2) — иначе 19 из 20
   // чтений били бы в кэш и регрессионная ценность теста была бы нулевой.
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 80; i++) {
     await setLogLevel(ctx, 'Info')
     await getLogLevel(ctx)
   }

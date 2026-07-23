@@ -3,7 +3,15 @@ import { BrokerSettings } from '../../tables/settings.table'
 export type BrokerLogLevelSetting = 'Disable' | 'Error' | 'Warn' | 'Info' | 'Debug'
 
 const LOG_LEVEL_KEY = 'log_level'
-const VALID_LEVELS: readonly BrokerLogLevelSetting[] = ['Disable', 'Error', 'Warn', 'Info', 'Debug']
+// Экспортирована для валидации в api/broker/admin/log-level.ts (§5.11, волна 2.5) —
+// единственный источник допустимых значений, не дублируется литералом на роуте.
+export const VALID_LEVELS: readonly BrokerLogLevelSetting[] = [
+  'Disable',
+  'Error',
+  'Warn',
+  'Info',
+  'Debug'
+]
 
 // Кэш уровня логирования с TTL (фикс-раунда 1, п.16а) — writeServerLog читает
 // getLogLevel на КАЖДЫЙ вызов; без кэша прогон персистентного набора и дренер

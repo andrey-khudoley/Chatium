@@ -20,6 +20,9 @@ export const indexRoute = app.get('/', async () => {
         <p>
           <a href={withProjectRoot(ROUTES.tests)}>Тесты</a>
         </p>
+        <p>
+          <a href={withProjectRoot(ROUTES.admin)}>Панель наблюдаемости</a>
+        </p>
       </body>
     </html>
   )

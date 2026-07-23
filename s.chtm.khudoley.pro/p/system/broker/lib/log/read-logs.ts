@@ -94,6 +94,45 @@ export async function readLogs(
   return { rows, total }
 }
 
+export type LogPayloadRow = { jsonStr: string | null }
+
+/**
+ * Раскрытие payload одной записи лога по точным {ts,msg,kv} (§5.11 «Живой
+ * монитор», волна 2.5) — round-trip значений ts/msg/kv, как есть из LogRow
+ * (список никогда не переформатирует их). Нет строк → null (не бросает) —
+ * вызывающий роут отличает «не найдено» от «найдено, но без payload»
+ * (json_str может быть NULL у самой строки).
+ *
+ * ⚠️ Известное ограничение схемы (не баг, фикс-цикл волны 2.5): у строки
+ * account_logs нет уникального id, совпадение {ts64,msg,kv} — не гарантированный
+ * ключ. Две записи с идентичными ts/msg/kv в один и тот же миллисекундный тик
+ * (например, дублирующийся вызов writeServerLog с тем же текстом) дадут
+ * коллизию — LIMIT 1 вернёт произвольную из них.
+ */
+export async function readLogPayload(
+  ctx: RichUgcCtx,
+  params: { ts: string; msg: string; kv: string }
+): Promise<LogPayloadRow | null> {
+  // @ts-ignore — @traffic/sdk внедряется платформой в рантайме, локальных типов нет (050-logging.md)
+  const { queryAi } = await import('@traffic/sdk')
+
+  const conditions = [
+    `workspace_path = '${escapeSqlString(WORKSPACE_PATH)}'`,
+    `ts64 = '${escapeSqlString(params.ts)}'`,
+    `msg = '${escapeSqlString(params.msg)}'`,
+    `kv = '${escapeSqlString(params.kv)}'`
+  ].join(' AND ')
+
+  const result = await queryAi(
+    ctx,
+    `SELECT json_str FROM chatium_ai.account_logs WHERE ${conditions} LIMIT 1`
+  )
+
+  const row = result.rows?.[0] as Record<string, unknown> | undefined
+  if (!row) return null
+  return { jsonStr: row.json_str == null ? null : String(row.json_str) }
+}
+
 export type LogByMarkRow = {
   workspacePath: string
   jsonStr: string | null
