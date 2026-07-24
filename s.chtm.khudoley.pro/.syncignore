@@ -11,6 +11,7 @@
 .playwright-mcp/
 outputs/
 work/
+scripts/.usage-log/
 
 # Dev-only контент — не публиковать (внутренние LLM-логи, проектная документация)
 **/docs/LLM/
